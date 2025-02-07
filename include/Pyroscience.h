@@ -15,14 +15,18 @@ class Pyroscience
 {
 public:
     Pyroscience();
-    float getTemperature();
-    float getPH();
-    float getDO();
+    float getTemperature() const;
+    float getPH() const;
+    float getDO() const;
     bool isDataValid();
 
 private:
     void fetchData();
-    bool writeCommand(uint8_t cmd);
+
+    float temperature;
+    float pH;
+    float DO;
+    bool isDataValidFlag;
 };
 
 #endif

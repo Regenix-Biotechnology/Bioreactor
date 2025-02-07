@@ -9,27 +9,27 @@ Pyroscience::Pyroscience() {}
  * @brief Get the current temperature value from the sensor.
  * @return The measured temperature in degrees Celsius.
  */
-float Pyroscience::getTemperature()
+float Pyroscience::getTemperature() const
 {
-    return 0.0f;
+    return temperature;
 }
 
 /**
  * @brief Get the current pH value from the sensor.
  * @return The measured pH value.
  */
-float Pyroscience::getPH()
+float Pyroscience::getPH() const
 {
-    return 0.0f;
+    return pH;
 }
 
 /**
  * @brief Get the current dissolved oxygen value from the sensor.
  * @return The measured dissolved oxygen value in mg/L.
  */
-float Pyroscience::getDO()
+float Pyroscience::getDO() const
 {
-    return 0.0f;
+    return DO;
 }
 
 /**
@@ -38,20 +38,18 @@ float Pyroscience::getDO()
  */
 bool Pyroscience::isDataValid()
 {
-    return false;
+    fetchData();
+    return isDataValidFlag;
 }
 
 /**
  * @brief Fetch and update the sensor data for temperature, pH, and dissolved oxygen.
  */
-void Pyroscience::fetchData() {}
-
-/**
- * @brief Write a command to the sensor.
- * @param cmd The command to send to the sensor.
- * @return true if the command was successfully written, false otherwise.
- */
-bool Pyroscience::writeCommand(uint8_t cmd)
+void Pyroscience::fetchData()
 {
-    return false;
+    // Fake data for the moment. TODO: Implement actual data fetching from the sensor.
+    temperature = 25.0;
+    pH = 7.0;
+    DO = 5.0;
+    isDataValidFlag = true;
 }

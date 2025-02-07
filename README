@@ -7,3 +7,6 @@ Make sure you have the following VS Code extensions installed:
 
 - [PlatformIO](https://marketplace.visualstudio.com/items?itemName=platformio.platformio-ide)  
 - [C/C++ for Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=ms-vscode.cpptools)  
+
+## Documentation
+See the documentation folder for more information on the codebase. 

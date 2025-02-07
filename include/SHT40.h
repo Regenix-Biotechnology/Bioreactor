@@ -15,28 +15,16 @@ class SHT40
 {
 public:
     SHT40();
-    float getTemperature();
-    float getHumidity();
+    float getTemperature() const;
+    float getHumidity() const;
     bool isDataValid();
 
 private:
     void fetchData();
-    bool writeCommand(uint8_t cmd);
-    uint8_t crc8(const uint8_t *data, int len);
 
     float temperature;
     float humidity;
     bool isDataValidFlag;
-    bool writeCommandIsSuccessful;
-
-    /*
-    Currently set to low repeatability (table 8) for minimum power usage (table 4)
-    High repeatability    -  0xFD  -  2.2 uA
-    Medium repeatability  -  0xF6  -  1.2 uA
-    Low repeatability     -  0xE0  -  0.4 uA
-    */
-    static constexpr uint8_t SHT40_FETCH = 0xE0;
-    static constexpr uint8_t SHT40_ADDRESS = 0x44;
 };
 
 #endif // SHT40_H
