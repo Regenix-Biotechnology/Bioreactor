@@ -14,9 +14,13 @@ This document establishes standard programming rules to ensure consistency, impr
 Consistent naming makes the code easier to read and maintain. Follow these conventions:
 
 - **camelCase** → For variables, functions, and methods.  
+  _Example:_ `calculateSpeed()`, `totalAmount`
 - **PascalCase** → For class names.  
+  _Example:_ `UserProfile`, `DataProcessor`
 - **UPPERCASE** → For constants.  
-- **snake_case** → For file names.
+  _Example:_ `MAX_SPEED`, `API_KEY`
+- **snake_case** → For file names.  
+  _Example:_ `user_profile.py`, `data_processor.js`
 - **Boolean variables** should start with `is`, `has`, `can`, etc.  
   _Example:_ `isAvailable`, `hasPermission`, `canExecute`
 
@@ -24,4 +28,24 @@ Following these rules will help maintain clarity and improve collaboration acros
 
 ## 3. Documentation
 
-Feel free to add sections in this guide to document any new rules or practices that you think are important for the team.
+- When adding a class for a new sensor, add the link to the datasheet in the class documentation.
+- **Document your code** using [Doxygen](https://www.doxygen.nl/) style comments to improve maintainability.  This will make those informations available when you hover over a function or class in VSCode.
+- Use comments to describe the purpose and behavior of functions, parameters, and return values.
+
+### Example:
+
+```cpp
+/**
+ * @brief Calculates the speed of an object.
+ * @param distance The distance traveled (in meters).
+ * @param time The time taken (in seconds).
+ * @return The calculated speed (in meters per second).
+ */
+double calculateSpeed(double distance, double time) {
+    return distance / time;
+}
+```
+
+
+
+This version keeps the document concise while improving readability. Let me know if you want to add anything else! 🚀
