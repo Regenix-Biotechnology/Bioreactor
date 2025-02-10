@@ -29,4 +29,7 @@ void setup()
     Serial.println("Hello, World!");
 }
 
-void loop() {}
+void loop()
+{
+    ApprovPump.setSpeed(254);
+}
