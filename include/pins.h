@@ -3,6 +3,10 @@
 
 #include <Arduino.h>
 
+/*
+*****************UPDATE the pin_usage.xlsx document when you make change to this file*****************
+*/
+
 // PUMPS
 constexpr int APPROV_PUMP_PIN_1 = 14;
 constexpr int APPROV_PUMP_PIN_2 = 32;
@@ -32,7 +36,7 @@ constexpr int VALVE_3_PIN = 0; // not working need extender
 constexpr int VALVE_4_PIN = 0; // not working need extender
 constexpr int VALVE_5_PIN = 0; // not working need extender
 constexpr int HEATER_FAN_PIN = 19;
-constexpr int INTERIOR_FAN_PIN = 23;
+constexpr int INTERIOR_FAN_PIN = 0; // not working need extender
 constexpr int EXTERIOR_FAN_PIN = 0; // not working need extender
 constexpr int PATCH_HEATER_PIN = 18;
 
