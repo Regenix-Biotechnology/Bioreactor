@@ -15,6 +15,7 @@ class SHT40
 {
 public:
     SHT40();
+    void begin();
     float getTemperature() const;
     float getHumidity() const;
     bool isDataValid();

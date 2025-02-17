@@ -7,6 +7,12 @@
 SHT40::SHT40() {}
 
 /**
+ * @brief initialise sht40
+ *
+ */
+void SHT40::begin() {}
+
+/**
  * @brief Get the current temperature value from the sensor.
  * @return The measured temperature in degrees Celsius.
  */

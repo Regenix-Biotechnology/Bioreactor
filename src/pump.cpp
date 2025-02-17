@@ -5,10 +5,16 @@
  * @param pin1 The first control pin.
  * @param pin2 The second control pin.
  */
-Pump::Pump(uint8_t pin1, uint8_t pin2) : pin1(pin1), pin2(pin2)
+Pump::Pump(uint8_t pin1, uint8_t pin2) : pin1(pin1), pin2(pin2) {}
+
+/**
+ * @brief initialise pump pin
+ *
+ */
+void Pump::begin()
 {
-    pinMode(pin1, OUTPUT);
-    pinMode(pin2, OUTPUT);
+    pinMode(this->pin1, OUTPUT);
+    pinMode(this->pin2, OUTPUT);
 }
 
 /**

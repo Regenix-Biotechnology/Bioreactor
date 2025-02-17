@@ -15,6 +15,7 @@ class Pyroscience
 {
 public:
     Pyroscience();
+    void begin();
     float getTemperature() const;
     float getPH() const;
     float getDO() const;
