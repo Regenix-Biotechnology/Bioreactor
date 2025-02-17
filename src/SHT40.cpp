@@ -1,46 +1,159 @@
 #include "SHT40.h"
 
+constexpr uint8_t SHT40_ADDR = 0x44;
+constexpr uint8_t SHT40_REQ_TEMP = 0xFD;
+constexpr uint8_t RAW_TEMPERATURE_SIZE = 2;
+constexpr uint8_t RAW_HUMIDITY_SIZE = 2;
+constexpr uint8_t INDEX_CRC_TEMPERATURE = 2;
+constexpr uint8_t INDEX_CRC_HUMIDITY = 5;
+constexpr uint8_t INDEX_TEMPERATURE = 0;
+constexpr uint8_t INDEX_HUMIDITY = 3;
+constexpr uint8_t NB_BITS_IN_BYTE = 8;
+constexpr uint8_t I2C_COMMUNICATION_SUCCESS = 0;
+constexpr uint8_t I2C_READ_DELAY = 10;
+
 /**
- * @brief Constructor to initialize the SHT40 sensor with the provided I2C interface.
- * @param wire Reference to a TwoWire object for I2C communication.
+ * @brief Constructor to initialize the SHT40 sensor variable. To default state
  */
-SHT40::SHT40() {}
+SHT40::SHT40()
+{
+    memset(this->rxBuffer, 0, SHT40_RSP_SIZE);
+    this->isInit = false;
+    this->temperature = 0.0;
+    this->humidity = 0.0;
+    this->i2cBus = NULL;
+}
+
+/**
+ * @brief initialise the sht40 with the i2cBus sent in parameter
+ *
+ * @param i2cBus The I2C Wire to use for this sensor
+ * @return eSHT40Status SHT40_STATUS_OK if init is succesful else return error code
+ */
+eSHT40Status SHT40::init(TwoWire *i2cBus)
+{
+    if (i2cBus == NULL)
+    {
+        return SHT40_STATUS_INVALID_I2C_BUS;
+    }
+    this->i2cBus = i2cBus;
+    this->isInit = true;
+    return SHT40_STATUS_OK;
+}
+
+/**
+ * @brief check if the SHT40 device is connected to the current i2c bus
+ *
+ * @return true if sht40 device is detected else return false
+ */
+bool SHT40::isConnected()
+{
+    if (this->isInit == false)
+    {
+        return SHT40_STATUS_NOT_INITIALISED;
+    }
+
+    this->i2cBus->beginTransmission(SHT40_ADDR);
+    uint8_t ret = this->i2cBus->endTransmission();
+    return ret == 0;
+}
 
 /**
  * @brief Get the current temperature value from the sensor.
- * @return The measured temperature in degrees Celsius.
+ * @return float The measured temperature in degrees Celsius.
  */
 float SHT40::getTemperature() const
 {
-    return temperature;
+    return this->temperature;
 }
 
 /**
  * @brief Get the current humidity value from the sensor.
- * @return The measured humidity in percentage.
+ * @return float The measured humidity in % rH.
  */
 float SHT40::getHumidity() const
 {
-    return humidity;
+    return this->humidity;
 }
 
 /**
- * @brief Check if the sensor data is valid.
- * @return True if the sensor data is valid, false otherwise.
+ * @brief Fetch and update the sensor data for temperature and humidity. WARNING this task has a 10ms delay
+ *
+ * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code
  */
-bool SHT40::isDataValid()
+eSHT40Status SHT40::fetchData()
 {
-    fetchData();
-    return isDataValidFlag;
+    if (this->isInit == false)
+    {
+        return SHT40_STATUS_NOT_INITIALISED;
+    }
+
+    this->i2cBus->beginTransmission(SHT40_ADDR);
+    this->i2cBus->write(SHT40_REQ_TEMP);
+    uint8_t ret = this->i2cBus->endTransmission();
+    if (ret != I2C_COMMUNICATION_SUCCESS)
+    {
+        return SHT40_STATUS_FAILED_TO_SEND_REQUEST;
+    }
+    delay(I2C_READ_DELAY);
+
+    size_t recv = this->i2cBus->requestFrom(SHT40_ADDR, SHT40_RSP_SIZE);
+    if (recv != SHT40_RSP_SIZE)
+    {
+        return SHT40_STATUS_WRONG_MSG_LENGTH;
+    }
+
+    // read msg
+    memset(rxBuffer, 0, SHT40_RSP_SIZE);
+    for (uint8_t i = 0; i < SHT40_RSP_SIZE; i++)
+    {
+        rxBuffer[i] = this->i2cBus->read();
+    }
+
+    // Check CRC
+    if (rxBuffer[INDEX_CRC_TEMPERATURE] != crc8((&(rxBuffer[INDEX_TEMPERATURE])), RAW_TEMPERATURE_SIZE) ||
+        rxBuffer[INDEX_CRC_HUMIDITY] != crc8((&(rxBuffer[INDEX_HUMIDITY])), RAW_HUMIDITY_SIZE))
+    {
+        return SHT40_STATUS_INVALID_CRC;
+    }
+
+    // Convert data
+    float_t rawTemp = (((uint16_t)(rxBuffer[INDEX_TEMPERATURE])) << NB_BITS_IN_BYTE) + ((uint16_t)rxBuffer[INDEX_TEMPERATURE + 1]);
+    float_t rawHumidity = (((uint16_t)(rxBuffer[INDEX_HUMIDITY])) << NB_BITS_IN_BYTE) + ((uint16_t)rxBuffer[INDEX_HUMIDITY + 1]);
+
+    this->temperature = -45 + 175 * rawTemp / 65535; // Calculation from datasheet
+    this->humidity = -6 + 125 * rawHumidity / 65535; // Calculation from datasheet
+
+    return SHT40_STATUS_OK;
 }
 
 /**
- * @brief Fetch and update the sensor data for temperature and humidity.
+ * @brief will return a unique uint8_t number for the provided data
+ * CRC-8 formula from page 14 of SHT spec pdf
+ *
+ * Test data 0xBE, 0xEF should yield 0x92
+ *
+ * Initialization data 0xFF
+ * Polynomial 0x31 (x8 + x5 +x4 +1)
+ * Final XOR 0x00
+ *
+ * @param data  data to calculate crc from
+ * @param len   length of data to calculate crc from
+ * @return uint8_t  result of crc8
  */
-void SHT40::fetchData()
+uint8_t SHT40::crc8(const uint8_t *data, int len)
 {
-    // Fake data for the moment. TODO: Implement actual data fetching from the sensor.
-    temperature = 25.0;
-    humidity = 50.0;
-    isDataValidFlag = true;
+    const uint8_t POLYNOMIAL(0x31);
+    uint8_t crc(0xFF);
+
+    for (uint8_t j = len; j; --j)
+    {
+        crc ^= *data++;
+
+        for (uint8_t i = 8; i; --i)
+        {
+            crc = (crc & 0x80) ? (crc << 1) ^ POLYNOMIAL : (crc << 1);
+        }
+    }
+    return crc;
 }
