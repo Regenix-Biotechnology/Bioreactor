@@ -116,10 +116,10 @@ eSHT40Status SHT40::getData(float_t *temperature, float_t *humidity)
         return status;
 
     if (temperature)
-        *temperature = this->getTemperature();
+        *temperature = this->temperature;
 
     if (humidity)
-        *humidity = this->getHumidity();
+        *humidity = this->humidity;
 
     return SHT40_STATUS_OK;
 }
