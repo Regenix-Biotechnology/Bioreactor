@@ -32,8 +32,8 @@ public:
     float getHumidity() const;
     bool isConnected();
     eSHT40Status fetchData();
-    eSHT40Status getData(float_t *temperature, float_t *humidity);
-    eSHT40Status getData(float_t *temperature);
+    eSHT40Status getData(float *temperature, float *humidity);
+    eSHT40Status getData(float *temperature);
 
 private:
     static constexpr uint8_t SHT40_RSP_SIZE = 6;

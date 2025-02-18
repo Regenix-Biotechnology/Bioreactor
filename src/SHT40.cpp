@@ -93,8 +93,8 @@ eSHT40Status SHT40::fetchData()
         return SHT40_STATUS_INVALID_CRC;
 
     // Convert data
-    float_t rawTemp = (((uint16_t)(rxBuffer[INDEX_TEMPERATURE])) << NB_BITS_IN_BYTE) + ((uint16_t)rxBuffer[INDEX_TEMPERATURE + 1]);
-    float_t rawHumidity = (((uint16_t)(rxBuffer[INDEX_HUMIDITY])) << NB_BITS_IN_BYTE) + ((uint16_t)rxBuffer[INDEX_HUMIDITY + 1]);
+    float rawTemp = (((uint16_t)(rxBuffer[INDEX_TEMPERATURE])) << NB_BITS_IN_BYTE) + ((uint16_t)rxBuffer[INDEX_TEMPERATURE + 1]);
+    float rawHumidity = (((uint16_t)(rxBuffer[INDEX_HUMIDITY])) << NB_BITS_IN_BYTE) + ((uint16_t)rxBuffer[INDEX_HUMIDITY + 1]);
 
     this->temperature = -45 + 175 * rawTemp / 65535; // Calculation from datasheet
     this->humidity = -6 + 125 * rawHumidity / 65535; // Calculation from datasheet
@@ -109,7 +109,7 @@ eSHT40Status SHT40::fetchData()
  * @param humidity Output humidity measured can be nullptr if only temperature needed
  * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code
  */
-eSHT40Status SHT40::getData(float_t *temperature, float_t *humidity)
+eSHT40Status SHT40::getData(float *temperature, float *humidity)
 {
     eSHT40Status status = this->fetchData();
     if (status != SHT40_STATUS_OK)
@@ -125,12 +125,12 @@ eSHT40Status SHT40::getData(float_t *temperature, float_t *humidity)
 }
 
 /**
- * @brief getData(float_t *temperature, float_t *humidity) overloading fetch and return the sensor data for temperature and humidity. WARNING this task has a 10ms delay
+ * @brief getData(float *temperature, float *humidity) overloading fetch and return the sensor data for temperature and humidity. WARNING this task has a 10ms delay
  *
  * @param temperature Output temperature measured
  * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code
  */
-eSHT40Status SHT40::getData(float_t *temperature)
+eSHT40Status SHT40::getData(float *temperature)
 {
     return this->getData(temperature, nullptr);
 }
