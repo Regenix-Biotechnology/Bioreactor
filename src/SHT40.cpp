@@ -1,27 +1,12 @@
 #include "SHT40.h"
 
-constexpr uint8_t SHT40_ADDR = 0x44;
-constexpr uint8_t SHT40_REQ_TEMP = 0xFD;
-constexpr uint8_t RAW_TEMPERATURE_SIZE = 2;
-constexpr uint8_t RAW_HUMIDITY_SIZE = 2;
-constexpr uint8_t INDEX_CRC_TEMPERATURE = 2;
-constexpr uint8_t INDEX_CRC_HUMIDITY = 5;
-constexpr uint8_t INDEX_TEMPERATURE = 0;
-constexpr uint8_t INDEX_HUMIDITY = 3;
-constexpr uint8_t NB_BITS_IN_BYTE = 8;
-constexpr uint8_t I2C_COMMUNICATION_SUCCESS = 0;
-constexpr uint8_t I2C_READ_DELAY = 10;
-
 /**
  * @brief Constructor to initialize the SHT40 sensor variable. To default state
  */
 SHT40::SHT40()
+    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(nullptr)
 {
     memset(this->rxBuffer, 0, SHT40_RSP_SIZE);
-    this->isInit = false;
-    this->temperature = 0.0;
-    this->humidity = 0.0;
-    this->i2cBus = NULL;
 }
 
 /**
@@ -30,12 +15,11 @@ SHT40::SHT40()
  * @param i2cBus The I2C Wire to use for this sensor
  * @return eSHT40Status SHT40_STATUS_OK if init is succesful else return error code
  */
-eSHT40Status SHT40::init(TwoWire *i2cBus)
+eSHT40Status SHT40::begin(TwoWire *i2cBus)
 {
     if (i2cBus == NULL)
-    {
         return SHT40_STATUS_INVALID_I2C_BUS;
-    }
+
     this->i2cBus = i2cBus;
     this->isInit = true;
     return SHT40_STATUS_OK;
@@ -49,13 +33,11 @@ eSHT40Status SHT40::init(TwoWire *i2cBus)
 bool SHT40::isConnected()
 {
     if (this->isInit == false)
-    {
         return SHT40_STATUS_NOT_INITIALISED;
-    }
 
     this->i2cBus->beginTransmission(SHT40_ADDR);
     uint8_t ret = this->i2cBus->endTransmission();
-    return ret == 0;
+    return !ret;
 }
 
 /**
@@ -83,25 +65,20 @@ float SHT40::getHumidity() const
  */
 eSHT40Status SHT40::fetchData()
 {
-    if (this->isInit == false)
-    {
+    if (!this->isInit)
         return SHT40_STATUS_NOT_INITIALISED;
-    }
 
     this->i2cBus->beginTransmission(SHT40_ADDR);
     this->i2cBus->write(SHT40_REQ_TEMP);
     uint8_t ret = this->i2cBus->endTransmission();
     if (ret != I2C_COMMUNICATION_SUCCESS)
-    {
         return SHT40_STATUS_FAILED_TO_SEND_REQUEST;
-    }
+
     delay(I2C_READ_DELAY);
 
     size_t recv = this->i2cBus->requestFrom(SHT40_ADDR, SHT40_RSP_SIZE);
     if (recv != SHT40_RSP_SIZE)
-    {
         return SHT40_STATUS_WRONG_MSG_LENGTH;
-    }
 
     // read msg
     memset(rxBuffer, 0, SHT40_RSP_SIZE);
@@ -113,9 +90,7 @@ eSHT40Status SHT40::fetchData()
     // Check CRC
     if (rxBuffer[INDEX_CRC_TEMPERATURE] != crc8((&(rxBuffer[INDEX_TEMPERATURE])), RAW_TEMPERATURE_SIZE) ||
         rxBuffer[INDEX_CRC_HUMIDITY] != crc8((&(rxBuffer[INDEX_HUMIDITY])), RAW_HUMIDITY_SIZE))
-    {
         return SHT40_STATUS_INVALID_CRC;
-    }
 
     // Convert data
     float_t rawTemp = (((uint16_t)(rxBuffer[INDEX_TEMPERATURE])) << NB_BITS_IN_BYTE) + ((uint16_t)rxBuffer[INDEX_TEMPERATURE + 1]);

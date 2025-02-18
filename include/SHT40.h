@@ -2,9 +2,6 @@
 #define SHT40_H
 
 #include <Wire.h>
-#include "pins.h"
-
-constexpr uint8_t SHT40_RSP_SIZE = 6;
 
 typedef enum
 {
@@ -30,13 +27,26 @@ class SHT40
 {
 public:
     SHT40();
-    eSHT40Status init(TwoWire *i2cBus);
+    eSHT40Status begin(TwoWire *i2cBus);
     float getTemperature() const;
     float getHumidity() const;
     bool isConnected();
     eSHT40Status fetchData();
 
 private:
+    static constexpr uint8_t SHT40_RSP_SIZE = 6;
+    static constexpr uint8_t SHT40_ADDR = 0x44;
+    static constexpr uint8_t SHT40_REQ_TEMP = 0xFD;
+    static constexpr uint8_t RAW_TEMPERATURE_SIZE = 2;
+    static constexpr uint8_t RAW_HUMIDITY_SIZE = 2;
+    static constexpr uint8_t INDEX_CRC_TEMPERATURE = 2;
+    static constexpr uint8_t INDEX_CRC_HUMIDITY = 5;
+    static constexpr uint8_t INDEX_TEMPERATURE = 0;
+    static constexpr uint8_t INDEX_HUMIDITY = 3;
+    static constexpr uint8_t NB_BITS_IN_BYTE = 8;
+    static constexpr uint8_t I2C_COMMUNICATION_SUCCESS = 0;
+    static constexpr uint8_t I2C_READ_DELAY = 10;
+
     uint8_t crc8(const uint8_t *data, int len);
 
     uint8_t rxBuffer[SHT40_RSP_SIZE];
