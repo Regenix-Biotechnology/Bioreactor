@@ -15,6 +15,7 @@ class Pump
 {
 public:
     Pump(uint8_t pin1, uint8_t pin2);
+    void begin();
     void setSpeed(int speed);
     void stop();
 

@@ -6,6 +6,15 @@
 Pyroscience::Pyroscience() {}
 
 /**
+ * @brief initialise pyroscience
+ *
+ */
+void Pyroscience::begin()
+{
+    // pSerial.begin()...
+}
+
+/**
  * @brief Get the current temperature value from the sensor.
  * @return The measured temperature in degrees Celsius.
  */

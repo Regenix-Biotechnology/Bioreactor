@@ -13,6 +13,7 @@ class SSR_Relay
 {
 public:
     SSR_Relay(uint8_t pin);
+    void begin();
     void setLevel(uint8_t level);
     void off();
 
