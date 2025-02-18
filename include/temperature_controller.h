@@ -8,7 +8,7 @@
  * @brief Implements the control loop for temperature regulation using a PID algorithm.
  *
  * The control loop computes:
- * - Activation of patch heating: if water temperature is below T_ref, patch is set to maximum power.
+ * - Activation of patch heating: if water temperature is below tempRef, patch is set to maximum power.
  * - A target air temperature based on the water temperature.
  * - A PID controller computes the fan power (with limits).
  */
@@ -18,22 +18,21 @@ public:
     TemperatureController();
     void update(float waterTemp, float airTemp);
     float getHeaterPower() const;
-    bool getPatchState() const;
-    void setReferenceTemperature(float T_ref);
+    bool isPatchHeatingNeeded() const;
+    void setReferenceTemperature(float tempRef);
 
 private:
     // Reference temperature.
-    float T_ref;
+    float tempRef;
 
     // Internal state for the PID controller.
-    float integral_error;
-    float prev_error;
-    unsigned long prev_time;
+    float integralError;
+    float prevError;
+    unsigned long prevTime;
 
     // Control outputs.
-    float pwmHeater;
-    float statePatch;
-    float targetAirTemp;
+    uint8_t pwmHeater;
+    bool patchState;
 
     // Constants for the control loop.
     static constexpr float KP_FAN = 200.0f;

@@ -4,12 +4,11 @@
  * @brief Constructor to initialize the control loop parameters.
  */
 TemperatureController::TemperatureController()
-    : integral_error(0.0f),
-      prev_error(0.0f),
-      pwmHeater(0.0f),
-      statePatch(0.0f),
-      targetAirTemp(0.0f),
-      T_ref(37.0f)
+    : integralError(0.0f),
+      prevError(0.0f),
+      pwmHeater(0),
+      patchState(false),
+      tempRef(37.0f)
 {
 }
 
@@ -23,22 +22,22 @@ TemperatureController::TemperatureController()
 void TemperatureController::update(float waterTemp, float airTemp)
 {
     // --- Activation of Patch Heating ---
-    statePatch = waterTemp < (T_ref - TEMPERATURE_REFERENCE_OFFSET);
+    this->patchState = waterTemp < (tempRef - TEMPERATURE_REFERENCE_OFFSET);
 
     // --- Compute Target Air Temperature ---
-    targetAirTemp = KP_AIR * (waterTemp - T_ref) + T_ref;
+    float targetAirTemp = KP_AIR * (waterTemp - tempRef) + tempRef;
 
     // --- PID Control for the Heater ---
-    unsigned long current_time = millis();
-    float dt = (current_time - prev_time) / MILLIS_TO_SECONDS;
+    unsigned long currentTime = millis();
+    float dt = (float)(currentTime - prevTime) / MILLIS_TO_SECONDS;
     float error = targetAirTemp - airTemp;
-    float derivative = (error - prev_error) / dt;
-    integral_error += error * dt;
-    prev_error = error;
-    prev_time = current_time;
+    float derivative = (error - prevError) / dt;
+    this->integralError += error * dt;
+    this->prevError = error;
+    this->prevTime = currentTime;
 
-    float heaterControl = KP_FAN * error + KI_FAN * integral_error + KD_FAN * derivative;
-    pwmHeater = constrain(heaterControl, 0.0f, 255.0f);
+    float heaterControl = KP_FAN * error + KI_FAN * integralError + KD_FAN * derivative;
+    this->pwmHeater = constrain(heaterControl, 0, 255);
 }
 
 /**
@@ -46,22 +45,22 @@ void TemperatureController::update(float waterTemp, float airTemp)
  */
 float TemperatureController::getHeaterPower() const
 {
-    return pwmHeater;
+    return this->pwmHeater;
 }
 
 /**
  * @brief Returns if the patch needs to be activated.
  */
-bool TemperatureController::getPatchState() const
+bool TemperatureController::isPatchHeatingNeeded() const
 {
-    return statePatch;
+    return this->patchState;
 }
 
 /**
  * @brief Set the reference temperature for the control loop.
- * @param T_ref The reference temperature (°C).
+ * @param tempRef The reference temperature (°C).
  */
-void TemperatureController::setReferenceTemperature(float T_ref)
+void TemperatureController::setReferenceTemperature(float tempRef)
 {
-    this->T_ref = T_ref;
+    this->tempRef = tempRef;
 }
