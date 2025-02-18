@@ -1,10 +1,4 @@
-#include <Arduino.h>
-#include "SHT40.h"
-#include "Pyroscience.h"
-#include "Pump.h"
-#include "ssr_relay.h"
-#include "relay.h"
-#include "pins.h"
+#include <main.h>
 
 SHT40 sht40;
 Pyroscience pyroscience;
@@ -31,5 +25,62 @@ void setup()
 
 void loop()
 {
-    ApprovPump.setSpeed(254);
+
+    switch (bioreactorState)
+    {
+    case eBioreactorState::IDLE:
+        closeAllRelay();
+        closeAllPumps();
+        break;
+    case eBioreactorState::APPROV:
+        /* code */
+        break;
+    case eBioreactorState::PREPARE:
+        /* code */
+        break;
+    case eBioreactorState::RUN:
+        /* code */
+        break;
+    case eBioreactorState::TEST:
+    {
+        // Pour le test complet de fluidique et de chauffage
+        HeaterFan.on();
+        InteriorFan.on();
+
+        SensorPump.setSpeed(255);
+
+        float airTemperature = sht40.getTemperature();
+        float waterTemperature = pyroscience.getTemperature();
+
+        // TemperatureController.update(airTemperature, waterTemperature);
+        // float heaterPower = TemperatureController.getHeaterPower();
+
+        break;
+    }
+    default:
+        delay(1000);
+        break;
+    }
+}
+
+void closeAllRelay()
+{
+    Valve1.off();
+    Valve2.off();
+    Valve3.off();
+    Valve4.off();
+    Valve5.off();
+    HeaterFan.off();
+    InteriorFan.off();
+    ExteriorFan.off();
+    PatchHeater.off();
+    Heater.off();
+}
+
+void closeAllPumps()
+{
+    ApprovPump.stop();
+    SensorPump.stop();
+    CultureChamberPump1.stop();
+    CultureChamberPump2.stop();
 }
