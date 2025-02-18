@@ -41,19 +41,19 @@ bool SHT40::isConnected()
 }
 
 /**
- * @brief Get the current temperature value from the sensor.
+ * @brief Get the last fetched temperature value from the sensor.
  * @return float The measured temperature in degrees Celsius.
  */
-float SHT40::getTemperature() const
+float SHT40::getLastTemperature() const
 {
     return this->temperature;
 }
 
 /**
- * @brief Get the current humidity value from the sensor.
+ * @brief Get the last fetched humidity value from the sensor.
  * @return float The measured humidity in % rH.
  */
-float SHT40::getHumidity() const
+float SHT40::getLastHumidity() const
 {
     return this->humidity;
 }

@@ -28,8 +28,8 @@ class SHT40
 public:
     SHT40();
     eSHT40Status begin(TwoWire *i2cBus);
-    float getTemperature() const;
-    float getHumidity() const;
+    float getLastTemperature() const;
+    float getLastHumidity() const;
     bool isConnected();
     eSHT40Status fetchData();
     eSHT40Status getData(float *temperature, float *humidity);
