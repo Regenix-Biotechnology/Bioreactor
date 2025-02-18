@@ -17,9 +17,9 @@ constexpr int CULTURE_CHAMBER_PUMP_1_PIN_2 = 12;
 constexpr int CULTURE_CHAMBER_PUMP_2_PIN_1 = 13;
 constexpr int CULTURE_CHAMBER_PUMP_2_PIN_2 = 4;
 
-// SHT40
-constexpr int SHT40_SDA_PIN = 21;
-constexpr int SHT40_SCL_PIN = 22;
+// I2C
+constexpr int I2C_SDA_PIN = 21;
+constexpr int I2C_SCL_PIN = 22;
 
 // PYROSCIENCE
 constexpr int PYROSCIENCE_RX_PIN = 16;

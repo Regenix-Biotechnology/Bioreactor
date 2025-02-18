@@ -26,9 +26,10 @@ Relay PatchHeater(PATCH_HEATER_PIN);
 void setup()
 {
     Serial.begin(115200);
+    Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
     Serial.println("Hello, World!");
 
-    sht40.begin();
+    sht40.begin(&Wire);
     pyroscience.begin();
     ApprovPump.begin();
     SensorPump.begin();
@@ -48,4 +49,5 @@ void setup()
 
 void loop()
 {
+    ApprovPump.setSpeed(254);
 }
