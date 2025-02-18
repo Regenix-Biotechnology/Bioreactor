@@ -103,6 +103,39 @@ eSHT40Status SHT40::fetchData()
 }
 
 /**
+ * @brief Fetch and return the sensor data for temperature and humidity. WARNING this task has a 10ms delay
+ *
+ * @param temperature Output temperature measured can be nullptr if only humidity needed
+ * @param humidity Output humidity measured can be nullptr if only temperature needed
+ * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code
+ */
+eSHT40Status SHT40::getData(float_t *temperature, float_t *humidity)
+{
+    eSHT40Status status = this->fetchData();
+    if (status != SHT40_STATUS_OK)
+        return status;
+
+    if (temperature)
+        *temperature = this->getTemperature();
+
+    if (humidity)
+        *humidity = this->getHumidity();
+
+    return SHT40_STATUS_OK;
+}
+
+/**
+ * @brief getData(float_t *temperature, float_t *humidity) overloading fetch and return the sensor data for temperature and humidity. WARNING this task has a 10ms delay
+ *
+ * @param temperature Output temperature measured
+ * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code
+ */
+eSHT40Status SHT40::getData(float_t *temperature)
+{
+    return this->getData(temperature, nullptr);
+}
+
+/**
  * @brief will return a unique uint8_t number for the provided data
  * CRC-8 formula from page 14 of SHT spec pdf
  *
