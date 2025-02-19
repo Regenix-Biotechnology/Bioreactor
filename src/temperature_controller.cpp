@@ -25,7 +25,7 @@ void TemperatureController::update(float waterTemp, float airTemp)
     this->patchState = waterTemp < (tempRef - TEMPERATURE_REFERENCE_OFFSET);
 
     // --- Compute Target Air Temperature ---
-    float targetAirTemp = KP_AIR * (waterTemp - tempRef) + tempRef;
+    float targetAirTemp = KP_AIR * (tempRef - waterTemp) + tempRef;
 
     // --- PID Control for the Heater ---
     unsigned long currentTime = millis();
@@ -38,6 +38,20 @@ void TemperatureController::update(float waterTemp, float airTemp)
 
     float heaterControl = KP_FAN * error + KI_FAN * integralError + KD_FAN * derivative;
     this->pwmHeater = constrain(heaterControl, 0, 255);
+
+    // --- Debug Output ---
+    // Serial.print("Target Air Temp: ");
+    // Serial.print(targetAirTemp);
+    // Serial.print(" Air Temp: ");
+    // Serial.print(airTemp);
+    // Serial.print(" Water Temp: ");
+    // Serial.print(waterTemp);
+    // Serial.print(" Heater Control: ");
+    // Serial.print(heaterControl);
+    // Serial.print(" Heater Power: ");
+    // Serial.print(this->pwmHeater);
+    // Serial.print(" Patch State: ");
+    // Serial.println(this->patchState);
 }
 
 /**
