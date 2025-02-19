@@ -13,6 +13,7 @@ class Relay
 {
 public:
     Relay(uint8_t pin);
+    void begin();
     void on();
     void off();
 

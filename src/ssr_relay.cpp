@@ -4,7 +4,13 @@
  * @brief Constructor to initialize the relay control pin.
  * @param pin The control pin for the SSR relay.
  */
-SSR_Relay::SSR_Relay(uint8_t pin) : pin(pin)
+SSR_Relay::SSR_Relay(uint8_t pin) : pin(pin) {}
+
+/**
+ * @brief initialise ssr relay pin and set default state
+ *
+ */
+void SSR_Relay::begin()
 {
     pinMode(pin, OUTPUT);
     analogWrite(pin, 0);
