@@ -35,8 +35,8 @@ private:
     bool patchState;
 
     // Constants for the control loop.
-    static constexpr float KP_FAN = 200.0f;
-    static constexpr float KI_FAN = 0.001f;
+    static constexpr float KP_FAN = 20.0f;
+    static constexpr float KI_FAN = 0.0001f;
     static constexpr float KD_FAN = 0.0f;
     static constexpr float KP_AIR = 4.0f;
     static constexpr float TEMPERATURE_REFERENCE_OFFSET = 2.0f;

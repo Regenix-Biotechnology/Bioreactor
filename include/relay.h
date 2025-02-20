@@ -16,9 +16,13 @@ public:
     void begin();
     void on();
     void off();
+    void set(bool state);
+    void toggle();
+    bool getState() const;
 
 private:
     uint8_t pin;
+    bool state;
 };
 
 #endif
