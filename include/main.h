@@ -41,11 +41,12 @@ extern unsigned long lastTemperatureControllerTime;
 extern uint8_t testState;
 
 // Global constants
-static constexpr bool OPEN = true;
-static constexpr bool CLOSE = false;
-static constexpr bool ON = true;
-static constexpr bool OFF = false;
+static constexpr bool OPEN = HIGH;
+static constexpr bool CLOSE = LOW;
+static constexpr bool ON = HIGH;
+static constexpr bool OFF = LOW;
 static constexpr uint8_t PUMP_MAX_SPEED = 255;
-static constexpr uint16_t TEMPERATURE_CONTROLLER_UPDATE_INTERVAL = 1000;
+static constexpr unsigned long TEMPERATURE_CONTROLLER_UPDATE_INTERVAL = 1000;
+static constexpr unsigned long SERIAL_BAUDRATE = 115200;
 
 #endif

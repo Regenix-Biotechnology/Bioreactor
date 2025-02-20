@@ -1,8 +1,8 @@
-#include <main.h>
+#include "main.h"
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(SERIAL_BAUDRATE);
     Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
     Serial.println("Hello, World!");
 

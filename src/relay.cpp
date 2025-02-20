@@ -41,7 +41,8 @@ void Relay::off()
  */
 void Relay::set(bool state)
 {
-    state ? this->on() : this->off();
+    digitalWrite(pin, state);
+    this->state = state;
 }
 
 /**
