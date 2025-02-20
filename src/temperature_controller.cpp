@@ -37,7 +37,7 @@ void TemperatureController::update(float waterTemp, float airTemp)
     this->prevTime = currentTime;
 
     float heaterControl = KP_FAN * error + KI_FAN * integralError + KD_FAN * derivative;
-    this->pwmHeater = constrain(heaterControl, 0, 255);
+    this->pwmHeater = constrain(heaterControl, 0, 100);
 
     // --- Debug Output ---
     // Serial.print("Target Air Temp: ");

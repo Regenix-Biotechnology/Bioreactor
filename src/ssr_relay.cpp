@@ -47,18 +47,16 @@ void SSR_Relay::update()
         if (currentPWM < levelPWM)
         {
             digitalWrite(pin, HIGH);
-            Serial.println("HIGH");
         }
         else
         {
             digitalWrite(pin, LOW);
-            Serial.println("LOW");
         }
         currentPWM++;
         lastCheckTime = currentTime;
 
         // Vérifier la période PWM et ajuster le signal en conséquence
-        if (currentPWM > 100)
+        if (currentPWM >= 100)
         {
             currentPWM = 0;
         }

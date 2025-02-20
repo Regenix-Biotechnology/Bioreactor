@@ -120,7 +120,7 @@ void setPumpsSpeed(uint8_t approvPumpSpeed, uint8_t sensorPumpSpeed, uint8_t cul
  * @param heaterState       State of the heater. (0-100%)
  * @param patchHeaterState  State of the patch heater. (ON/OFF)
  */
-void setHeatersState(bool heaterState, bool patchHeaterState)
+void setHeatersState(float heaterState, bool patchHeaterState)
 {
     heater.setLevel(heaterState);
     patchHeater.set(patchHeaterState);
@@ -136,6 +136,7 @@ void updateTemperatureController()
         lastTemperatureControllerTime = millis();
         float airTemperature = 0;
         sht40.getData(&airTemperature);
+        pyroscience.fetchData();
         float waterTemperature = pyroscience.getLastTemperature();
 
         temperatureController.update(waterTemperature, airTemperature);

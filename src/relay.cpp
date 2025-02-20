@@ -22,7 +22,7 @@ void Relay::begin()
  */
 void Relay::on()
 {
-    digitalWrite(pin, HIGH);
+    digitalWrite(pin, LOW); // Relay are active low
     this->state = true;
 }
 
@@ -31,7 +31,7 @@ void Relay::on()
  */
 void Relay::off()
 {
-    digitalWrite(pin, LOW);
+    digitalWrite(pin, HIGH); // Relay are active low
     this->state = false;
 }
 
@@ -41,7 +41,7 @@ void Relay::off()
  */
 void Relay::set(bool state)
 {
-    digitalWrite(pin, state);
+    digitalWrite(pin, !state); // Relay are active low
     this->state = state;
 }
 
