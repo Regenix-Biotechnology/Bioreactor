@@ -21,9 +21,9 @@ typedef struct __attribute__((packed))
 {
     char cmd[4];
     float temperature;
-    float oxygenDissous;
+    float dissolvedOxygen;
     float percentO2;
-    float ph;
+    float pH;
 } sPyroscienceRxData;
 
 /**
@@ -52,14 +52,6 @@ private:
     static constexpr uint8_t MAX_RX_BUFF_SIZE = 128;
     static constexpr uint32_t TIMEOUT_READ = 1500;
     static constexpr uint32_t PYROSCIENCE_BAUDRATE = 115200;
-    // static constexpr const char *REQUEST_MEASUREMENT_CMD;
-    // static constexpr const char *FIRESTING_CHAN_NUM;
-    // static constexpr const char *FIRESTING_MEASUREMENT_PARAM;
-    // static constexpr const char *REQUEST_MEASUREMENT_CMD = "MEA";
-    // static constexpr char REQUEST_MEASUREMENT_CMD[] = "MEA";
-    // static constexpr char FIRESTING_CHAN_NUM[2];
-    // static constexpr char FIRESTING_MEASUREMENT_PARAM[3];
-
     static constexpr uint8_t TEMP_POS_IN_MSG = 8;
     static constexpr uint8_t DO_POS_IN_MSG = 9;
     static constexpr uint8_t DO_PERCENT_POS_IN_MSG = 17;
@@ -71,7 +63,6 @@ private:
 
     ePyroscienceStatus parseRxData(sPyroscienceRxData *data, char *dataStr, uint8_t size);
     ePyroscienceStatus getFloatAt(char *dataStr, uint8_t pos, uint8_t size, float *resFloat);
-    // float getFloatAt(char *dataStr, uint8_t pos, uint8_t size);
     ePyroscienceStatus read(char *buff, uint8_t *readSize);
 
     char txBuff[REQUEST_MEASURE_SIZE];

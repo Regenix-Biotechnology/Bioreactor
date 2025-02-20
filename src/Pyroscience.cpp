@@ -18,10 +18,10 @@ Pyroscience::Pyroscience()
 }
 
 /**
- * @brief start pyroscience and pass serial uart interface (not yet initialised)
+ * @brief Start pyroscience and pass serial uart interface (not yet initialised)
  *
- * @param pSerial pointer to the uninitialised uart interface
- * @return ePyroscienceStatus if everything is ok PYROSCIENCE_STATUS_OK else return error code
+ * @param pSerial Pointer to the uninitialised uart interface
+ * @return ePyroscienceStatus If everything is ok PYROSCIENCE_STATUS_OK else return error code
  */
 ePyroscienceStatus Pyroscience::begin(HardwareSerial *pSerial)
 {
@@ -49,7 +49,7 @@ float Pyroscience::getLastTemperature() const
  */
 float Pyroscience::getLastPH() const
 {
-    return this->data.ph;
+    return this->data.pH;
 }
 
 /**
@@ -58,7 +58,7 @@ float Pyroscience::getLastPH() const
  */
 float Pyroscience::getLastDO() const
 {
-    return this->data.oxygenDissous;
+    return this->data.dissolvedOxygen;
 }
 
 /**
@@ -71,9 +71,9 @@ float Pyroscience::getLastDOPercent() const
 }
 
 /**
- * @brief return the last fetched sPyroscienceRxData containing all the info
+ * @brief Return the last fetched sPyroscienceRxData containing all the info
  *
- * @param pData the sPyroscienceRxData containing last fetched data
+ * @param pData The sPyroscienceRxData containing last fetched data
  */
 void Pyroscience::getLastRxData(sPyroscienceRxData *pData) const
 {
@@ -81,14 +81,14 @@ void Pyroscience::getLastRxData(sPyroscienceRxData *pData) const
 }
 
 /**
- * @brief fetch the data and return a sPyroscienceRxData containing all the received value
+ * @brief Fetch the data and return a sPyroscienceRxData containing all the received value
  *
- * @param pData pointer to a sPyroscienceRxData that will be filled with the reiceived data
- * @return ePyroscienceStatus if getData was a success return PYROSCIENCE_STATUS_OK else return error code
+ * @param pData Pointer to a sPyroscienceRxData that will be filled with the reiceived data
+ * @return ePyroscienceStatus If getData was a success return PYROSCIENCE_STATUS_OK else return error code
  */
 ePyroscienceStatus Pyroscience::getData(sPyroscienceRxData *pData)
 {
-    if (this->isInit == false)
+    if (!this->isInit)
         return PYROSCIENCE_STATUS_NOT_INITIALISED;
 
     if (pData == nullptr)
@@ -107,32 +107,32 @@ ePyroscienceStatus Pyroscience::getData(sPyroscienceRxData *pData)
 /**
  * @brief Fetch and update the sensor data for temperature, pH, and dissolved oxygen.
  *
- * @return ePyroscienceStatus if fetchData was a success return PYROSCIENCE_STATUS_OK else return error code
+ * @return ePyroscienceStatus If fetchData was a success return PYROSCIENCE_STATUS_OK else return error code
  */
 ePyroscienceStatus Pyroscience::fetchData()
 {
-    ePyroscienceStatus status = PYROSCIENCE_STATUS_OK;
+    ePyroscienceStatus status;
 
-    if (this->isInit == false)
+    if (!this->isInit)
         return PYROSCIENCE_STATUS_NOT_INITIALISED;
 
     memset(rxBuff, 0, MAX_RX_BUFF_SIZE);
 
-    // create message
+    // Create message
     sprintf(txBuff, "%s %s %s\r", REQUEST_MEASUREMENT_CMD, FIRESTING_CHAN_NUM, FIRESTING_MEASUREMENT_PARAM);
 
-    // send message
+    // Send message
     size_t txSize = pSerial->print(txBuff);
     if (txSize != REQUEST_MEASURE_SIZE)
         return PYROSCIENCE_STATUS_FAILED_TO_SEND_REQUEST;
 
-    // read response
+    // Read response
     uint8_t rxSize = 0;
     status = read(rxBuff, &rxSize);
     if (status != PYROSCIENCE_STATUS_OK)
         return status;
 
-    // parse message
+    // Parse message
     status = parseRxData(&(this->data), rxBuff, rxSize);
     if (status != PYROSCIENCE_STATUS_OK)
         return status;
@@ -141,10 +141,10 @@ ePyroscienceStatus Pyroscience::fetchData()
 }
 
 /**
- * @brief read pyroscience response and return it in a buffer
+ * @brief Read pyroscience response and return it in a buffer
  *
- * @param buff the message response from pyroscience
- * @param pReadSize the length of the response from pyroscience
+ * @param buff The message response from pyroscience
+ * @param pReadSize The length of the response from pyroscience
  * @return ePyroscienceStatus PYROSCIENCE_STATUS_OK if read was a success else error message
  */
 ePyroscienceStatus Pyroscience::read(char *buff, uint8_t *pReadSize)
@@ -156,17 +156,17 @@ ePyroscienceStatus Pyroscience::read(char *buff, uint8_t *pReadSize)
     uint8_t index = 0;
     while (true)
     {
-        // verification
+        // Verification
         if (index > MAX_RX_BUFF_SIZE - 1)
             return PYROSCIENCE_STATUS_RX_MSG_TO_LONG;
 
         if (startReadTime + TIMEOUT_READ < millis())
             return PYROSCIENCE_STATUS_READ_TIMEOUT;
 
-        // read data
+        // Read data
         buff[index] = this->pSerial->read();
 
-        // end of transmission
+        // End of transmission
         if (buff[index] == '\r')
             break;
 
@@ -178,33 +178,33 @@ ePyroscienceStatus Pyroscience::read(char *buff, uint8_t *pReadSize)
 }
 
 /**
- * @brief parse the data from dataStr into a sPyroscienceRxData structure
+ * @brief Parse the data from dataStr into a sPyroscienceRxData structure
  *
- * @param pData the structure to place the data in
- * @param dataStr the data string received from the pyroscience device
- * @param size the size of the received string
+ * @param pData The structure to place the data in
+ * @param dataStr The data string received from the pyroscience device
+ * @param size The size of the received string
  * @return ePyroscienceStatus PYROSCIENCE_STATUS_OK if parsing was a success else error message
  */
 ePyroscienceStatus Pyroscience::parseRxData(sPyroscienceRxData *pData, char *dataStr, uint8_t size)
 {
-    // read command name
+    // Read command name
     memcpy(pData->cmd, dataStr, 3);
     pData->cmd[4] = '\n';
     ePyroscienceStatus status;
 
-    // read temperature
+    // Read temperature
     float rawTemperature;
     status = getFloatAt(dataStr, TEMP_POS_IN_MSG, size, &rawTemperature);
     if (status != PYROSCIENCE_STATUS_OK)
         return status;
 
-    // read pH
+    // Read pH
     float rawPh;
     status = getFloatAt(dataStr, PH_POS_IN_MSG, size, &rawPh);
     if (status != PYROSCIENCE_STATUS_OK)
         return status;
 
-    // read DO
+    // Read DO
     float rawDo;
     status = getFloatAt(dataStr, DO_POS_IN_MSG, size, &rawDo);
     if (status != PYROSCIENCE_STATUS_OK)
@@ -217,9 +217,9 @@ ePyroscienceStatus Pyroscience::parseRxData(sPyroscienceRxData *pData, char *dat
         return status;
 
     pData->temperature = rawTemperature / TEMP_DIVIDER;
-    pData->oxygenDissous = rawDo / DO_DIVIDER;
+    pData->dissolvedOxygen = rawDo / DO_DIVIDER;
     pData->percentO2 = rawDoPercent / DO_PERCENT_DIVIDER;
-    pData->ph = rawPh / PH_DIVIDER;
+    pData->pH = rawPh / PH_DIVIDER;
 
     return PYROSCIENCE_STATUS_OK;
 }
@@ -227,9 +227,9 @@ ePyroscienceStatus Pyroscience::parseRxData(sPyroscienceRxData *pData, char *dat
 /**
  * @brief Convert the word a pos to a float and return it in pResFloat
  *
- * @param dataStr the data string received from the pyroscience device
- * @param pos the position of the word to convert to float
- * @param size the size of the received string
+ * @param dataStr The data string received from the pyroscience device
+ * @param pos The position of the word to convert to float
+ * @param size The size of the received string
  * @param pResFloat The returned float data at the position specified
  * @return ePyroscienceStatus PYROSCIENCE_STATUS_OK if float was found else error message
  */
@@ -243,15 +243,20 @@ ePyroscienceStatus Pyroscience::getFloatAt(char *dataStr, uint8_t pos, uint8_t s
 
     for (uint8_t i = 0; i < size; i++)
     {
+        // Find a space character or end of string
         if (dataStr[i] == ' ' || dataStr[i] == '\r' || dataStr[i] == '\n')
         {
             wordCount++;
+
+            // Found the space just before the word
             if (wordCount == pos)
             {
                 indexStartWord = i + 1;
             }
+            // Found the end of the word
             else if (wordCount == pos + 1)
             {
+                // Convert string to float
                 char *pEnd = &(dataStr[i]);
                 *pResFloat = strtof(&(dataStr[indexStartWord]), &pEnd);
                 return PYROSCIENCE_STATUS_OK;
@@ -259,5 +264,6 @@ ePyroscienceStatus Pyroscience::getFloatAt(char *dataStr, uint8_t pos, uint8_t s
         }
     }
 
+    // No word at position pos found
     return PYROSCIENCE_STATUS_DATA_NOT_FOUND;
 }
