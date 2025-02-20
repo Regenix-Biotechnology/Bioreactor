@@ -136,7 +136,7 @@ void updateTemperatureController()
         lastTemperatureControllerTime = millis();
         float airTemperature = 0;
         sht40.getData(&airTemperature);
-        float waterTemperature = pyroscience.getTemperature();
+        float waterTemperature = pyroscience.getLastTemperature();
 
         temperatureController.update(waterTemperature, airTemperature);
     }
