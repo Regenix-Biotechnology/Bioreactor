@@ -7,13 +7,13 @@
 SSR_Relay::SSR_Relay(uint8_t pin) : pin(pin) {}
 
 /**
- * @brief initialise ssr relay pin and set default state
- *
+ * @brief Initialise SSR relay pin and set default state.
  */
 void SSR_Relay::begin()
 {
-    pinMode(pin, OUTPUT);
-    analogWrite(pin, 0);
+    pinMode(pin, OUTPUT);   // Initialiser la broche du relais en mode sortie
+    digitalWrite(pin, LOW); // Initialiser le relais avec un PWM de 0 (éteint)
+    lastCheckTime = 0;
 }
 
 /**
@@ -22,7 +22,7 @@ void SSR_Relay::begin()
  */
 void SSR_Relay::setLevel(uint8_t level)
 {
-    analogWrite(pin, level);
+    this->levelPWM = constrain(level, 0, 100);
 }
 
 /**
@@ -30,5 +30,37 @@ void SSR_Relay::setLevel(uint8_t level)
  */
 void SSR_Relay::off()
 {
-    analogWrite(pin, 0);
+    digitalWrite(pin, LOW); // Désactive le relais en envoyant 0 au PWM
+}
+
+/**
+ * @brief Main loop to manage relay PWM based on temperature input.
+ */
+void SSR_Relay::update()
+{
+
+    // Vérification de la période PWM toutes les 10ms
+    unsigned long currentTime = millis();
+
+    if (currentTime - lastCheckTime >= checkInterval)
+    {
+        if (currentPWM < levelPWM)
+        {
+            digitalWrite(pin, HIGH);
+            Serial.println("HIGH");
+        }
+        else
+        {
+            digitalWrite(pin, LOW);
+            Serial.println("LOW");
+        }
+        currentPWM++;
+        lastCheckTime = currentTime;
+
+        // Vérifier la période PWM et ajuster le signal en conséquence
+        if (currentPWM > 100)
+        {
+            currentPWM = 0;
+        }
+    }
 }

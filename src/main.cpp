@@ -23,6 +23,9 @@ Relay InteriorFan(INTERIOR_FAN_PIN);
 // Relay ExteriorFan(EXTERIOR_FAN_PIN);
 Relay PatchHeater(PATCH_HEATER_PIN);
 
+int value = 128;
+void serialReader();
+
 void setup()
 {
     Serial.begin(115200);
@@ -50,4 +53,26 @@ void setup()
 void loop()
 {
     ApprovPump.setSpeed(254);
+    Heater.setLevel(value); // temperaturecontroller.getHeaterPower()
+    Heater.update();
+    serialReader();
+
+    Serial.println(value);
+}
+
+void serialReader()
+{
+    if (Serial.available())
+    {
+        uint8_t byte = Serial.read();
+
+        if (byte == 'w')
+        {
+            value++;
+        }
+        else if (byte == 's')
+        {
+            value--;
+        }
+    }
 }
