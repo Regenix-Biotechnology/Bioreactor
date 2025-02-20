@@ -34,7 +34,7 @@ uint8_t testState = 0;
 void beginBioreactorController()
 {
     sht40.begin(&Wire);
-    pyroscience.begin();
+    pyroscience.begin(&Serial1);
     approvPump.begin();
     sensorPump.begin();
     cultureChamberPump1.begin();
