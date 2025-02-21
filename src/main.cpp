@@ -32,7 +32,7 @@ void loop()
     case eBioreactorState::TEST: // For the fluidic and heating system test
     {
         setFansState(ON, OFF, OFF);
-        setPumpsSpeed(PUMP_MAX_SPEED, OFF, OFF, OFF);
+        setPumpsSpeed(PUMP_MAX_SPEED, OFF, OFF, 1000);
         setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
         setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
         setHeatersState(temperatureController.getHeaterPower(), temperatureController.isPatchHeatingNeeded());
@@ -48,4 +48,5 @@ void loop()
     // updatePressureChamberController();
     // updateBioreactorState();
     serialReader(); // This is used for DEBUG only
+    cultureChamberPump2.update();
 }
