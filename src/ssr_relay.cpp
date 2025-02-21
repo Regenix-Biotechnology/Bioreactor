@@ -11,14 +11,14 @@ SSR_Relay::SSR_Relay(uint8_t pin) : pin(pin) {}
  */
 void SSR_Relay::begin()
 {
-    pinMode(pin, OUTPUT);   // Initialiser la broche du relais en mode sortie
-    digitalWrite(pin, LOW); // Initialiser le relais avec un PWM de 0 (éteint)
+    pinMode(this->pin, OUTPUT);   // Initialiser la broche du relais en mode sortie
+    digitalWrite(this->pin, LOW); // Initialiser le relais avec un PWM de 0 (éteint)
     lastCheckTime = 0;
 }
 
 /**
  * @brief Set the relay output level.
- * @param level A PWM value between 0 and 255.
+ * @param level A PWM value between 0 and 100.
  */
 void SSR_Relay::setLevel(uint8_t level)
 {
@@ -42,17 +42,17 @@ void SSR_Relay::update()
     // Vérification de la période PWM toutes les 10ms
     unsigned long currentTime = millis();
 
-    if (currentTime - lastCheckTime >= checkInterval)
+    if (currentTime - lastCheckTime >= CHECK_INTERVAL)
     {
         if (currentPWM < levelPWM)
         {
             digitalWrite(pin, HIGH);
-            Serial.println("HIGH");
+            // Serial.println("HIGH");
         }
         else
         {
             digitalWrite(pin, LOW);
-            Serial.println("LOW");
+            // Serial.println("LOW");
         }
         currentPWM++;
         lastCheckTime = currentTime;
