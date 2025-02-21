@@ -7,7 +7,7 @@
  * @class SSR_Relay
  * @brief Controls a solid-state relay using a PWM signal.
  *
- * This class allows setting the relay output with a PWM value between 0 and 255.
+ * This class allows setting the relay output with a PWM value between 0 and 100.
  */
 class SSR_Relay
 {
@@ -19,12 +19,12 @@ public:
     void off();
 
 private:
-    static constexpr unsigned long CHECK_INTERVAL = 10; // Intervalle de vérification en millisecondes (10ms)
-    unsigned long lastCheckTime;                        // Dernière vérification
+    static constexpr unsigned long CHECK_INTERVAL = 10;
+    static constexpr uint8_t MAX_PWM_INDEX = 100;
+    unsigned long lastCheckTime;
     uint8_t levelPWM;
     uint8_t pin;
-    uint8_t currentPWM;
-    static constexpr unsigned long checkInterval = 10; // Intervalle de vérification en millisecondes (10ms)
+    uint8_t currentPWMIndex;
 };
 
 #endif
