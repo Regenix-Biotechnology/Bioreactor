@@ -19,7 +19,8 @@ public:
     void off();
 
 private:
-    unsigned long lastCheckTime; // Dernière vérification
+    static constexpr unsigned long CHECK_INTERVAL = 10; // Intervalle de vérification en millisecondes (10ms)
+    unsigned long lastCheckTime;                        // Dernière vérification
     uint8_t levelPWM;
     uint8_t pin;
     uint8_t currentPWM;
