@@ -49,7 +49,7 @@ void SSR_Relay::update()
         currentPWMIndex++;
         lastCheckTime = currentTime;
 
-        if (currentPWMIndex > MAX_PWM_INDEX)
+        if (currentPWMIndex >= MAX_PWM_INDEX)
             currentPWMIndex = 0;
     }
 }
