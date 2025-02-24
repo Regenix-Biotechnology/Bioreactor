@@ -2,6 +2,7 @@
 
 // Objects declaration
 SHT40 sht40;
+SHT40 sht40_2;
 I2CMux muxI2c;
 Pyroscience pyroscience;
 Pump approvPump(APPROV_PUMP_PIN_1, APPROV_PUMP_PIN_2);
@@ -34,7 +35,9 @@ uint8_t testState = 0;
  */
 void beginBioreactorController()
 {
+    muxI2c.begin(&Wire);
     sht40.begin(&Wire);
+    sht40_2.begin(&Wire);
     pyroscience.begin(&Serial1);
     approvPump.begin();
     sensorPump.begin();

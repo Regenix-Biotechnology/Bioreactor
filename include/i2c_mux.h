@@ -28,16 +28,17 @@ class I2CMux
 public:
     I2CMux();
     void begin(TwoWire *i2cBus);
-    // uint8_t getCurrentBus() const;
-    // void setBus(uint8_t bus);
-    bool enableMuxPort(uint8_t portNumber);
-    bool disableMuxPort(uint8_t portNumber);
+    uint8_t getCurrentBus();
+    void setBus(uint8_t bus);
+    // bool enableMuxPort(uint8_t portNumber);
+    // bool disableMuxPort(uint8_t portNumber);
     bool isConnected();
 
 private:
     // static constexpr uint8_t SHT40_RSP_SIZE = 6;
     static constexpr uint8_t MUX_ADDR = 0x70;
     static constexpr uint8_t NB_BUS = 8;
+    static constexpr uint8_t REQ_SETTINGS = 0x01;
     // static constexpr uint8_t SHT40_REQ_TEMP = 0xFD;
     // static constexpr uint8_t RAW_TEMPERATURE_SIZE = 2;
     // static constexpr uint8_t RAW_HUMIDITY_SIZE = 2;
@@ -53,9 +54,14 @@ private:
 
     // uint8_t rxBuffer[SHT40_RSP_SIZE];
     bool isInit;
+    uint8_t settings;
     // float temperature;
     // float humidity;
     TwoWire *i2cBus;
+
+    void updateSettings();
+    // bool enableMuxPort(uint8_t portNumber);
+    // bool disableMuxPort(uint8_t portNumber);
 };
 
 #endif // I2CMUX

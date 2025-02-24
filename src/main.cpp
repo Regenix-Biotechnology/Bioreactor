@@ -7,6 +7,9 @@ void setup()
     Serial.println("Hello, World!");
 
     beginBioreactorController();
+
+    muxI2c.setBus(0);
+    // Serial.printf("enable ret: %d\n", ret);
 }
 
 void loop()
@@ -36,6 +39,20 @@ void loop()
         setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
         setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
         setHeatersState(temperatureController.getHeaterPower(), temperatureController.isPatchHeatingNeeded());
+
+        // muxI2c.disableMuxPort(1);
+        // muxI2c.enableMuxPort(0);
+        muxI2c.setBus(0);
+        float temperature1 = 0.0f;
+        sht40.getData(&temperature1);
+
+        // muxI2c.disableMuxPort(0);
+        // muxI2c.enableMuxPort(1);
+        muxI2c.setBus(1);
+        float temperature2 = 0.0f;
+        eSHT40Status status = sht40.getData(&temperature2);
+
+        Serial.printf("temp1: %f, temp2: %f, err: %d\n\n", temperature1, temperature2, status);
         break;
     }
     default:
@@ -43,8 +60,10 @@ void loop()
         break;
     }
 
-    updateTemperatureController();
-    heater.update();
+    delay(1000);
+
+    // updateTemperatureController();
+    // heater.update();
     // updatePressureChamberController();
     // updateBioreactorState();
 }

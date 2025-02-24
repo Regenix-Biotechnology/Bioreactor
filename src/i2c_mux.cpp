@@ -1,19 +1,15 @@
 #include "i2c_mux.h"
 
 /**
- * @brief Constructor to initialize the SHT40 sensor variable. To default state
+ * @brief Constructor to initialize the i2c mux variable. To default state
  */
 I2CMux::I2CMux()
-    : isInit(false), i2cBus(nullptr)
-{
-    // memset(this->rxBuffer, 0, SHT40_RSP_SIZE);
-}
+    : isInit(false), i2cBus(nullptr), settings(0x00) {}
 
 /**
- * @brief initialise the sht40 with the i2cBus sent in parameter
+ * @brief initialise the i2c mux with the i2cBus sent in parameter
  *
  * @param i2cBus The I2C Wire to use for this sensor
- * @return eSHT40Status SHT40_STATUS_OK if init is succesful else return error code
  */
 void I2CMux::begin(TwoWire *i2cBus)
 {
@@ -27,47 +23,86 @@ void I2CMux::begin(TwoWire *i2cBus)
     return;
 }
 
-bool I2CMux::enableMuxPort(uint8_t portNumber)
+void I2CMux::setBus(uint8_t bus)
 {
-    if (portNumber > 7)
-        portNumber = 7;
+    uint8_t cmd = 0;
+    cmd |= (1 << bus);
 
-    // Read the current mux settings
-    this->i2cBus->requestFrom(MUX_ADDR, 1);
-    if (!this->i2cBus->available())
-        return (false); // Error
+    this->i2cBus->beginTransmission(MUX_ADDR);
+    this->i2cBus->write(cmd);
+    this->i2cBus->endTransmission();
+}
+
+uint8_t I2CMux::getCurrentBus()
+{
+    updateSettings();
+    if (this->settings == 0)
+    {
+        // error do something
+        return -1;
+    }
+    else
+    {
+        int position = 0;
+        while ((this->settings & 1) == 0)
+        { // Shift until we find the 1
+            this->settings >>= 1;
+            position++;
+        }
+        return position;
+    }
+}
+
+void I2CMux::updateSettings()
+{
+    this->i2cBus->requestFrom(MUX_ADDR, REQ_SETTINGS);
     uint8_t settings = Wire.read();
-
-    // Set the wanted bit to enable the port
-    settings |= (1 << portNumber);
-
-    this->i2cBus->beginTransmission(MUX_ADDR);
-    this->i2cBus->write(settings);
-    this->i2cBus->endTransmission();
-
-    return (true);
+    this->settings = settings;
 }
 
-bool I2CMux::disableMuxPort(uint8_t portNumber)
-{
-    if (portNumber > 7)
-        portNumber = 7;
+// bool I2CMux::enableMuxPort(uint8_t portNumber)
+// {
+//     if (portNumber > 7)
+//         portNumber = 7;
 
-    // Read the current mux settings
-    this->i2cBus->requestFrom(MUX_ADDR, 1);
-    if (!this->i2cBus->available())
-        return (false); // Error
-    uint8_t settings = this->i2cBus->read();
+//     // Read the current mux settings
+//     // this->i2cBus->requestFrom(MUX_ADDR, REQ_SETTINGS);
+//     // if (!this->i2cBus->available())
+//     //     return (false); // Error
+//     // uint8_t settings = Wire.read();
+//     uint8_t settings = getSettings();
 
-    // Clear the wanted bit to disable the port
-    settings &= ~(1 << portNumber);
+//     // Set the wanted bit to enable the port
+//     settings |= (1 << portNumber);
 
-    this->i2cBus->beginTransmission(MUX_ADDR);
-    this->i2cBus->write(settings);
-    this->i2cBus->endTransmission();
+//     this->i2cBus->beginTransmission(MUX_ADDR);
+//     this->i2cBus->write(settings);
+//     this->i2cBus->endTransmission();
 
-    return (true);
-}
+//     return (true);
+// }
+
+// bool I2CMux::disableMuxPort(uint8_t portNumber)
+// {
+//     if (portNumber > 7)
+//         portNumber = 7;
+
+//     // Read the current mux settings
+//     // this->i2cBus->requestFrom(MUX_ADDR, 1);
+//     // if (!this->i2cBus->available())
+//     //     return (false); // Error
+//     // uint8_t settings = this->i2cBus->read();
+//     uint8_t settings = getSettings();
+
+//     // Clear the wanted bit to disable the port
+//     settings &= ~(1 << portNumber);
+
+//     this->i2cBus->beginTransmission(MUX_ADDR);
+//     this->i2cBus->write(settings);
+//     this->i2cBus->endTransmission();
+
+//     return (true);
+// }
 
 // /**
 //  * @brief check if the SHT40 device is connected to the current i2c bus
