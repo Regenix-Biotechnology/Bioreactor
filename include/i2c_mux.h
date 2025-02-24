@@ -1,5 +1,5 @@
-#ifndef SHT40_H
-#define SHT40_H
+#ifndef I2CMUX
+#define I2CMUX
 
 #include <Wire.h>
 
@@ -58,4 +58,4 @@ private:
     TwoWire *i2cBus;
 };
 
-#endif // SHT40_H
+#endif // I2CMUX

@@ -2,6 +2,7 @@
 
 // Objects declaration
 SHT40 sht40;
+I2CMux muxI2c;
 Pyroscience pyroscience;
 Pump approvPump(APPROV_PUMP_PIN_1, APPROV_PUMP_PIN_2);
 Pump sensorPump(SENSOR_PUMP_PIN_1, SENSOR_PUMP_PIN_2);
