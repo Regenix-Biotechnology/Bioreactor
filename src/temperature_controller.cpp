@@ -21,6 +21,7 @@ TemperatureController::TemperatureController()
  */
 void TemperatureController::update(float waterTemp, float airTemp)
 {
+
     // --- Activation of Patch Heating ---
     this->patchState = waterTemp < (tempRef - TEMPERATURE_REFERENCE_OFFSET);
 

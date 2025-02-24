@@ -57,6 +57,8 @@ void beginBioreactorController()
     interiorFan.begin();
     // exteriorFan.begin();
     patchHeater.begin();
+
+    muxI2c.setBus(0);
 }
 
 /**
