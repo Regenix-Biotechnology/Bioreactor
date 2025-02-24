@@ -4,9 +4,9 @@
  * @brief Constructor to initialize the SHT40 sensor variable. To default state
  */
 I2CMux::I2CMux()
-    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(nullptr)
+    : isInit(false), i2cBus(nullptr)
 {
-    memset(this->rxBuffer, 0, SHT40_RSP_SIZE);
+    // memset(this->rxBuffer, 0, SHT40_RSP_SIZE);
 }
 
 /**
