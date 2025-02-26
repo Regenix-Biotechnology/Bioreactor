@@ -10,49 +10,81 @@ I2CMux::I2CMux()
  * @brief initialise the i2c mux with the i2cBus sent in parameter
  *
  * @param i2cBus The I2C Wire to use for this sensor
+ * @return eI2cMuxStatus I2C_MUX_STATUS_OK if successful else error code
  */
-void I2CMux::begin(TwoWire *i2cBus)
+eI2cMuxStatus I2CMux::begin(TwoWire *i2cBus)
 {
-    if (i2cBus == NULL)
-        // return SHT40_STATUS_INVALID_I2C_BUS;
-        return;
+    if (i2cBus == nullptr)
+        return I2C_MUX_STATUS_NULL_POINTER;
 
     this->i2cBus = i2cBus;
     this->isInit = true;
-    // return SHT40_STATUS_OK;
-    return;
+
+    return I2C_MUX_STATUS_OK;
 }
 
-void I2CMux::setBus(uint8_t bus)
+/**
+ * @brief set the i2c bus from the mux that will be connected to the esp32
+ *
+ * @param bus the bus to listen and write to
+ * @return eI2cMuxStatus I2C_MUX_STATUS_OK if set bus was successful else return error code
+ */
+eI2cMuxStatus I2CMux::setBus(uint8_t bus)
 {
+    if (!this->isInit)
+        return I2C_MUX_STATUS_NOT_INITIALISED;
+    if (bus >= NB_BUS)
+        return I2C_MUX_STATUS_INVALID_I2C_BUS;
+
+    // build the cmd
     uint8_t cmd = 0;
     cmd |= (1 << bus);
 
+    // send cmd to mux
     this->i2cBus->beginTransmission(MUX_ADDR);
     this->i2cBus->write(cmd);
-    this->i2cBus->endTransmission();
+    uint8_t ret = this->i2cBus->endTransmission();
+    if (ret != I2C_COMMUNICATION_SUCCESS)
+        return I2C_MUX_STATUS_FAILED_TO_SEND_REQUEST;
+
+    return I2C_MUX_STATUS_OK;
 }
 
-uint8_t I2CMux::getCurrentBus()
+/**
+ * @brief read the current bus from the i2c mux and return the active bus
+ *
+ * @param pBus pointer to return the bus from
+ * @return eI2cMuxStatus I2C_MUX_STATUS_OK if reading current bus was successful else return error code
+ */
+eI2cMuxStatus I2CMux::getCurrentBus(uint8_t *pBus)
 {
+    if (!this->isInit)
+        return I2C_MUX_STATUS_NOT_INITIALISED;
+    if (pBus == nullptr)
+        return I2C_MUX_STATUS_NULL_POINTER;
+
+    *pBus = INVALID_I2C_BUS;
+
     updateSettings();
+
     if (this->settings == 0)
+        return I2C_MUX_STATUS_NO_BUS_SELECTED;
+
+    uint8_t position = 0;
+    while ((this->settings & 1) == 0)
     {
-        // error do something
-        return -1;
+        // Shift until we find the 1
+        this->settings >>= 1;
+        position++;
     }
-    else
-    {
-        int position = 0;
-        while ((this->settings & 1) == 0)
-        { // Shift until we find the 1
-            this->settings >>= 1;
-            position++;
-        }
-        return position;
-    }
+    *pBus = position;
+    return I2C_MUX_STATUS_OK;
 }
 
+/**
+ * @brief ask the i2c mux what are the currently selected mux port and update this->settings
+ *
+ */
 void I2CMux::updateSettings()
 {
     this->i2cBus->requestFrom(MUX_ADDR, REQ_SETTINGS);
@@ -60,187 +92,17 @@ void I2CMux::updateSettings()
     this->settings = settings;
 }
 
-// bool I2CMux::enableMuxPort(uint8_t portNumber)
-// {
-//     if (portNumber > 7)
-//         portNumber = 7;
+/**
+ * @brief check if the i2c mux device is connected to the current i2c bus
+ *
+ * @return true if i2c mux device is detected else return false
+ */
+bool I2CMux::isConnected()
+{
+    if (!this->isInit)
+        return false;
 
-//     // Read the current mux settings
-//     // this->i2cBus->requestFrom(MUX_ADDR, REQ_SETTINGS);
-//     // if (!this->i2cBus->available())
-//     //     return (false); // Error
-//     // uint8_t settings = Wire.read();
-//     uint8_t settings = getSettings();
-
-//     // Set the wanted bit to enable the port
-//     settings |= (1 << portNumber);
-
-//     this->i2cBus->beginTransmission(MUX_ADDR);
-//     this->i2cBus->write(settings);
-//     this->i2cBus->endTransmission();
-
-//     return (true);
-// }
-
-// bool I2CMux::disableMuxPort(uint8_t portNumber)
-// {
-//     if (portNumber > 7)
-//         portNumber = 7;
-
-//     // Read the current mux settings
-//     // this->i2cBus->requestFrom(MUX_ADDR, 1);
-//     // if (!this->i2cBus->available())
-//     //     return (false); // Error
-//     // uint8_t settings = this->i2cBus->read();
-//     uint8_t settings = getSettings();
-
-//     // Clear the wanted bit to disable the port
-//     settings &= ~(1 << portNumber);
-
-//     this->i2cBus->beginTransmission(MUX_ADDR);
-//     this->i2cBus->write(settings);
-//     this->i2cBus->endTransmission();
-
-//     return (true);
-// }
-
-// /**
-//  * @brief check if the SHT40 device is connected to the current i2c bus
-//  *
-//  * @return true if sht40 device is detected else return false
-//  */
-// bool SHT40::isConnected()
-// {
-//     if (this->isInit == false)
-//         return SHT40_STATUS_NOT_INITIALISED;
-
-//     this->i2cBus->beginTransmission(SHT40_ADDR);
-//     uint8_t ret = this->i2cBus->endTransmission();
-//     return !ret;
-// }
-
-// /**
-//  * @brief Get the last fetched temperature value from the sensor.
-//  * @return float The measured temperature in degrees Celsius.
-//  */
-// float SHT40::getLastTemperature() const
-// {
-//     return this->temperature;
-// }
-
-// /**
-//  * @brief Get the last fetched humidity value from the sensor.
-//  * @return float The measured humidity in % rH.
-//  */
-// float SHT40::getLastHumidity() const
-// {
-//     return this->humidity;
-// }
-
-// /**
-//  * @brief Fetch and update the sensor data for temperature and humidity. WARNING this task has a 10ms delay
-//  *
-//  * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code
-//  */
-// eSHT40Status SHT40::fetchData()
-// {
-//     if (!this->isInit)
-//         return SHT40_STATUS_NOT_INITIALISED;
-
-//     this->i2cBus->beginTransmission(SHT40_ADDR);
-//     this->i2cBus->write(SHT40_REQ_TEMP);
-//     uint8_t ret = this->i2cBus->endTransmission();
-//     if (ret != I2C_COMMUNICATION_SUCCESS)
-//         return SHT40_STATUS_FAILED_TO_SEND_REQUEST;
-
-//     delay(I2C_READ_DELAY);
-
-//     size_t recv = this->i2cBus->requestFrom(SHT40_ADDR, SHT40_RSP_SIZE);
-//     if (recv != SHT40_RSP_SIZE)
-//         return SHT40_STATUS_WRONG_MSG_LENGTH;
-
-//     // read msg
-//     memset(rxBuffer, 0, SHT40_RSP_SIZE);
-//     for (uint8_t i = 0; i < SHT40_RSP_SIZE; i++)
-//     {
-//         rxBuffer[i] = this->i2cBus->read();
-//     }
-
-//     // Check CRC
-//     if (rxBuffer[INDEX_CRC_TEMPERATURE] != crc8((&(rxBuffer[INDEX_TEMPERATURE])), RAW_TEMPERATURE_SIZE) ||
-//         rxBuffer[INDEX_CRC_HUMIDITY] != crc8((&(rxBuffer[INDEX_HUMIDITY])), RAW_HUMIDITY_SIZE))
-//         return SHT40_STATUS_INVALID_CRC;
-
-//     // Convert data
-//     float rawTemp = (((uint16_t)(rxBuffer[INDEX_TEMPERATURE])) << NB_BITS_IN_BYTE) + ((uint16_t)rxBuffer[INDEX_TEMPERATURE + 1]);
-//     float rawHumidity = (((uint16_t)(rxBuffer[INDEX_HUMIDITY])) << NB_BITS_IN_BYTE) + ((uint16_t)rxBuffer[INDEX_HUMIDITY + 1]);
-
-//     this->temperature = -45 + 175 * rawTemp / 65535; // Calculation from datasheet
-//     this->humidity = -6 + 125 * rawHumidity / 65535; // Calculation from datasheet
-
-//     return SHT40_STATUS_OK;
-// }
-
-// /**
-//  * @brief Fetch and return the sensor data for temperature and humidity. WARNING this task has a 10ms delay
-//  *
-//  * @param temperature Output temperature measured can be nullptr if only humidity needed
-//  * @param humidity Output humidity measured can be nullptr if only temperature needed
-//  * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code
-//  */
-// eSHT40Status SHT40::getData(float *temperature, float *humidity)
-// {
-//     eSHT40Status status = this->fetchData();
-//     if (status != SHT40_STATUS_OK)
-//         return status;
-
-//     if (temperature)
-//         *temperature = this->temperature;
-
-//     if (humidity)
-//         *humidity = this->humidity;
-
-//     return SHT40_STATUS_OK;
-// }
-
-// /**
-//  * @brief getData(float *temperature, float *humidity) overloading fetch and return the sensor data for temperature and humidity. WARNING this task has a 10ms delay
-//  *
-//  * @param temperature Output temperature measured
-//  * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code
-//  */
-// eSHT40Status SHT40::getData(float *temperature)
-// {
-//     return this->getData(temperature, nullptr);
-// }
-
-// /**
-//  * @brief will return a unique uint8_t number for the provided data
-//  * CRC-8 formula from page 14 of SHT spec pdf
-//  *
-//  * Test data 0xBE, 0xEF should yield 0x92
-//  *
-//  * Initialization data 0xFF
-//  * Polynomial 0x31 (x8 + x5 +x4 +1)
-//  * Final XOR 0x00
-//  *
-//  * @param data  data to calculate crc from
-//  * @param len   length of data to calculate crc from
-//  * @return uint8_t  result of crc8
-//  */
-// uint8_t SHT40::crc8(const uint8_t *data, int len)
-// {
-//     const uint8_t POLYNOMIAL(0x31);
-//     uint8_t crc(0xFF);
-
-//     for (uint8_t j = len; j; --j)
-//     {
-//         crc ^= *data++;
-
-//         for (uint8_t i = 8; i; --i)
-//         {
-//             crc = (crc & 0x80) ? (crc << 1) ^ POLYNOMIAL : (crc << 1);
-//         }
-//     }
-//     return crc;
-// }
+    this->i2cBus->beginTransmission(MUX_ADDR);
+    uint8_t ret = this->i2cBus->endTransmission();
+    return !ret;
+}
