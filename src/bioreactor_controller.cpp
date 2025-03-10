@@ -1,8 +1,7 @@
 #include "bioreactor_controller.h"
 
 // Objects declaration
-SHT40 sht40;
-SHT40 sht40_2;
+SHT40 sht40[NB_TEMP_SENSOR];
 I2CMux muxI2c;
 Pyroscience pyroscience;
 Pump approvPump(APPROV_PUMP_PIN_1, APPROV_PUMP_PIN_2);
@@ -36,8 +35,10 @@ uint8_t testState = 0;
 void beginBioreactorController()
 {
     muxI2c.begin(&Wire);
-    sht40.begin(&Wire);
-    sht40_2.begin(&Wire);
+    for (uint8_t i = 0; i < NB_TEMP_SENSOR; i++)
+    {
+        sht40[i].begin(&Wire, i, (NB_TEMP_SENSOR > 1));
+    }
     pyroscience.begin(&Serial1);
     approvPump.begin();
     sensorPump.begin();
@@ -58,7 +59,7 @@ void beginBioreactorController()
     // exteriorFan.begin();
     patchHeater.begin();
 
-    muxI2c.setBus(0);
+    SHT40::setMuxI2C(&muxI2c);
 }
 
 /**
@@ -141,7 +142,7 @@ void updateTemperatureController()
     {
         lastTemperatureControllerTime = millis();
         float airTemperature = 0;
-        sht40.getData(&airTemperature);
+        sht40[0].getData(&airTemperature);
         pyroscience.fetchData();
         float waterTemperature = pyroscience.getLastTemperature();
 

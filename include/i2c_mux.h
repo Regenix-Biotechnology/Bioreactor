@@ -30,11 +30,12 @@ public:
     eI2cMuxStatus setBus(uint8_t bus);
     bool isConnected();
 
+    static constexpr uint8_t NB_BUS = 8;
+    static constexpr uint8_t INVALID_I2C_BUS = 0xFF;
+
 private:
     static constexpr uint8_t MUX_ADDR = 0x70;
-    static constexpr uint8_t NB_BUS = 8;
     static constexpr uint8_t REQ_SETTINGS = 0x01;
-    static constexpr uint8_t INVALID_I2C_BUS = 0xFF;
     static constexpr uint8_t I2C_COMMUNICATION_SUCCESS = 0;
 
     bool isInit;

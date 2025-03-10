@@ -41,11 +41,11 @@ void loop()
         /******** for testing mux ********/
         muxI2c.setBus(1);
         float temperature1 = 0.0f;
-        sht40.getData(&temperature1);
+        sht40[1].getData(&temperature1);
 
         muxI2c.setBus(2);
         float temperature2 = 0.0f;
-        sht40.getData(&temperature2);
+        sht40[2].getData(&temperature2);
 
         Serial.printf(">temp bus 1: %f\n>temp bus 2: %f\n", temperature1, temperature2);
         break;

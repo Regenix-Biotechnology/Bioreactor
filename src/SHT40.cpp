@@ -1,10 +1,12 @@
 #include "SHT40.h"
 
+I2CMux *SHT40::pMuxI2c = nullptr;
+
 /**
  * @brief Constructor to initialize the SHT40 sensor variable. To default state
  */
 SHT40::SHT40()
-    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(nullptr)
+    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(nullptr), i2cBusNumber(I2CMux::INVALID_I2C_BUS)
 {
     memset(this->rxBuffer, 0, SHT40_RSP_SIZE);
 }
@@ -13,15 +15,18 @@ SHT40::SHT40()
  * @brief initialise the sht40 with the i2cBus sent in parameter
  *
  * @param i2cBus The I2C Wire to use for this sensor
+ * @param i2cBusNumber the channel number to use for i2c
+ * @param isUsingI2CMux true if the 12c mux is necessairy false to bypasss it
  * @return eSHT40Status SHT40_STATUS_OK if init is succesful else return error code
  */
-eSHT40Status SHT40::begin(TwoWire *i2cBus)
+eSHT40Status SHT40::begin(TwoWire *i2cBus, uint8_t i2cBusNumber, bool isUsingI2CMux)
 {
     if (i2cBus == NULL)
         return SHT40_STATUS_INVALID_I2C_BUS;
-
     this->i2cBus = i2cBus;
     this->isInit = true;
+    this->i2cBusNumber = i2cBusNumber;
+    this->isUsingI2CMux = isUsingI2CMux;
     return SHT40_STATUS_OK;
 }
 
@@ -34,6 +39,10 @@ bool SHT40::isConnected()
 {
     if (this->isInit == false)
         return SHT40_STATUS_NOT_INITIALISED;
+
+    eSHT40Status status = updateI2CMux();
+    if (status != SHT40_STATUS_OK)
+        return status;
 
     this->i2cBus->beginTransmission(SHT40_ADDR);
     uint8_t ret = this->i2cBus->endTransmission();
@@ -67,6 +76,10 @@ eSHT40Status SHT40::fetchData()
 {
     if (!this->isInit)
         return SHT40_STATUS_NOT_INITIALISED;
+
+    eSHT40Status status = updateI2CMux();
+    if (status != SHT40_STATUS_OK)
+        return status;
 
     this->i2cBus->beginTransmission(SHT40_ADDR);
     this->i2cBus->write(SHT40_REQ_TEMP);
@@ -136,6 +149,26 @@ eSHT40Status SHT40::getData(float *temperature)
 }
 
 /**
+ * @brief switch the i2c mux to be the bus for this temperature sensor
+ *
+ * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code (error code can also be from i2c mux)
+ */
+eSHT40Status SHT40::updateI2CMux()
+{
+    if (this->isUsingI2CMux)
+    {
+        if (this->pMuxI2c == nullptr)
+            return SHT40_STATUS_NULL_POINTER;
+
+        eI2cMuxStatus muxStatus = this->pMuxI2c->setBus(this->i2cBusNumber);
+        if (muxStatus != I2C_MUX_STATUS_OK)
+            return (eSHT40Status)muxStatus;
+    }
+
+    return SHT40_STATUS_OK;
+}
+
+/**
  * @brief will return a unique uint8_t number for the provided data
  * CRC-8 formula from page 14 of SHT spec pdf
  *
@@ -164,4 +197,14 @@ uint8_t SHT40::crc8(const uint8_t *data, int len)
         }
     }
     return crc;
+}
+
+/**
+ * @brief set static i2c mux instance to use to switch between i2c channel
+ *
+ * @param pMuxI2c the i2c mux object to use
+ */
+void SHT40::setMuxI2C(I2CMux *pMuxI2c)
+{
+    SHT40::pMuxI2c = pMuxI2c;
 }

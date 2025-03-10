@@ -1,6 +1,8 @@
 #ifndef BIOREACTOR_CONTROLLER_H
 #define BIOREACTOR_CONTROLLER_H
 
+#define NB_TEMP_SENSOR (3)
+
 #include <main.h>
 
 /**
