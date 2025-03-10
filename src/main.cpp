@@ -39,15 +39,15 @@ void loop()
         setHeatersState(temperatureController.getHeaterPower(), temperatureController.isPatchHeatingNeeded());
 
         /******** for testing mux ********/
-        muxI2c.setBus(1);
-        float temperature1 = 0.0f;
-        sht40.getData(&temperature1);
+        // muxI2c.setBus(1);
+        // float temperature1 = 0.0f;
+        // sht40.getData(&temperature1);
 
-        muxI2c.setBus(2);
-        float temperature2 = 0.0f;
-        sht40.getData(&temperature2);
+        // muxI2c.setBus(2);
+        // float temperature2 = 0.0f;
+        // sht40.getData(&temperature2);
 
-        Serial.printf(">temp bus 1: %f\n>temp bus 2: %f\n", temperature1, temperature2);
+        // Serial.printf(">temp bus 1: %f\n>temp bus 2: %f\n", temperature1, temperature2);
         break;
     }
     default:
@@ -59,7 +59,7 @@ void loop()
 
     updateTemperatureController();
 
-    muxI2c.setBus(0);
+    // muxI2c.setBus(0);
     heater.update();
     // updatePressureChamberController();
     // updateBioreactorState();

@@ -5,6 +5,7 @@
  */
 TemperatureController::TemperatureController()
     : integralError(0.0f),
+      integralErrorAir(0.0f),
       prevError(0.0f),
       pwmHeater(0),
       patchState(false),
@@ -21,17 +22,19 @@ TemperatureController::TemperatureController()
  */
 void TemperatureController::update(float waterTemp, float airTemp)
 {
+    unsigned long currentTime = millis();
+    float dt = (float)(currentTime - prevTime) / MILLIS_TO_SECONDS;
 
     // --- Activation of Patch Heating ---
     this->patchState = waterTemp < (tempRef - TEMPERATURE_REFERENCE_OFFSET);
 
     // --- Compute Target Air Temperature ---
-    float targetAirTemp = KP_AIR * (tempRef - waterTemp) + tempRef;
+    float errorAir = (tempRef - waterTemp);
+    integralErrorAir += errorAir * dt;
+    float targetAirTemp = KP_AIR * errorAir + KI_AIR * integralErrorAir + tempRef;
     targetAirTemp = constrain(targetAirTemp, 0, MAX_TARGET_AIR_TEMP);
 
     // --- PID Control for the Heater ---
-    unsigned long currentTime = millis();
-    float dt = (float)(currentTime - prevTime) / MILLIS_TO_SECONDS;
     float error = targetAirTemp - airTemp;
     float derivative = (error - prevError) / dt;
     this->integralError += error * dt;

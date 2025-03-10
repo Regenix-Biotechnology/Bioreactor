@@ -140,11 +140,22 @@ void updateTemperatureController()
     if (millis() - lastTemperatureControllerTime > TEMPERATURE_CONTROLLER_UPDATE_INTERVAL)
     {
         lastTemperatureControllerTime = millis();
+        muxI2c.setBus(0);
         float airTemperature = 0;
         sht40.getData(&airTemperature);
         pyroscience.fetchData();
         float waterTemperature = pyroscience.getLastTemperature();
 
         temperatureController.update(waterTemperature, airTemperature);
+
+        muxI2c.setBus(1);
+        float temperature1 = 0.0f;
+        sht40.getData(&temperature1);
+
+        muxI2c.setBus(2);
+        float temperature2 = 0.0f;
+        sht40.getData(&temperature2);
+
+        Serial.printf(">temp bus 1: %f\n>temp bus 2: %f\n", temperature1, temperature2);
     }
 }

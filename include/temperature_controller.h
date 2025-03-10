@@ -24,6 +24,7 @@ public:
 private:
     // Reference temperature.
     float tempRef;
+    float integralErrorAir;
 
     // Internal state for the PID controller.
     float integralError;
@@ -40,6 +41,7 @@ private:
     static constexpr float KI_FAN = 0.001f;
     static constexpr float KD_FAN = 0.0f;
     static constexpr float KP_AIR = 4.0f;
+    static constexpr float KI_AIR = 0.00004f;
     static constexpr float TEMPERATURE_REFERENCE_OFFSET = 2.0f;
     static constexpr float MILLIS_TO_SECONDS = 1000.0f;
 };
