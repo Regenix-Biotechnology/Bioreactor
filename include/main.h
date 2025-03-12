@@ -23,11 +23,9 @@ enum class eBioreactorState
     MAX_STATES
 };
 
-// extern uint8_t NB_TEMP_SENSOR;
-
 // Objects declaration (extern to be used both in main.cpp and bioreactor_controller.cpp)
 extern I2CMux muxI2c;
-extern SHT40 sht40[NB_TEMP_SENSOR];
+extern SHT40 sht40[];
 extern Pyroscience pyroscience;
 extern Pump approvPump;
 extern Pump sensorPump;

@@ -40,9 +40,12 @@ bool SHT40::isConnected()
     if (this->isInit == false)
         return SHT40_STATUS_NOT_INITIALISED;
 
-    eSHT40Status status = updateI2CMux();
-    if (status != SHT40_STATUS_OK)
-        return status;
+    if (this->isUsingI2CMux)
+    {
+        eSHT40Status status = updateI2CMux();
+        if (status != SHT40_STATUS_OK)
+            return status;
+    }
 
     this->i2cBus->beginTransmission(SHT40_ADDR);
     uint8_t ret = this->i2cBus->endTransmission();
@@ -77,9 +80,12 @@ eSHT40Status SHT40::fetchData()
     if (!this->isInit)
         return SHT40_STATUS_NOT_INITIALISED;
 
-    eSHT40Status status = updateI2CMux();
-    if (status != SHT40_STATUS_OK)
-        return status;
+    if (this->isUsingI2CMux)
+    {
+        eSHT40Status status = updateI2CMux();
+        if (status != SHT40_STATUS_OK)
+            return status;
+    }
 
     this->i2cBus->beginTransmission(SHT40_ADDR);
     this->i2cBus->write(SHT40_REQ_TEMP);
@@ -155,15 +161,12 @@ eSHT40Status SHT40::getData(float *temperature)
  */
 eSHT40Status SHT40::updateI2CMux()
 {
-    if (this->isUsingI2CMux)
-    {
-        if (this->pMuxI2c == nullptr)
-            return SHT40_STATUS_NULL_POINTER;
+    if (this->pMuxI2c == nullptr)
+        return SHT40_STATUS_NULL_POINTER;
 
-        eI2cMuxStatus muxStatus = this->pMuxI2c->setBus(this->i2cBusNumber);
-        if (muxStatus != I2C_MUX_STATUS_OK)
-            return (eSHT40Status)muxStatus;
-    }
+    eI2cMuxStatus muxStatus = this->pMuxI2c->setBus(this->i2cBusNumber);
+    if (muxStatus != I2C_MUX_STATUS_OK)
+        return (eSHT40Status)muxStatus;
 
     return SHT40_STATUS_OK;
 }
