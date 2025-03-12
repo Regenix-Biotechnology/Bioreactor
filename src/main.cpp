@@ -47,5 +47,4 @@ void loop()
     heater.update();
     // updatePressureChamberController();
     // updateBioreactorState();
-    serialReader(); // This is used for DEBUG only
 }
