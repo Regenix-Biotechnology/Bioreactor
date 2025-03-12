@@ -7,7 +7,6 @@ void setup()
     Serial.println("Hello, World!");
 
     beginBioreactorController();
-    // Serial.printf("enable ret: %d\n", ret);
 }
 
 void loop()
@@ -33,21 +32,10 @@ void loop()
     case eBioreactorState::TEST: // For the fluidic and heating system test
     {
         setFansState(ON, OFF, OFF);
-        setPumpsSpeed(PUMP_MAX_SPEED / 8, OFF, OFF, OFF);
+        setPumpsSpeed(PUMP_MAX_SPEED, OFF, OFF, OFF);
         setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
         setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
         setHeatersState(temperatureController.getHeaterPower(), temperatureController.isPatchHeatingNeeded());
-
-        /******** for testing mux ********/
-        // muxI2c.setBus(1);
-        float temperature1 = 0.0f;
-        sht40[0].getData(&temperature1);
-
-        // muxI2c.setBus(2);
-        float temperature2 = 0.0f;
-        sht40[1].getData(&temperature2);
-
-        Serial.printf(">temp bus 1: %f\n>temp bus 2: %f\n", temperature1, temperature2);
         break;
     }
     default:
@@ -55,12 +43,9 @@ void loop()
         break;
     }
 
-    // delay(1000);
-
     updateTemperatureController();
-
-    muxI2c.setBus(0);
     heater.update();
     // updatePressureChamberController();
     // updateBioreactorState();
+    serialReader(); // This is used for DEBUG only
 }

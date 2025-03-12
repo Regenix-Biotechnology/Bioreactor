@@ -6,8 +6,5 @@
     },
     "[h]":{
         "editor.defaultFormatter": "ms-vscode.cpptools"
-    },
-    "files.associations": {
-        "random": "cpp"
     }
 }

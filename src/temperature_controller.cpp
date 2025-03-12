@@ -21,13 +21,11 @@ TemperatureController::TemperatureController()
  */
 void TemperatureController::update(float waterTemp, float airTemp)
 {
-
     // --- Activation of Patch Heating ---
     this->patchState = waterTemp < (tempRef - TEMPERATURE_REFERENCE_OFFSET);
 
     // --- Compute Target Air Temperature ---
     float targetAirTemp = KP_AIR * (tempRef - waterTemp) + tempRef;
-    targetAirTemp = constrain(targetAirTemp, 0, MAX_TARGET_AIR_TEMP);
 
     // --- PID Control for the Heater ---
     unsigned long currentTime = millis();
@@ -42,23 +40,18 @@ void TemperatureController::update(float waterTemp, float airTemp)
     this->pwmHeater = constrain(heaterControl, 0, 100);
 
     // --- Debug Output ---
-    Serial.print(">Target Air Temp: ");
-    Serial.println(targetAirTemp);
-    Serial.print(">Air Temp: ");
-    Serial.println(airTemp);
-    Serial.print(">Water Temp: ");
-    Serial.println(waterTemp);
-    Serial.print(">Heater Control: ");
-    Serial.println(heaterControl);
-    Serial.print(">Heater KP: ");
-    Serial.println(KP_FAN * error);
-    Serial.print(">Heater KI: ");
-    Serial.println(KI_FAN * integralError);
-    Serial.print(">Heater Power: ");
-    Serial.println(this->pwmHeater);
-    Serial.print(">Patch State: ");
-    Serial.println(this->patchState);
-    Serial.println("\n");
+    // Serial.print("Target Air Temp: ");
+    // Serial.print(targetAirTemp);
+    // Serial.print(" Air Temp: ");
+    // Serial.print(airTemp);
+    // Serial.print(" Water Temp: ");
+    // Serial.print(waterTemp);
+    // Serial.print(" Heater Control: ");
+    // Serial.print(heaterControl);
+    // Serial.print(" Heater Power: ");
+    // Serial.print(this->pwmHeater);
+    // Serial.print(" Patch State: ");
+    // Serial.println(this->patchState);
 }
 
 /**
