@@ -7,8 +7,6 @@
  * This file contains the functions that are called in the main loop to control the bioreactor.
  */
 
-const uint8_t NB_TEMP_SENSOR = 2;
-
 void beginBioreactorController();
 void setFansState(bool heaterFanState, bool interiorFanState, bool exteriorFanState);
 void setValvesState(bool valve1State, bool valve2State, bool valve3State, bool valve4State, bool valve5State);

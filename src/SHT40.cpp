@@ -1,46 +1,44 @@
 #include "SHT40.h"
 
-I2CMux *SHT40::pMuxI2c = nullptr;
-
 /**
  * @brief Constructor to initialize the SHT40 sensor variable. To default state
  */
 SHT40::SHT40()
-    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(nullptr), i2cBusNumber(I2CMux::INVALID_I2C_BUS)
+    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(nullptr), i2cBusNumber(I2CMux::INVALID_I2C_BUS), pMuxI2c(nullptr)
 {
     memset(this->rxBuffer, 0, SHT40_RSP_SIZE);
 }
 
 /**
- * @brief initialise the sht40 with the i2cBus sent in parameter
+ * @brief Initialise the sht40 with the i2cBus sent in parameter
  *
  * @param i2cBus The I2C Wire to use for this sensor
- * @param i2cBusNumber the channel number to use for i2c
- * @param isUsingI2CMux true if the 12c mux is necessairy false to bypasss it
+ * @param i2cBusNumber The channel number to use for i2c
+ * @param pMuxI2c Pointer to I2CMux class can be set to nullptr if no mux is used
  * @return eSHT40Status SHT40_STATUS_OK if init is succesful else return error code
  */
-eSHT40Status SHT40::begin(TwoWire *i2cBus, uint8_t i2cBusNumber, bool isUsingI2CMux)
+eSHT40Status SHT40::begin(TwoWire *i2cBus, uint8_t i2cBusNumber, I2CMux *pMuxI2c)
 {
-    if (i2cBus == NULL)
+    if (i2cBus == nullptr)
         return SHT40_STATUS_INVALID_I2C_BUS;
     this->i2cBus = i2cBus;
     this->isInit = true;
     this->i2cBusNumber = i2cBusNumber;
-    this->isUsingI2CMux = isUsingI2CMux;
+    this->pMuxI2c = pMuxI2c;
     return SHT40_STATUS_OK;
 }
 
 /**
- * @brief check if the SHT40 device is connected to the current i2c bus
+ * @brief Check if the SHT40 device is connected to the current i2c bus
  *
- * @return true if sht40 device is detected else return false
+ * @return True if sht40 device is detected else return false
  */
 bool SHT40::isConnected()
 {
     if (this->isInit == false)
         return SHT40_STATUS_NOT_INITIALISED;
 
-    if (this->isUsingI2CMux)
+    if (this->pMuxI2c != nullptr)
     {
         eSHT40Status status = updateI2CMux();
         if (status != SHT40_STATUS_OK)
@@ -80,7 +78,7 @@ eSHT40Status SHT40::fetchData()
     if (!this->isInit)
         return SHT40_STATUS_NOT_INITIALISED;
 
-    if (this->isUsingI2CMux)
+    if (this->pMuxI2c != nullptr)
     {
         eSHT40Status status = updateI2CMux();
         if (status != SHT40_STATUS_OK)
@@ -155,7 +153,7 @@ eSHT40Status SHT40::getData(float *temperature)
 }
 
 /**
- * @brief switch the i2c mux to be the bus for this temperature sensor
+ * @brief Switch the i2c mux to be the bus for this temperature sensor
  *
  * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code (error code can also be from i2c mux)
  */
@@ -200,14 +198,4 @@ uint8_t SHT40::crc8(const uint8_t *data, int len)
         }
     }
     return crc;
-}
-
-/**
- * @brief set static i2c mux instance to use to switch between i2c channel
- *
- * @param pMuxI2c the i2c mux object to use
- */
-void SHT40::setMuxI2C(I2CMux *pMuxI2c)
-{
-    SHT40::pMuxI2c = pMuxI2c;
 }

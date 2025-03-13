@@ -30,15 +30,13 @@ class SHT40
 {
 public:
     SHT40();
-    eSHT40Status begin(TwoWire *i2cBus, uint8_t i2cBusNumber, bool isUsingI2CMux);
+    eSHT40Status begin(TwoWire *i2cBus, uint8_t i2cBusNumber = 0, I2CMux *PMuxI2c = nullptr);
     float getLastTemperature() const;
     float getLastHumidity() const;
     bool isConnected();
     eSHT40Status fetchData();
     eSHT40Status getData(float *temperature, float *humidity);
     eSHT40Status getData(float *temperature);
-
-    static void setMuxI2C(I2CMux *pMuxI2c);
 
 private:
     static constexpr uint8_t SHT40_RSP_SIZE = 6;
@@ -54,18 +52,16 @@ private:
     static constexpr uint8_t I2C_COMMUNICATION_SUCCESS = 0;
     static constexpr uint8_t I2C_READ_DELAY = 10;
 
-    static I2CMux *pMuxI2c;
-
     uint8_t crc8(const uint8_t *data, int len);
     eSHT40Status updateI2CMux();
 
+    I2CMux *pMuxI2c;
     uint8_t rxBuffer[SHT40_RSP_SIZE];
     bool isInit;
     float temperature;
     float humidity;
     TwoWire *i2cBus;
     uint8_t i2cBusNumber;
-    bool isUsingI2CMux;
 };
 
 #endif // SHT40_H

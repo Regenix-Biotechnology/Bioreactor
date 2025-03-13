@@ -36,7 +36,7 @@ void beginBioreactorController()
 {
     muxI2c.begin(&Wire);
     for (uint8_t i = 0; i < NB_TEMP_SENSOR; i++)
-        sht40[i].begin(&Wire, i, (NB_TEMP_SENSOR > 1));
+        sht40[i].begin(&Wire, i, (NB_TEMP_SENSOR > 1) ? &muxI2c : nullptr);
     pyroscience.begin(&Serial1);
     approvPump.begin();
     sensorPump.begin();
@@ -56,8 +56,6 @@ void beginBioreactorController()
     interiorFan.begin();
     // exteriorFan.begin();
     patchHeater.begin();
-
-    SHT40::setMuxI2C(&muxI2c);
 }
 
 /**

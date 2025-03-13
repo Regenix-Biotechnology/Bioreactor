@@ -50,5 +50,6 @@ static constexpr bool OFF = LOW;
 static constexpr uint8_t PUMP_MAX_SPEED = 255;
 static constexpr unsigned long TEMPERATURE_CONTROLLER_UPDATE_INTERVAL = 1000;
 static constexpr unsigned long SERIAL_BAUDRATE = 115200;
+static constexpr uint8_t NB_TEMP_SENSOR = 2;
 
 #endif
