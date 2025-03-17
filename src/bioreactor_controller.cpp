@@ -36,7 +36,7 @@ void beginBioreactorController()
 {
     muxI2c.begin(&Wire);
     for (uint8_t i = 0; i < NB_TEMP_SENSOR; i++)
-        sht40[i].begin(&Wire, i, (NB_TEMP_SENSOR > 1) ? &muxI2c : nullptr);
+        sht40[i].begin(&Wire, i, &muxI2c);
     pyroscience.begin(&Serial1);
     approvPump.begin();
     sensorPump.begin();
