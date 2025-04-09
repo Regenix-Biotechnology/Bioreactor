@@ -5,7 +5,7 @@
  */
 TemperatureController::TemperatureController()
     : integralError(0.0f),
-      integralErrorAir(0.0f),
+      targetAirTempFromKI(0.0f),
       prevError(0.0f),
       pwmHeater(0),
       patchState(false),
@@ -30,8 +30,9 @@ void TemperatureController::update(float waterTemp, float airTemp)
 
     // --- Compute Target Air Temperature ---
     float errorAir = (tempRef - waterTemp);
-    integralErrorAir += errorAir * dt;
-    float targetAirTemp = KP_AIR * errorAir + KI_AIR * integralErrorAir + tempRef;
+    this->targetAirTempFromKI += KI_AIR * errorAir * dt;
+    this->targetAirTempFromKI = constrain(this->targetAirTempFromKI, -2.5, 2);
+    float targetAirTemp = KP_AIR * errorAir + targetAirTempFromKI + tempRef;
     targetAirTemp = constrain(targetAirTemp, 0, MAX_TARGET_AIR_TEMP);
 
     // --- PID Control for the Heater ---
@@ -57,6 +58,8 @@ void TemperatureController::update(float waterTemp, float airTemp)
     Serial.println(KP_FAN * error);
     Serial.print(">Heater KI: ");
     Serial.println(KI_FAN * integralError);
+    Serial.print(">targetAirTempFromKI: ");
+    Serial.println(targetAirTempFromKI);
     Serial.print(">Heater Power: ");
     Serial.println(this->pwmHeater);
     Serial.print(">Patch State: ");
