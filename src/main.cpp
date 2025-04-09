@@ -17,7 +17,7 @@ void loop()
         setFansState(OFF, OFF, OFF);
         setPumpsSpeed(OFF, OFF, OFF, OFF);
         setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
-        setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
+        setState(OFF);
         setHeatersState(OFF, OFF);
         break;
     case eBioreactorState::APPROV:
@@ -34,7 +34,7 @@ void loop()
         setFansState(ON, OFF, OFF);
         setPumpsSpeed(PUMP_MAX_SPEED, OFF, OFF, OFF);
         setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
-        setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
+        setState(ON);
         setHeatersState(temperatureController.getHeaterPower(), temperatureController.isPatchHeatingNeeded());
         break;
     }
@@ -43,9 +43,9 @@ void loop()
         break;
     }
 
-    updateTemperatureController();
-    heater.update();
-    // updatePressureChamberController();
+    // updateTemperatureController();
+    // heater.update();
+    updatePressureChamberController();
     // updateBioreactorState();
     serialReader(); // This is used for DEBUG only
 }

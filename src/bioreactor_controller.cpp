@@ -3,6 +3,8 @@
 // Objects declaration
 SHT40 sht40;
 Pyroscience pyroscience;
+GMP251 co2Sensor(RS485_RX_PIN, RS485_TX_PIN, RS485_DE_PIN, Serial1);
+O2Sensor o2Sensor;
 Pump approvPump(APPROV_PUMP_PIN_1, APPROV_PUMP_PIN_2);
 Pump sensorPump(SENSOR_PUMP_PIN_1, SENSOR_PUMP_PIN_2);
 Pump cultureChamberPump1(CULTURE_CHAMBER_PUMP_1_PIN_1, CULTURE_CHAMBER_PUMP_1_PIN_2);
@@ -13,8 +15,8 @@ SSR_Relay heater(HEATER_PIN);
 // Relay valve3(VALVE_3_PIN);
 // Relay valve4(VALVE_4_PIN);
 // Relay valve5(VALVE_5_PIN);
-// Relay O2Valve(O2_VALVE_PIN);
-// Relay CO2Valve(CO2_VALVE_PIN);
+Relay O2Valve(O2_VALVE_PIN);
+Relay CO2Valve(CO2_VALVE_PIN);
 // Relay airValve(AIR_VALVE_PIN);
 // Relay safetyValve(SAFETY_VALVE_PIN);
 Relay heaterFan(HEATER_FAN_PIN);
@@ -22,10 +24,12 @@ Relay interiorFan(INTERIOR_FAN_PIN);
 // Relay ExteriorFan(EXTERIOR_FAN_PIN);
 Relay patchHeater(PATCH_HEATER_PIN);
 TemperatureController temperatureController;
+PressureChamberController pressureChamber;
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
 unsigned long lastTemperatureControllerTime = 0;
+unsigned long lastPressureChamberControllerTime = 0;
 uint8_t testState = 0;
 
 /**
@@ -33,22 +37,31 @@ uint8_t testState = 0;
  */
 void beginBioreactorController()
 {
+    // Sensors
     sht40.begin(&Wire);
     pyroscience.begin(&Serial1);
+    co2Sensor.begin();
+    o2Sensor.begin();
+
+    // Pumps
     approvPump.begin();
     sensorPump.begin();
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
-    heater.begin();
+
+    // Valves
     // valve1.begin();
     // valve2.begin();
     // valve3.begin();
     // valve4.begin();
     // valve5.begin();
-    // O2Valve.begin();
-    // CO2Valve.begin();
+    O2Valve.begin();
+    CO2Valve.begin();
     // airValve.begin();
     // safetyValve.begin();
+
+    // Fans & Heaters
+    heater.begin();
     heaterFan.begin();
     interiorFan.begin();
     // exteriorFan.begin();
@@ -87,15 +100,15 @@ void setValvesState(bool valve1State, bool valve2State, bool valve3State, bool v
 
 /**
  * @brief Set the state of the pressure chamber valves.
- * @param O2ValveState      State of the O2 valve. (OPEN/CLOSE)
- * @param CO2ValveState     State of the CO2 valve. (OPEN/CLOSE)
+ * @param o2ValveState      State of the O2 valve. (OPEN/CLOSE)
+ * @param co2ValveState     State of the CO2 valve. (OPEN/CLOSE)
  * @param airValveState     State of the air valve. (OPEN/CLOSE)
  * @param safetyValveState  State of the safety valve. (OPEN/CLOSE)
  */
-void setPressureChamberValvesState(bool O2ValveState, bool CO2ValveState, bool airValveState, bool safetyValveState)
+void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState, bool safetyValveState)
 {
-    // O2Valve.set(O2ValveState);
-    // CO2Valve.set(CO2ValveState);
+    O2Valve.set(o2ValveState);
+    CO2Valve.set(co2ValveState);
     // airValve.set(airValveState);
     // safetyValve.set(safetyValveState);
 }
@@ -127,6 +140,15 @@ void setHeatersState(float heaterState, bool patchHeaterState)
 }
 
 /**
+ * @brief Determine if the pressure chamber needs to be pressurized and regulated.
+ * @param state  State of the pressure chamber. (ON/OFF)
+ */
+void setState(bool state)
+{
+    pressureChamber.setState(state);
+}
+
+/**
  * @brief Update the temperature controller. Must be called in the main loop.
  */
 void updateTemperatureController()
@@ -141,4 +163,27 @@ void updateTemperatureController()
 
         temperatureController.update(waterTemperature, airTemperature);
     }
+}
+
+/**
+ * @brief Update the pressure chamber controller. Must be called in the main loop.
+ */
+void updatePressureChamberController()
+{
+    if (millis() - lastPressureChamberControllerTime > PRESSURE_CHAMBER_CONTROLLER_UPDATE_INTERVAL)
+    {
+        lastPressureChamberControllerTime = millis();
+        float o2Concentration = o2Sensor.getO2();
+        float co2Concentration = co2Sensor.getCO2();
+        float pressure = 7.5 * 6894.76; // 7.5 psi to Pa // TODO: get this value from the sensor
+
+        pressureChamber.update(o2Concentration, co2Concentration, pressure);
+    }
+
+    setPressureChamberValvesState(pressureChamber.getValveState(O2),
+                                  pressureChamber.getValveState(CO2),
+                                  pressureChamber.getValveState(AIR),
+                                  pressureChamber.getValveState(SAFETY));
+
+    co2Sensor.update();
 }

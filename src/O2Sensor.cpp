@@ -5,7 +5,7 @@
  * @param pWire Pointer to the I2C interface (default: Wire)
  */
 O2Sensor::O2Sensor(TwoWire *pWire)
-    : _pWire(pWire), status(O2_SENSOR_STATUS_NOT_INITIALISED) {}
+    : _pWire(pWire), status(O2_SENSOR_STATUS_NOT_INITIALIZED) {}
 
 /**
  * @brief Initializes I2C communication and checks sensor availability
@@ -16,7 +16,7 @@ eO2SensorStatus O2Sensor::begin()
     _pWire->begin();
     _pWire->beginTransmission(I2C_ADDRESS);
     if (_pWire->endTransmission() != 0)
-        return this->status = O2_SENSOR_STATUS_NOT_INITIALISED;
+        return this->status = O2_SENSOR_STATUS_NOT_INITIALIZED;
 
     return this->status = O2_SENSOR_STATUS_INITIALIZED;
 }
