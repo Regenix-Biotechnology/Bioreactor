@@ -30,6 +30,7 @@ PressureChamberController pressureChamber;
 eBioreactorState bioreactorState = eBioreactorState::TEST;
 unsigned long lastTemperatureControllerTime = 0;
 unsigned long lastPressureChamberControllerTime = 0;
+unsigned long lastPressureChamberControllerTimePrint = 0;
 uint8_t testState = 0;
 
 /**
@@ -175,9 +176,16 @@ void updatePressureChamberController()
         lastPressureChamberControllerTime = millis();
         float o2Concentration = o2Sensor.getO2();
         float co2Concentration = co2Sensor.getCO2();
-        float pressure = 7.5 * 6894.76; // 7.5 psi to Pa // TODO: get this value from the sensor
+        float pressure = 22.5 * 6895; // 7.5 psi to Pa // TODO: get this value from the sensor
 
         pressureChamber.update(o2Concentration, co2Concentration, pressure);
+    }
+
+    if (millis() - lastPressureChamberControllerTimePrint > 1000)
+    {
+        lastPressureChamberControllerTimePrint = millis();
+        Serial.println(">o2Concentration: " + String(o2Sensor.getO2()));
+        Serial.println(">co2Concentration: " + String(co2Sensor.getCO2()));
     }
 
     setPressureChamberValvesState(pressureChamber.getValveState(O2),

@@ -67,11 +67,8 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
     this->timeBeforeClosingCO2Valve = co2ValveTime;
 
     // --- DEBUG OUTPUT ---
-    Serial.print("o2Concentration: " + String(o2Concentration) + " %\t");
-    Serial.print("co2Concentration: " + String(co2Concentration) + " ppm\t");
-    Serial.print("O2 Opening Time: " + String((timeBeforeClosingO2Valve - millis())) + " ms\t");
-    Serial.print("CO2 Opening Time: " + String((timeBeforeClosingCO2Valve - millis())) + " ms\t");
-    Serial.println("");
+    Serial.println(">O2 Opening Time: " + String((timeBeforeClosingO2Valve - millis())));
+    Serial.println(">CO2 Opening Time: " + String((timeBeforeClosingCO2Valve - millis())));
 }
 
 /**

@@ -51,7 +51,7 @@ static constexpr bool ON = HIGH;
 static constexpr bool OFF = LOW;
 static constexpr uint8_t PUMP_MAX_SPEED = 255;
 static constexpr unsigned long TEMPERATURE_CONTROLLER_UPDATE_INTERVAL = 1000;
-static constexpr unsigned long PRESSURE_CHAMBER_CONTROLLER_UPDATE_INTERVAL = 60000; // 1 minute. Based on the GMP251 response time
+static constexpr unsigned long PRESSURE_CHAMBER_CONTROLLER_UPDATE_INTERVAL = 60000; // Based on the GMP251 response time
 static constexpr unsigned long SERIAL_BAUDRATE = 115200;
 
 #endif
