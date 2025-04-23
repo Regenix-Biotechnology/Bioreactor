@@ -10,12 +10,12 @@
 // PUMPS
 constexpr int APPROV_PUMP_PIN_1 = 14;
 constexpr int APPROV_PUMP_PIN_2 = 32;
-constexpr int SENSOR_PUMP_PIN_1 = 15;
+constexpr int SENSOR_PUMP_PIN_1 = 0; // not working need extender
 constexpr int SENSOR_PUMP_PIN_2 = 33;
-constexpr int CULTURE_CHAMBER_PUMP_1_PIN_1 = 0; // not working need extender
-constexpr int CULTURE_CHAMBER_PUMP_1_PIN_2 = 0; // not working need extender
-constexpr int CULTURE_CHAMBER_PUMP_2_PIN_1 = 13;
-constexpr int CULTURE_CHAMBER_PUMP_2_PIN_2 = 0; // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_1_PIN_1 = 0;  // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_1_PIN_2 = 0;  // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_2_PIN_1 = 13; // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_2_PIN_2 = 0;  // not working need extender
 
 // I2C
 constexpr int I2C_SDA_PIN = 21;
@@ -42,7 +42,7 @@ constexpr int EXTERIOR_FAN_PIN = 0; // not working need extender
 constexpr int PATCH_HEATER_PIN = 18;
 constexpr int O2_VALVE_PIN = 12;
 constexpr int CO2_VALVE_PIN = 27;
-constexpr int AIR_VALVE_PIN = 0;    // not working need extender
+constexpr int AIR_VALVE_PIN = 15;   // not working need extender
 constexpr int SAFETY_VALVE_PIN = 0; // not working need extender
 
 // SSR RELAY

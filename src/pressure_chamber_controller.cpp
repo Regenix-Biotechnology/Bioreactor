@@ -4,11 +4,12 @@
  * @brief Constructor to initialize the control loop parameters.
  */
 PressureChamberController::PressureChamberController()
-    : o2MinRef(O2_MIN_REF),
-      o2MaxRef(O2_MAX_REF),
-      co2MinRef(CO2_REF - CO2_DEAD_ZONE),
+    : co2MinRef(CO2_REF - CO2_DEAD_ZONE),
       co2MaxRef(CO2_REF + CO2_DEAD_ZONE),
       co2Ref(CO2_REF),
+      o2MinRef(O2_REF - O2_DEAD_ZONE),
+      o2MaxRef(O2_REF + O2_DEAD_ZONE),
+      o2Ref(O2_REF),
       o2ValveState(false),
       co2ValveState(false),
       airValveState(false),
@@ -31,44 +32,62 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
     if (!this->pressureChamberState)
         return;
 
-    unsigned long o2ValveTime = 0;
-    unsigned long co2ValveTime = 0;
+    float o2ValveTime = 0;
+    float co2ValveTime = 0;
+    float airValveTime = 0;
 
     // --- O₂ Control Logic ---
-    if (o2Concentration < this->o2MinRef)
+    if (o2Concentration > this->o2MaxRef)
+    {
+        float o2Error = o2Concentration - this->o2Ref;
+        float effectiveO2Error = o2Error / o2Concentration;
+        airValveTime = calculateTimeBeforeClosingValve(AIR, effectiveO2Error) * CORRECTION_FACTOR_O2_REDUCTION;
+    }
+    else if (o2Concentration < this->o2MinRef)
     {
         float o2Error = this->o2MaxRef - o2Concentration;
-        o2ValveTime = calculateTimeBeforeClosingValve(O2, o2Error);
+        o2ValveTime = calculateTimeBeforeClosingValve(O2, o2Error) * CORRECTION_FACTOR_O2;
     }
 
     // --- CO₂ Control Logic ---
     if (co2Concentration > this->co2MaxRef)
     {
         float co2Error = co2Concentration - this->co2Ref;
-        float effectiveO2Error = co2Error / co2Concentration;
-        unsigned long o2ValveTimeFromCo2 = calculateTimeBeforeClosingValve(O2, effectiveO2Error);
-        o2ValveTime = max(o2ValveTime, o2ValveTimeFromCo2);
+        float effectiveCO2Error = co2Error / co2Concentration;
+        float airValveTimeFromCo2 = calculateTimeBeforeClosingValve(AIR, effectiveCO2Error) * CORRECTION_FACTOR_CO2_REDUCTION;
+        airValveTime = max(airValveTime, airValveTimeFromCo2);
     }
     else if (co2Concentration < this->co2MinRef)
     {
         float co2Error = this->co2Ref - co2Concentration;
-        co2ValveTime = calculateTimeBeforeClosingValve(CO2, co2Error);
+        co2ValveTime = calculateTimeBeforeClosingValve(CO2, co2Error) * CORRECTION_FACTOR_CO2;
     }
 
     // --- Pressure Control Logic ---
     if (pressure < P_CHAMBER_MIN)
     {
-        unsigned long o2ValveTimeFromPressure = millis() + AIR_VALVE_OPEN_TIME;
-        o2ValveTime = max(o2ValveTime, o2ValveTimeFromPressure);
+        float airValveTimeFromPressure = millis() + AIR_VALVE_OPEN_TIME;
+        airValveTime = max(airValveTime, airValveTimeFromPressure);
     }
 
     // Apply the calculated times
-    this->timeBeforeClosingO2Valve = o2ValveTime;
-    this->timeBeforeClosingCO2Valve = co2ValveTime;
+    this->timeBeforeClosingO2Valve = millis() + static_cast<unsigned long>(o2ValveTime);
+    this->timeBeforeClosingCO2Valve = millis() + static_cast<unsigned long>(co2ValveTime);
+    this->timeBeforeClosingAirValve = millis() + static_cast<unsigned long>(airValveTime);
 
     // --- DEBUG OUTPUT ---
-    Serial.println(">O2 Opening Time: " + String((timeBeforeClosingO2Valve - millis())));
-    Serial.println(">CO2 Opening Time: " + String((timeBeforeClosingCO2Valve - millis())));
+    float printTimeBeforeClosingO2Valve = (timeBeforeClosingO2Valve - millis());
+    if (printTimeBeforeClosingO2Valve > 999999999)
+        printTimeBeforeClosingO2Valve = 0;
+    float printTimeBeforeClosingCO2Valve = (timeBeforeClosingCO2Valve - millis());
+    if (printTimeBeforeClosingCO2Valve > 999999999)
+        printTimeBeforeClosingCO2Valve = 0;
+    float printTimeBeforeClosingAirValve = (timeBeforeClosingAirValve - millis());
+    if (printTimeBeforeClosingAirValve > 999999999)
+        printTimeBeforeClosingAirValve = 0;
+    Serial.println(">O2 Opening Time: " + String(printTimeBeforeClosingO2Valve));
+    Serial.println(">CO2 Opening Time: " + String(printTimeBeforeClosingCO2Valve));
+    Serial.println(">Air Opening Time: " + String(printTimeBeforeClosingAirValve));
 }
 
 /**
@@ -81,22 +100,27 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
  * - The equation assumes that no gas is lost when new gas is added to the chamber, wich is false.
  *   Because we will have multiple adjustment in a row, I assume that the error will disapear after a few iterations.
  */
-unsigned long PressureChamberController::calculateTimeBeforeClosingValve(eValves Valve, float error)
+float PressureChamberController::calculateTimeBeforeClosingValve(eValves Valve, float error)
 {
-    unsigned long timeBeforeClosing = 0;
+    float timeBeforeClosing = 0;
     float q = 0.0f;           // Flow rate in liters per second
     float volumeToAdd = 0.0f; // Volume to add in liters
     switch (Valve)
     {
     case O2:
-        q = (PI * pow(R, 4)) / (8 * MU_O2 * L) * (P_APPROV - P_CHAMBER);                                // Flow rate equation for O2 (Poiseuille's law)
-        volumeToAdd = error * PERCENT_TO_LITERS;                                                        // Volume to add in liters
-        timeBeforeClosing = millis() + static_cast<unsigned long>(volumeToAdd / q * SECONDS_TO_MILLIS); // Time in milliseconds (t=V/Q)
+        q = (PI * pow(R, 4)) / (8 * MU_O2 * L) * (P_APPROV - P_CHAMBER); // Flow rate equation for O2 (Poiseuille's law)
+        volumeToAdd = error * PERCENT_TO_LITERS;                         // Volume to add in liters
+        timeBeforeClosing = volumeToAdd / q * SECONDS_TO_MILLIS;         // Time in milliseconds (t=V/Q)
         break;
     case CO2:
-        q = (PI * pow(R, 4)) / (8 * MU_CO2 * L) * (P_APPROV - P_CHAMBER);                               // Flow rate equation for CO2 (Poiseuille's law)
-        volumeToAdd = error * PPM_TO_LITERS;                                                            // Volume to add in liters
-        timeBeforeClosing = millis() + static_cast<unsigned long>(volumeToAdd / q * SECONDS_TO_MILLIS); // Time in milliseconds (t=V/Q)
+        q = (PI * pow(R, 4)) / (8 * MU_CO2 * L) * (P_APPROV - P_CHAMBER); // Flow rate equation for CO2 (Poiseuille's law)
+        volumeToAdd = error * PPM_TO_LITERS;                              // Volume to add in liters
+        timeBeforeClosing = volumeToAdd / q * SECONDS_TO_MILLIS;          // Time in milliseconds (t=V/Q)
+        break;
+    case AIR:
+        q = (PI * pow(R, 4)) / (8 * MU_AIR * L) * (P_APPROV - P_CHAMBER); // Flow rate equation for air (Poiseuille's law)
+        volumeToAdd = error * PERCENT_TO_LITERS;                          // Volume to add in liters
+        timeBeforeClosing = volumeToAdd / q * SECONDS_TO_MILLIS;          // Time in milliseconds (t=V/Q)
         break;
     default:
         break;
@@ -121,7 +145,7 @@ bool PressureChamberController::getValveState(eValves Valve) const
     case CO2:
         return (timeBeforeClosingCO2Valve > millis()) ? true : false;
     case AIR:
-        return false;
+        return (timeBeforeClosingAirValve > millis()) ? true : false;
     case SAFETY:
         return false;
     default:
@@ -139,8 +163,9 @@ void PressureChamberController::setReferenceLevel(eValves Valve, float Reference
     switch (Valve)
     {
     case O2:
-        this->o2MinRef = ReferenceLevel;
-        this->o2MaxRef = O2_MAX_REF; // O2 max reference is fixed to 95%
+        this->o2Ref = ReferenceLevel;
+        this->o2MinRef = ReferenceLevel - O2_DEAD_ZONE;
+        this->o2MaxRef = ReferenceLevel + O2_DEAD_ZONE;
         break;
     case CO2:
         this->co2Ref = ReferenceLevel;

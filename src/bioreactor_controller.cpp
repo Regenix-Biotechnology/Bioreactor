@@ -17,7 +17,7 @@ SSR_Relay heater(HEATER_PIN);
 // Relay valve5(VALVE_5_PIN);
 Relay O2Valve(O2_VALVE_PIN);
 Relay CO2Valve(CO2_VALVE_PIN);
-// Relay airValve(AIR_VALVE_PIN);
+Relay airValve(AIR_VALVE_PIN);
 // Relay safetyValve(SAFETY_VALVE_PIN);
 Relay heaterFan(HEATER_FAN_PIN);
 Relay interiorFan(INTERIOR_FAN_PIN);
@@ -58,7 +58,7 @@ void beginBioreactorController()
     // valve5.begin();
     O2Valve.begin();
     CO2Valve.begin();
-    // airValve.begin();
+    airValve.begin();
     // safetyValve.begin();
 
     // Fans & Heaters
@@ -110,7 +110,7 @@ void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool a
 {
     O2Valve.set(o2ValveState);
     CO2Valve.set(co2ValveState);
-    // airValve.set(airValveState);
+    airValve.set(airValveState);
     // safetyValve.set(safetyValveState);
 }
 
@@ -186,6 +186,7 @@ void updatePressureChamberController()
         lastPressureChamberControllerTimePrint = millis();
         Serial.println(">o2Concentration: " + String(o2Sensor.getO2()));
         Serial.println(">co2Concentration: " + String(co2Sensor.getCO2()));
+        Serial.println(">Time since controller update: " + String(millis() - lastPressureChamberControllerTime));
     }
 
     setPressureChamberValvesState(pressureChamber.getValveState(O2),
