@@ -4,36 +4,46 @@
  * @brief Constructor to initialize the SHT40 sensor variable. To default state
  */
 SHT40::SHT40()
-    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(nullptr)
+    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(nullptr), i2cBusNumber(I2CMux::INVALID_I2C_BUS), pMuxI2c(nullptr)
 {
     memset(this->rxBuffer, 0, SHT40_RSP_SIZE);
 }
 
 /**
- * @brief initialise the sht40 with the i2cBus sent in parameter
+ * @brief Initialise the sht40 with the i2cBus sent in parameter
  *
  * @param i2cBus The I2C Wire to use for this sensor
+ * @param i2cBusNumber The channel number to use for i2c
+ * @param pMuxI2c Pointer to I2CMux class can be set to nullptr if no mux is used
  * @return eSHT40Status SHT40_STATUS_OK if init is succesful else return error code
  */
-eSHT40Status SHT40::begin(TwoWire *i2cBus)
+eSHT40Status SHT40::begin(TwoWire *i2cBus, uint8_t i2cBusNumber, I2CMux *pMuxI2c)
 {
-    if (i2cBus == NULL)
+    if (i2cBus == nullptr)
         return SHT40_STATUS_INVALID_I2C_BUS;
-
     this->i2cBus = i2cBus;
     this->isInit = true;
+    this->i2cBusNumber = i2cBusNumber;
+    this->pMuxI2c = pMuxI2c;
     return SHT40_STATUS_OK;
 }
 
 /**
- * @brief check if the SHT40 device is connected to the current i2c bus
+ * @brief Check if the SHT40 device is connected to the current i2c bus
  *
- * @return true if sht40 device is detected else return false
+ * @return True if sht40 device is detected else return false
  */
 bool SHT40::isConnected()
 {
     if (this->isInit == false)
         return SHT40_STATUS_NOT_INITIALISED;
+
+    if (this->pMuxI2c != nullptr)
+    {
+        eSHT40Status status = updateI2CMux();
+        if (status != SHT40_STATUS_OK)
+            return status;
+    }
 
     this->i2cBus->beginTransmission(SHT40_ADDR);
     uint8_t ret = this->i2cBus->endTransmission();
@@ -67,6 +77,13 @@ eSHT40Status SHT40::fetchData()
 {
     if (!this->isInit)
         return SHT40_STATUS_NOT_INITIALISED;
+
+    if (this->pMuxI2c != nullptr)
+    {
+        eSHT40Status status = updateI2CMux();
+        if (status != SHT40_STATUS_OK)
+            return status;
+    }
 
     this->i2cBus->beginTransmission(SHT40_ADDR);
     this->i2cBus->write(SHT40_REQ_TEMP);
@@ -133,6 +150,23 @@ eSHT40Status SHT40::getData(float *temperature, float *humidity)
 eSHT40Status SHT40::getData(float *temperature)
 {
     return this->getData(temperature, nullptr);
+}
+
+/**
+ * @brief Switch the i2c mux to be the bus for this temperature sensor
+ *
+ * @return eSHT40Status SHT40_STATUS_OK if data is updated succesfully else return error code (error code can also be from i2c mux)
+ */
+eSHT40Status SHT40::updateI2CMux()
+{
+    if (this->pMuxI2c == nullptr)
+        return SHT40_STATUS_NULL_POINTER;
+
+    eI2cMuxStatus muxStatus = this->pMuxI2c->setBus(this->i2cBusNumber);
+    if (muxStatus != I2C_MUX_STATUS_OK)
+        return (eSHT40Status)muxStatus;
+
+    return SHT40_STATUS_OK;
 }
 
 /**
