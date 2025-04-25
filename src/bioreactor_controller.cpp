@@ -178,7 +178,7 @@ void updatePressureChamberController()
         lastPressureChamberControllerTime = millis();
         float o2Concentration = o2Sensor.getO2();
         float co2Concentration = co2Sensor.getCO2();
-        float pressure = 22.5 * 6895; // 7.5 psi to Pa // TODO: get this value from the sensor
+        float pressure = 25 * 6895; // 7.5 psi to Pa // TODO: get this value from the sensor
 
         pressureChamber.update(o2Concentration, co2Concentration, pressure);
     }

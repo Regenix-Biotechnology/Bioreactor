@@ -36,31 +36,41 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
     float co2ValveTime = 0;
     float airValveTime = 0;
 
+    float o2Error = o2Concentration - this->o2Ref;
+    float co2Error = co2Concentration - this->co2Ref;
+
     // --- O₂ Control Logic ---
-    if (o2Concentration > this->o2MaxRef)
+    if (o2Error > 0)
     {
-        float o2Error = o2Concentration - this->o2Ref;
         float effectiveO2Error = o2Error / o2Concentration;
         airValveTime = calculateTimeBeforeClosingValve(AIR, effectiveO2Error) * CORRECTION_FACTOR_O2_REDUCTION;
     }
-    else if (o2Concentration < this->o2MinRef)
+    else if (o2Error < 0)
     {
-        float o2Error = this->o2MaxRef - o2Concentration;
-        o2ValveTime = calculateTimeBeforeClosingValve(O2, o2Error) * CORRECTION_FACTOR_O2;
+        float correctionFactor = (-o2Error < SMALL_O2_ERROR_THRESHOLD)
+                                     ? CORRECTION_FACTOR_O2_SMALL
+                                     : CORRECTION_FACTOR_O2;
+
+        o2ValveTime = calculateTimeBeforeClosingValve(O2, -o2Error) * correctionFactor;
     }
 
     // --- CO₂ Control Logic ---
-    if (co2Concentration > this->co2MaxRef)
+    if (co2Error > 0)
     {
-        float co2Error = co2Concentration - this->co2Ref;
         float effectiveCO2Error = co2Error / co2Concentration;
         float airValveTimeFromCo2 = calculateTimeBeforeClosingValve(AIR, effectiveCO2Error) * CORRECTION_FACTOR_CO2_REDUCTION;
         airValveTime = max(airValveTime, airValveTimeFromCo2);
     }
-    else if (co2Concentration < this->co2MinRef)
+    else if (co2Error < 0)
     {
-        float co2Error = this->co2Ref - co2Concentration;
-        co2ValveTime = calculateTimeBeforeClosingValve(CO2, co2Error) * CORRECTION_FACTOR_CO2;
+        float correctionFactor = (-co2Error < SMALL_CO2_ERROR_THRESHOLD)
+                                     ? CORRECTION_FACTOR_CO2_SMALL
+                                     : CORRECTION_FACTOR_CO2;
+
+        Serial.println(">CO2 Error: " + String(co2Error));
+        Serial.println(">CO2 Error Correction Factor: " + String(correctionFactor));
+
+        co2ValveTime = calculateTimeBeforeClosingValve(CO2, -co2Error) * correctionFactor;
     }
 
     // --- Pressure Control Logic ---
