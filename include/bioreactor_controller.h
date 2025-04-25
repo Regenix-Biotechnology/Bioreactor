@@ -1,7 +1,7 @@
 #ifndef BIOREACTOR_CONTROLLER_H
 #define BIOREACTOR_CONTROLLER_H
 
-#include <main.h>
+#include "main.h"
 
 /**
  * This file contains the functions that are called in the main loop to control the bioreactor.

@@ -2,6 +2,7 @@
 #define MAIN_H
 
 #include <Arduino.h>
+#include "i2c_mux.h"
 #include "SHT40.h"
 #include "Pyroscience.h"
 #include "Pump_dc.h"
@@ -25,7 +26,8 @@ enum class eBioreactorState
 };
 
 // Objects declaration (extern to be used both in main.cpp and bioreactor_controller.cpp)
-extern SHT40 sht40;
+extern I2CMux muxI2c;
+extern SHT40 sht40[];
 extern Pyroscience pyroscience;
 extern PumpDC approvPump;
 extern PumpDC sensorPump;
@@ -50,5 +52,6 @@ static constexpr bool OFF = LOW;
 static constexpr uint8_t PUMP_MAX_SPEED = 255;
 static constexpr unsigned long TEMPERATURE_CONTROLLER_UPDATE_INTERVAL = 1000;
 static constexpr unsigned long SERIAL_BAUDRATE = 115200;
+static constexpr uint8_t NB_TEMP_SENSOR = 2;
 
 #endif
