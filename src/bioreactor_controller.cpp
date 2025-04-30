@@ -105,10 +105,14 @@ void setPressureChamberValvesState(bool O2ValveState, bool CO2ValveState, bool a
 
 /**
  * @brief Set the speed of the pumps.
- * @param approvPumpSpeed           Speed of the approv pump. (0-255)
- * @param sensorPumpSpeed           Speed of the sensor pump. (0-255)
- * @param cultureChamberPump1Speed  Speed of the culture chamber pump 1. (0-255)
- * @param cultureChamberPump2Speed  Speed of the culture chamber pump 2. (0-255)
+ *
+ * MAX_SPEED for DC pumps is 255 (0-255)
+ * MAX_SPEED for stepper pumps is 1000 (0-1000)
+ *
+ * @param approvPumpSpeed           Speed of the approv pump
+ * @param sensorPumpSpeed           Speed of the sensor pump
+ * @param cultureChamberPump1Speed  Speed of the culture chamber pump 1
+ * @param cultureChamberPump2Speed  Speed of the culture chamber pump 2
  */
 void setPumpsSpeed(uint8_t approvPumpSpeed, uint8_t sensorPumpSpeed, uint16_t cultureChamberPump1Speed, uint16_t cultureChamberPump2Speed)
 {

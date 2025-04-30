@@ -21,8 +21,12 @@ public:
     void stop() override;
     void update() override;
 
+    static constexpr int MAX_SPEED = 1000; // Maximum speed (steps per second)
+
 private:
     AccelStepper stepper;
+
+    static constexpr int ACCELERATION = 500;
 };
 
 #endif // PUMP_STEPPER_H

@@ -4,7 +4,7 @@
 #include <pump.h>
 
 /**
- * @class Pump
+ * @class PumpDC
  * @brief Controls a pump via a Cytron motor driver using PWM.
  *
  * This class allows setting the pump speed and direction using two control pins.
@@ -18,6 +18,9 @@ public:
     void begin() override;
     void setSpeed(int speed) override;
     void stop() override;
+
+    static constexpr int MAX_SPEED = 255; // Maximum speed (0-255)
+    static constexpr int MIN_SPEED = 0;   // Minimum speed (0-255)
 
 private:
     uint8_t pin1, pin2;

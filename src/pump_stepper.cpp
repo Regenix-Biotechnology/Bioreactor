@@ -7,8 +7,8 @@ PumpStepper::PumpStepper(uint8_t stepPin, uint8_t dirPin)
 
 void PumpStepper::begin()
 {
-    stepper.setMaxSpeed(1000);    // Adjust max speed as needed
-    stepper.setAcceleration(500); // Adjust acceleration as needed
+    stepper.setMaxSpeed(MAX_SPEED);
+    stepper.setAcceleration(ACCELERATION);
 }
 
 void PumpStepper::setSpeed(int speed)

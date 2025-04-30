@@ -32,7 +32,7 @@ void loop()
     case eBioreactorState::TEST: // For the fluidic and heating system test
     {
         setFansState(ON, OFF, OFF);
-        setPumpsSpeed(PUMP_MAX_SPEED, OFF, OFF, 1000);
+        setPumpsSpeed(PumpDC::MAX_SPEED, OFF, OFF, PumpStepper::MAX_SPEED);
         setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
         setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
         setHeatersState(temperatureController.getHeaterPower(), temperatureController.isPatchHeatingNeeded());
