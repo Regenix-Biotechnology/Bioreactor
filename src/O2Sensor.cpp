@@ -5,7 +5,7 @@
  * @param pWire Pointer to the I2C interface (default: Wire)
  */
 O2Sensor::O2Sensor(TwoWire *pWire)
-    : _pWire(pWire), status(O2_SENSOR_STATUS_NOT_INITIALISED) {}
+    : _pWire(pWire), status(O2_SENSOR_STATUS_NOT_INITIALIZED) {}
 
 /**
  * @brief Initializes I2C communication and checks sensor availability
@@ -16,7 +16,7 @@ eO2SensorStatus O2Sensor::begin()
     _pWire->begin();
     _pWire->beginTransmission(I2C_ADDRESS);
     if (_pWire->endTransmission() != 0)
-        return this->status = O2_SENSOR_STATUS_NOT_INITIALISED;
+        return this->status = O2_SENSOR_STATUS_NOT_INITIALIZED;
 
     return this->status = O2_SENSOR_STATUS_INITIALIZED;
 }
@@ -51,12 +51,14 @@ uint8_t O2Sensor::readCalibrationState()
 /**
  * @brief Calibrates the sensor with an O2 concentration of 20.9% Vol (ambient air)
  * @return True if calibration is successful, false otherwise
+ *
+ * @warning This function will block for 2 seconds while the calibration is performed.
  */
 bool O2Sensor::calibration_20_9()
 {
     uint8_t state = 0, data = CALIBRATION_20_9;
     writeData(CALIBRATION_SENSOR, &data, 1);
-    delay(2000);
+    delay(CALIBRATION_DELAY);
     state = readCalibrationState();
     return (state & CALIBRATION_20_9);
 }
@@ -64,12 +66,14 @@ bool O2Sensor::calibration_20_9()
 /**
  * @brief Calibrates the sensor with an O2 concentration of 99.5% Vol
  * @return True if calibration is successful, false otherwise
+ *
+ * @warning This function will block for 2 seconds while the calibration is performed.
  */
 bool O2Sensor::calibration_99_5()
 {
     uint8_t state = 0, data = CALIBRATION_99_5;
     writeData(CALIBRATION_SENSOR, &data, 1);
-    delay(2000);
+    delay(CALIBRATION_DELAY);
     state = readCalibrationState();
     return (state & CALIBRATION_99_5);
 }
@@ -77,12 +81,14 @@ bool O2Sensor::calibration_99_5()
 /**
  * @brief Clears calibration data
  * @return True if successful, false otherwise
+ *
+ * @warning This function will block for 2 seconds while the calibration is performed.
  */
 bool O2Sensor::clearCalibration()
 {
     uint8_t state = 0, data = CALIBRATION_CLEAR;
     writeData(CALIBRATION_SENSOR, &data, 1);
-    delay(2000);
+    delay(CALIBRATION_DELAY);
     state = readCalibrationState();
     return (state == 0);
 }

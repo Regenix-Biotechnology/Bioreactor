@@ -52,6 +52,7 @@ private:
   static constexpr uint8_t DATA_BUFFER_SIZE = 3;
   static constexpr uint8_t DECIMAL_PLACE_1 = 10;
   static constexpr uint8_t DECIMAL_PLACE_2 = 100;
+  static constexpr uint16_t CALIBRATION_DELAY = 2000;
 };
 
 #endif
