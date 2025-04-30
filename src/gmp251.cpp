@@ -2,9 +2,13 @@
 
 /**
  * @brief Constructor for GMP251 sensor.
+ * @param rxPin The RX pin for RS-485 communication.
+ * @param txPin The TX pin for RS-485 communication.
+ * @param dePin The DE pin for RS-485 communication.
+ * @param serial The HardwareSerial object for communication.
  */
 GMP251::GMP251(uint8_t rxPin, uint8_t txPin, uint8_t dePin, HardwareSerial &serial)
-    : _rxPin(rxPin), _txPin(txPin), _dePin(dePin), _serial(serial), co2(0), lastReadTime(0) {}
+    : _rxPin(rxPin), _txPin(txPin), _dePin(dePin), _serial(serial), co2(0), lastReadTime(0), status(GMP_251_STATUS_NOT_INITIALISED) {}
 
 /**
  * @brief Initializes RS-485 communication and forces serial mode.
@@ -115,6 +119,12 @@ eGMP251Status GMP251::parseCO2()
     return this->status = GMP_251_STATUS_OK;
 }
 
+/**
+ * @brief Gets the CO₂ concentration in ppm.
+ * @return The CO₂ concentration in ppm.
+ *
+ * @warning This function returns 0 if the sensor is not initialized or if the status is not OK.
+ */
 float GMP251::getCO2()
 {
     if (this->status == GMP_251_STATUS_OK)
@@ -125,43 +135,62 @@ float GMP251::getCO2()
 
 // === Calibration Functions ===
 
+/**
+ * @brief Calibrates the CO₂ sensor with a reference value.
+ * @param referencePpm The reference CO₂ concentration in ppm.
+ * @warning There is a 100ms blocking delay after sending the command.
+ */
 void GMP251::calibrateCO2(uint32_t referencePpm)
 {
     sendCommand("cco2 -hi " + String(referencePpm));
     delay(100);
     sendCommand("cco2 -save");
-    Serial.println("CO₂ Calibration complete.");
 }
 
+/**
+ * @brief Sets the temperature compensation mode.
+ * @param mode The temperature compensation mode (e.g., "on", "off").
+ */
 void GMP251::setTemperatureCompensation(const String &mode)
 {
     sendCommand("tcmode " + mode);
-    Serial.println("Temperature compensation set to: " + mode);
 }
 
+/**
+ * @brief Calibrates the temperature sensor.
+ * @param temperature The reference temperature in degrees Celsius.
+ */
 void GMP251::calibrateTemperature(float temperature)
 {
     sendCommand("env xtemp " + String(temperature));
-    Serial.println("Temperature calibration complete.");
 }
 
+/**
+ * @brief Calibrates the pressure sensor.
+ * @param pressure The reference pressure in hPa.
+ */
 void GMP251::calibratePressure(float pressure)
 {
     sendCommand("env xpres " + String(pressure));
-    Serial.println("Pressure calibration complete.");
 }
 
+/**
+ * @brief Calibrates the oxygen sensor.
+ * @param oxygen The reference oxygen concentration in %.
+ */
 void GMP251::calibrateOxygen(float oxygen)
 {
     sendCommand("env xoxy " + String(oxygen));
-    Serial.println("Oxygen calibration complete.");
 }
 
 // === Utils function ===
+/**
+ * @brief Clears the serial buffer.
+ */
 void GMP251::clearBuffer()
 {
-    while (Serial.available())
+    while (_serial.available())
     {
-        Serial.read();
+        _serial.read();
     }
 }
