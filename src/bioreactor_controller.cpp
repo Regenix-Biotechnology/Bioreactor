@@ -4,10 +4,10 @@
 SHT40 sht40[NB_TEMP_SENSOR];
 I2CMux muxI2c;
 Pyroscience pyroscience;
-Pump approvPump(APPROV_PUMP_PIN_1, APPROV_PUMP_PIN_2);
-Pump sensorPump(SENSOR_PUMP_PIN_1, SENSOR_PUMP_PIN_2);
-Pump cultureChamberPump1(CULTURE_CHAMBER_PUMP_1_PIN_1, CULTURE_CHAMBER_PUMP_1_PIN_2);
-Pump cultureChamberPump2(CULTURE_CHAMBER_PUMP_2_PIN_1, CULTURE_CHAMBER_PUMP_2_PIN_2);
+PumpDC approvPump(APPROV_PUMP_PIN_1, APPROV_PUMP_PIN_2);
+PumpDC sensorPump(SENSOR_PUMP_PIN_1, SENSOR_PUMP_PIN_2);
+PumpStepper cultureChamberPump1(CULTURE_CHAMBER_PUMP_1_PIN_1, CULTURE_CHAMBER_PUMP_1_PIN_2);
+PumpStepper cultureChamberPump2(CULTURE_CHAMBER_PUMP_2_PIN_1, CULTURE_CHAMBER_PUMP_2_PIN_2);
 SSR_Relay heater(HEATER_PIN);
 // Relay valve1(VALVE_1_PIN);
 // Relay valve2(VALVE_2_PIN);
@@ -105,12 +105,16 @@ void setPressureChamberValvesState(bool O2ValveState, bool CO2ValveState, bool a
 
 /**
  * @brief Set the speed of the pumps.
- * @param approvPumpSpeed           Speed of the approv pump. (0-255)
- * @param sensorPumpSpeed           Speed of the sensor pump. (0-255)
- * @param cultureChamberPump1Speed  Speed of the culture chamber pump 1. (0-255)
- * @param cultureChamberPump2Speed  Speed of the culture chamber pump 2. (0-255)
+ *
+ * MAX_SPEED for DC pumps is 255 (0-255)
+ * MAX_SPEED for stepper pumps is 1000 (0-1000)
+ *
+ * @param approvPumpSpeed           Speed of the approv pump
+ * @param sensorPumpSpeed           Speed of the sensor pump
+ * @param cultureChamberPump1Speed  Speed of the culture chamber pump 1
+ * @param cultureChamberPump2Speed  Speed of the culture chamber pump 2
  */
-void setPumpsSpeed(uint8_t approvPumpSpeed, uint8_t sensorPumpSpeed, uint8_t cultureChamberPump1Speed, uint8_t cultureChamberPump2Speed)
+void setPumpsSpeed(uint8_t approvPumpSpeed, uint8_t sensorPumpSpeed, uint16_t cultureChamberPump1Speed, uint16_t cultureChamberPump2Speed)
 {
     approvPump.setSpeed(approvPumpSpeed);
     sensorPump.setSpeed(sensorPumpSpeed);
