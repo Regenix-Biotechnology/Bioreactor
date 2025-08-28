@@ -48,13 +48,9 @@ private:
     uint32_t lastReadTime;
     eGMP251Status status;
     float co2;
-    bool isGMP251Enabled;
-    uint32_t sendCommandTime;
-    bool isCommandSent;
 
     // Constants
     static constexpr uint8_t NUM_CARRIAGE_RETURNS = 5;
-    static constexpr uint32_t RESPONSE_TIMEOUT_MS = 1000;
     static constexpr uint32_t READ_INTERVAL_MS = 500;
     static constexpr uint32_t BAUD_RATE = 19200;
     static constexpr uint8_t CO2_STRING_LENGTH = 4; // "CO2="
