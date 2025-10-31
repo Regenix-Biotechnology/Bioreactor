@@ -28,7 +28,7 @@ constexpr int PYROSCIENCE_TX_PIN = 0; // not working need extender
 // CO2 RS485
 constexpr int RS485_RX_PIN = 16;
 constexpr int RS485_TX_PIN = 17;
-constexpr int RS485_DE_PIN = 4;
+constexpr int RS485_DE_PIN = 15;
 
 // RELAY
 constexpr int VALVE_1_PIN = 0; // not working need extender
