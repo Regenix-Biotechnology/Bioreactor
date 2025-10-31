@@ -160,8 +160,8 @@ void GMP251::calibrateOxygen(float oxygen)
 // === Utils function ===
 void GMP251::clearBuffer()
 {
-    while (Serial.available())
+    while (_serial.available())
     {
-        Serial.read();
+        _serial.read();
     }
 }
