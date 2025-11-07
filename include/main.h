@@ -5,7 +5,8 @@
 #include "i2c_mux.h"
 #include "SHT40.h"
 #include "Pyroscience.h"
-#include "Pump.h"
+#include "Pump_dc.h"
+#include "Pump_stepper.h"
 #include "ssr_relay.h"
 #include "relay.h"
 #include "pins.h"
@@ -31,10 +32,10 @@ enum class eBioreactorState
 extern I2CMux muxI2c;
 extern SHT40 sht40[];
 extern Pyroscience pyroscience;
-extern Pump approvPump;
-extern Pump sensorPump;
-extern Pump cultureChamberPump1;
-extern Pump cultureChamberPump2;
+extern PumpDC approvPump;
+extern PumpDC sensorPump;
+extern PumpStepper cultureChamberPump1;
+extern PumpStepper cultureChamberPump2;
 extern SSR_Relay heater;
 extern Relay heaterFan;
 extern Relay interiorFan;
