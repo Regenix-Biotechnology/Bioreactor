@@ -2,7 +2,7 @@
 #define PUMP_STEPPER_H
 
 #include "Pump.h"
-#include <AccelStepper.h>
+// #include <AccelStepper.h>
 
 /**
  * @class Pump
@@ -24,7 +24,7 @@ public:
     static constexpr int MAX_SPEED = 1000; // Maximum speed (steps per second)
 
 private:
-    AccelStepper stepper;
+    // AccelStepper stepper;
 
     static constexpr int ACCELERATION = 500;
 };

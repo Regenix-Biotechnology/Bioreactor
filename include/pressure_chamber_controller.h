@@ -23,7 +23,7 @@ public:
     void update(float o2Concentration, float co2Concentration, float pressure);
     bool getValveState(eValves Valve) const;
     void setReferenceLevel(eValves Valve, float ReferenceLevel);
-    void setState(bool state) { this->pressureChamberState = state; }
+    void setPressureChamberState(bool state) { this->pressureChamberState = state; }
 
 private:
     float calculateTimeBeforeClosingValve(eValves Valve, float error);
@@ -64,8 +64,6 @@ private:
     static constexpr float CO2_REF = 50000.0f;                      // ppm
     static constexpr float CO2_DEAD_ZONE = 100.0f;                  // ppm
     static constexpr float O2_DEAD_ZONE = 0.1f;                     // % O2
-    static constexpr float O2_ERROR_PERCENTAGE_TO_TIME = 0.1f;      // 10% error corresponds to 1 second of time
-    static constexpr float CO2_ERROR_PERCENTAGE_TO_TIME = 0.1f;     // 10% error corresponds to 1 second of time
     static constexpr float PERCENT_TO_LITERS = 0.01 * V;            // Convert percentage to liters
     static constexpr float PPM_TO_LITERS = 0.000001 * V;            // Convert ppm to liters
     static constexpr float SECONDS_TO_MILLIS = 1000.0f;             // Convert seconds to milliseconds

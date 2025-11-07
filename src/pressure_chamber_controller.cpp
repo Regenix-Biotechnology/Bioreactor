@@ -67,8 +67,8 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
                                      ? CORRECTION_FACTOR_CO2_SMALL
                                      : CORRECTION_FACTOR_CO2;
 
-        Serial.println(">CO2 Error: " + String(co2Error));
-        Serial.println(">CO2 Error Correction Factor: " + String(correctionFactor));
+        // Serial.println(">CO2 Error: " + String(co2Error));
+        // Serial.println(">CO2 Error Correction Factor: " + String(correctionFactor));
 
         co2ValveTime = calculateTimeBeforeClosingValve(CO2, -co2Error) * correctionFactor;
     }
@@ -86,18 +86,18 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
     this->timeBeforeClosingAirValve = millis() + static_cast<unsigned long>(airValveTime);
 
     // --- DEBUG OUTPUT ---
-    float printTimeBeforeClosingO2Valve = (timeBeforeClosingO2Valve - millis());
-    if (printTimeBeforeClosingO2Valve > 999999999)
-        printTimeBeforeClosingO2Valve = 0;
-    float printTimeBeforeClosingCO2Valve = (timeBeforeClosingCO2Valve - millis());
-    if (printTimeBeforeClosingCO2Valve > 999999999)
-        printTimeBeforeClosingCO2Valve = 0;
-    float printTimeBeforeClosingAirValve = (timeBeforeClosingAirValve - millis());
-    if (printTimeBeforeClosingAirValve > 999999999)
-        printTimeBeforeClosingAirValve = 0;
-    Serial.println(">O2 Opening Time: " + String(printTimeBeforeClosingO2Valve));
-    Serial.println(">CO2 Opening Time: " + String(printTimeBeforeClosingCO2Valve));
-    Serial.println(">Air Opening Time: " + String(printTimeBeforeClosingAirValve));
+    // float printTimeBeforeClosingO2Valve = (timeBeforeClosingO2Valve - millis());
+    // if (printTimeBeforeClosingO2Valve > 999999999)
+    //     printTimeBeforeClosingO2Valve = 0;
+    // float printTimeBeforeClosingCO2Valve = (timeBeforeClosingCO2Valve - millis());
+    // if (printTimeBeforeClosingCO2Valve > 999999999)
+    //     printTimeBeforeClosingCO2Valve = 0;
+    // float printTimeBeforeClosingAirValve = (timeBeforeClosingAirValve - millis());
+    // if (printTimeBeforeClosingAirValve > 999999999)
+    //     printTimeBeforeClosingAirValve = 0;
+    // Serial.println(">O2 Opening Time: " + String(printTimeBeforeClosingO2Valve));
+    // Serial.println(">CO2 Opening Time: " + String(printTimeBeforeClosingCO2Valve));
+    // Serial.println(">Air Opening Time: " + String(printTimeBeforeClosingAirValve));
 }
 
 /**

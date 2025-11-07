@@ -129,10 +129,10 @@ void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool a
  */
 void setPumpsSpeed(uint8_t approvPumpSpeed, uint8_t sensorPumpSpeed, uint16_t cultureChamberPump1Speed, uint16_t cultureChamberPump2Speed)
 {
-    approvPump.setSpeed(approvPumpSpeed);
-    sensorPump.setSpeed(sensorPumpSpeed);
-    cultureChamberPump1.setSpeed(cultureChamberPump1Speed);
-    cultureChamberPump2.setSpeed(cultureChamberPump2Speed);
+    // approvPump.setSpeed(approvPumpSpeed);
+    // sensorPump.setSpeed(sensorPumpSpeed);
+    // cultureChamberPump1.setSpeed(cultureChamberPump1Speed);
+    // cultureChamberPump2.setSpeed(cultureChamberPump2Speed);
 }
 
 /**
@@ -150,9 +150,9 @@ void setHeatersState(float heaterState, bool patchHeaterState)
  * @brief Determine if the pressure chamber needs to be pressurized and regulated.
  * @param state  State of the pressure chamber. (ON/OFF)
  */
-void setState(bool state)
+void setPressureChamberState(bool state)
 {
-    pressureChamber.setState(state);
+    pressureChamber.setPressureChamberState(state);
 }
 
 /**
@@ -160,6 +160,8 @@ void setState(bool state)
  */
 void updateTemperatureController()
 {
+    heater.update();
+
     if (millis() - lastTemperatureControllerTime > TEMPERATURE_CONTROLLER_UPDATE_INTERVAL)
     {
         lastTemperatureControllerTime = millis();
@@ -187,13 +189,14 @@ void updatePressureChamberController()
         pressureChamber.update(o2Concentration, co2Concentration, pressure);
     }
 
-    if (millis() - lastPressureChamberControllerTimePrint > 1000)
-    {
-        lastPressureChamberControllerTimePrint = millis();
-        Serial.println(">o2Concentration: " + String(o2Sensor.getO2()));
-        Serial.println(">co2Concentration: " + String(co2Sensor.getCO2()));
-        Serial.println(">Time since controller update: " + String(millis() - lastPressureChamberControllerTime));
-    }
+    // // DEBUG: Print every second the O2 and CO2 concentration and the time since last update
+    // if (millis() - lastPressureChamberControllerTimePrint > 1000)
+    // {
+    //     lastPressureChamberControllerTimePrint = millis();
+    //     Serial.println(">o2Concentration: " + String(o2Sensor.getO2()));
+    //     Serial.println(">co2Concentration: " + String(co2Sensor.getCO2()));
+    //     Serial.println(">Time since controller update: " + String(millis() - lastPressureChamberControllerTime));
+    // }
 
     setPressureChamberValvesState(pressureChamber.getValveState(O2),
                                   pressureChamber.getValveState(CO2),
