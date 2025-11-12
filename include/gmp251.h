@@ -20,6 +20,8 @@ typedef enum
  * @brief GMP251 Carbon Dioxide Sensor Driver (RS-485 Communication).
  * @details Communicates with the Vaisala GMP251 CO₂ sensor using the Vaisala Industrial Protocol.
  * @link https://docs.vaisala.com/v/u/M211799EN-G/en-US
+ *
+ * @warning The microcontroller must be running before powering the GMP251 sensor to ensure proper RS-485 communication.
  */
 class GMP251
 {

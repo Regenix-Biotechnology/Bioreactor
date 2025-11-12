@@ -15,9 +15,9 @@ void loop()
     {
     case eBioreactorState::IDLE:
         setFansState(OFF, OFF, OFF);
-        setPumpsSpeed(OFF, OFF, OFF, OFF);
+        // setPumpsSpeed(OFF, OFF, OFF, OFF);
         setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
-        setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
+        setPressureChamberState(OFF);
         setHeatersState(OFF, OFF);
         break;
     case eBioreactorState::APPROV:
@@ -32,9 +32,9 @@ void loop()
     case eBioreactorState::TEST: // For the fluidic and heating system test
     {
         setFansState(ON, OFF, OFF);
-        setPumpsSpeed(PumpDC::MAX_SPEED, OFF, OFF, PumpStepper::MAX_SPEED);
+        // setPumpsSpeed(255, OFF, OFF, 255);
         setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
-        setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
+        setPressureChamberState(ON);
         setHeatersState(temperatureController.getHeaterPower(), temperatureController.isPatchHeatingNeeded());
         break;
     }
@@ -44,9 +44,8 @@ void loop()
     }
 
     updateTemperatureController();
-    heater.update();
-    // updatePressureChamberController();
-    // updateBioreactorState();
+    updatePressureChamberController();
+    // updateBioreactorState(); // To be implemented when communication with the GUI will be available
     serialReader(); // This is used for DEBUG only
     cultureChamberPump2.update();
 }
