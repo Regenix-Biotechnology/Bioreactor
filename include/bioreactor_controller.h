@@ -16,5 +16,7 @@ void setPumpsSpeed(uint8_t approvPumpSpeed, uint8_t sensorPumpSpeed, uint8_t cul
 void setHeatersState(float heaterState, bool patchHeaterState);
 void updateTemperatureController();
 void updatePressureChamberController();
+void updateSensors();
+void printBioreactorStateToSerial();
 
 #endif
