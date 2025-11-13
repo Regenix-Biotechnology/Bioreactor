@@ -2,13 +2,12 @@
 #define MAIN_H
 
 #include <Arduino.h>
-#include "i2c_mux.h"
 #include "SHT40.h"
 #include "Pyroscience.h"
 #include "Pump_dc.h"
 #include "Pump_stepper.h"
 #include "ssr_relay.h"
-#include "relay.h"
+#include "ioExpander.h"
 #include "pins.h"
 #include "temperature_controller.h"
 #include "bioreactor_controller.h"
@@ -30,17 +29,14 @@ enum class eBioreactorState
 };
 
 // Objects declaration (extern to be used both in main.cpp and bioreactor_controller.cpp)
-extern I2CMux muxI2c;
-extern SHT40 sht40[];
+extern SHT40 sht40;
 extern Pyroscience pyroscience;
 extern PumpDC approvPump;
 extern PumpDC sensorPump;
 extern PumpStepper cultureChamberPump1;
 extern PumpStepper cultureChamberPump2;
 extern SSR_Relay heater;
-extern Relay heaterFan;
-extern Relay interiorFan;
-extern Relay patchHeater;
+extern IOExpander ioExpander;
 extern TemperatureController temperatureController;
 extern VisiFermRS485 dissolvedOxygenSensor;
 

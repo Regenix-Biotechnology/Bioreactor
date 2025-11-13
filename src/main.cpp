@@ -14,11 +14,11 @@ void loop()
     switch (bioreactorState)
     {
     case eBioreactorState::IDLE:
-        setFansState(OFF, OFF, OFF);
+        setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
         // setPumpsSpeed(OFF, OFF, OFF, OFF);
-        setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
-        setPressureChamberState(OFF);
-        setHeatersState(OFF, OFF);
+        setValvesState(CLOSE, CLOSE, CLOSE);
+        setPressureChamberValvesState(OFF, OFF, OFF);
+        setHeatersState(OFF);
         break;
     case eBioreactorState::APPROV:
         /* code */
@@ -31,11 +31,12 @@ void loop()
         break;
     case eBioreactorState::TEST: // For the fluidic and heating system test
     {
-        setFansState(ON, OFF, OFF);
+        setFansState(ON, ON, ON, ON, ON, ON, ON);
         // setPumpsSpeed(255, OFF, OFF, 255);
-        setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
+        setValvesState(CLOSE, CLOSE, CLOSE);
+        setPressureChamberValvesState(OFF, OFF, OFF);
         setPressureChamberState(ON);
-        setHeatersState(temperatureController.getHeaterPower(), temperatureController.isPatchHeatingNeeded());
+        setHeatersState(temperatureController.getHeaterPower());
         break;
     }
     default:
