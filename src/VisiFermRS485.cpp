@@ -1,4 +1,4 @@
-#include "VisiFermRS485.h"
+#include "visiferm_RS485.h"
 
 /**
  * Constructor for the VisiFerm RS485 driver.

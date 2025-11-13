@@ -16,7 +16,7 @@
 #include "pressure_chamber_controller.h"
 #include "O2Sensor.h"
 #include "gmp251.h"
-#include "VisiFermRS485.h"
+#include "visiferm_RS485.h"
 
 enum class eBioreactorState
 {
@@ -42,7 +42,7 @@ extern Relay heaterFan;
 extern Relay interiorFan;
 extern Relay patchHeater;
 extern TemperatureController temperatureController;
-extern VisiFermRS485 DOSensor;
+extern VisiFermRS485 dissolvedOxygenSensor;
 
 // Global variables
 extern eBioreactorState bioreactorState;

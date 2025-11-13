@@ -26,7 +26,7 @@ Relay interiorFan(INTERIOR_FAN_PIN);
 Relay patchHeater(PATCH_HEATER_PIN);
 TemperatureController temperatureController;
 PressureChamberController pressureChamber;
-VisiFermRS485 DOSensor(RS485_2_RX_PIN, RS485_2_TX_PIN, Serial2);
+VisiFermRS485 dissolvedOxygenSensor(RS485_2_RX_PIN, RS485_2_TX_PIN, Serial2);
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
@@ -47,7 +47,7 @@ void beginBioreactorController()
     pyroscience.begin(&Serial1);
     co2Sensor.begin();
     o2Sensor.begin();
-    DOSensor.begin();
+    dissolvedOxygenSensor.begin();
 
     // Pumps
     approvPump.begin();
@@ -219,7 +219,7 @@ void printBioreactorStateToSerial()
     if (millis() - lastPrintTime > PRINT_UPDATE_INTERVAL)
     {
         Serial.println("> Bioreactor State: " + String(static_cast<int>(bioreactorState)));
-        Serial.println("> DO Sensor (%sat): " + String(DOSensor.getOxygen()));
+        Serial.println("> DO Sensor (%sat): " + String(dissolvedOxygenSensor.getOxygen()));
 
         /* Add more prints here*/
 
@@ -232,5 +232,5 @@ void printBioreactorStateToSerial()
  */
 void updateSensors()
 {
-    DOSensor.update();
+    dissolvedOxygenSensor.update();
 }
