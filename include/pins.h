@@ -33,9 +33,6 @@ constexpr int RS485_DE_PIN = 15;
 constexpr uint8_t RS485_2_RX_PIN = 32;
 constexpr uint8_t RS485_2_TX_PIN = 33;
 
-constexpr uint8_t RS485_2_RX_PIN = 32;
-constexpr uint8_t RS485_2_TX_PIN = 33;
-
 // eFuses (via IO Expander)
 // Io Expander outputs 0-15 are 24V
 constexpr uint8_t EFUSE_VALVE_SUPPLY_INDEX = 0;
