@@ -30,20 +30,28 @@ constexpr int RS485_RX_PIN = 16;
 constexpr int RS485_TX_PIN = 17;
 constexpr int RS485_DE_PIN = 15;
 
-// RELAY
-constexpr int VALVE_1_PIN = 0; // not working need extender
-constexpr int VALVE_2_PIN = 0; // not working need extender
-constexpr int VALVE_3_PIN = 0; // not working need extender
-constexpr int VALVE_4_PIN = 0; // not working need extender
-constexpr int VALVE_5_PIN = 0; // not working need extender
-constexpr int HEATER_FAN_PIN = 19;
-constexpr int INTERIOR_FAN_PIN = 0; // not working need extender
-constexpr int EXTERIOR_FAN_PIN = 0; // not working need extender
-constexpr int PATCH_HEATER_PIN = 18;
-constexpr int O2_VALVE_PIN = 12;
-constexpr int CO2_VALVE_PIN = 27;
-constexpr int AIR_VALVE_PIN = 15;   // not working need extender
-constexpr int SAFETY_VALVE_PIN = 0; // not working need extender
+// eFuses (via IO Expander)
+
+constexpr uint8_t EFUSE_PUMP_APPROV_PIN = 0;  // ex: IOExpander P0_0
+constexpr uint8_t EFUSE_PUMP_CIRCUIT_PIN = 1; // ex: IOExpander P0_1
+constexpr uint8_t EFUSE_PUMP_CULTURE_CHAMBER_1_PIN = 2;
+constexpr uint8_t EFUSE_PUMP_CULTURE_CHAMBER_2_PINN = 3;
+
+constexpr uint8_t EFUSE_VALVE_APPROV_PIN = 4;
+constexpr uint8_t EFUSE_VALVE_CIRCULATION_PIN = 5;
+constexpr uint8_t EFUSE_VALVE_RETOUR_PIN = 6;
+
+constexpr uint8_t EFUSE_VALVE_O2_PIN = 7;
+constexpr uint8_t EFUSE_VALVE_CO2_PIN = 8;
+constexpr uint8_t EFUSE_VALVE_AIR_PIN = 9;
+
+constexpr uint8_t EFUSE_FAN_RIGHT_PIN = 10;
+constexpr uint8_t EFUSE_FAN_LEFT_PIN = 11;
+constexpr uint8_t EFUSE_FAN_CIRCULATION_PIN = 12;
+constexpr uint8_t EFUSE_FAN_PCB_PIN = 13;
+constexpr uint8_t EFUSE_FAN_24_PIN = 14;
+constexpr uint8_t EFUSE_FAN_120_PIN = 15;
+constexpr uint8_t EFUSE_FAN_HEATER_PIN = 16;
 
 // SSR RELAY
 constexpr int HEATER_PIN = 23;

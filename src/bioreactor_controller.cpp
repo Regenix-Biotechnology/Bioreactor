@@ -11,19 +11,7 @@ PumpDC sensorPump(SENSOR_PUMP_PIN_1, SENSOR_PUMP_PIN_2);
 PumpStepper cultureChamberPump1(CULTURE_CHAMBER_PUMP_1_PIN_1, CULTURE_CHAMBER_PUMP_1_PIN_2);
 PumpStepper cultureChamberPump2(CULTURE_CHAMBER_PUMP_2_PIN_1, CULTURE_CHAMBER_PUMP_2_PIN_2);
 SSR_Relay heater(HEATER_PIN);
-// Relay valve1(VALVE_1_PIN);
-// Relay valve2(VALVE_2_PIN);
-// Relay valve3(VALVE_3_PIN);
-// Relay valve4(VALVE_4_PIN);
-// Relay valve5(VALVE_5_PIN);
-Relay O2Valve(O2_VALVE_PIN);
-Relay CO2Valve(CO2_VALVE_PIN);
-Relay airValve(AIR_VALVE_PIN);
-// Relay safetyValve(SAFETY_VALVE_PIN);
-Relay heaterFan(HEATER_FAN_PIN);
-Relay interiorFan(INTERIOR_FAN_PIN);
-// Relay ExteriorFan(EXTERIOR_FAN_PIN);
-Relay patchHeater(PATCH_HEATER_PIN);
+IOExpander ioExpander(&Wire);
 TemperatureController temperatureController;
 PressureChamberController pressureChamber;
 
@@ -52,23 +40,7 @@ void beginBioreactorController()
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
 
-    // Valves
-    // valve1.begin();
-    // valve2.begin();
-    // valve3.begin();
-    // valve4.begin();
-    // valve5.begin();
-    O2Valve.begin();
-    CO2Valve.begin();
-    airValve.begin();
-    // safetyValve.begin();
-
-    // Fans & Heaters
-    heater.begin();
-    heaterFan.begin();
-    interiorFan.begin();
-    // exteriorFan.begin();
-    patchHeater.begin();
+    ioExpander.begin();
 }
 
 /**
@@ -77,11 +49,15 @@ void beginBioreactorController()
  * @param interiorFanState  State of the interior fan. (ON/OFF)
  * @param exteriorFanState  State of the exterior fan. (ON/OFF)
  */
-void setFansState(bool heaterFanState, bool interiorFanState, bool exteriorFanState)
+void setFansState(bool heaterFanState, bool circulationFanState, bool rightFanState, bool leftFanState, bool pcbFanState, bool lowVoltFanState, bool highvoltFanState)
 {
-    heaterFan.set(heaterFanState);
-    interiorFan.set(interiorFanState);
-    // exteriorFan.set(exteriorFanState);
+    ioExpander.setEfuse(EFUSE_FAN_HEATER_PIN, heaterFanState);
+    ioExpander.setEfuse(EFUSE_FAN_CIRCULATION_PIN, circulationFanState);
+    ioExpander.setEfuse(EFUSE_FAN_RIGHT_PIN, rightFanState);
+    ioExpander.setEfuse(EFUSE_FAN_LEFT_PIN, leftFanState);
+    ioExpander.setEfuse(EFUSE_FAN_PCB_PIN, pcbFanState);
+    ioExpander.setEfuse(EFUSE_FAN_24_PIN, lowVoltFanState);
+    ioExpander.setEfuse(EFUSE_FAN_120_PIN, highvoltFanState);
 }
 
 /**
@@ -92,13 +68,11 @@ void setFansState(bool heaterFanState, bool interiorFanState, bool exteriorFanSt
  * @param valve4State   State of the valve 4. (OPEN/CLOSE)
  * @param valve5State   State of the valve 5. (OPEN/CLOSE)
  */
-void setValvesState(bool valve1State, bool valve2State, bool valve3State, bool valve4State, bool valve5State)
+void setValvesState(bool valveApprovState, bool valveCirculationState, bool valveRetourState)
 {
-    // valve1.set(valve1State);
-    // valve2.set(valve2State);
-    // valve3.set(valve3State);
-    // valve4.set(valve4State);
-    // valve5.set(valve5State);
+    ioExpander.setEfuse(EFUSE_VALVE_APPROV_PIN, valveApprovState);
+    ioExpander.setEfuse(EFUSE_VALVE_CIRCULATION_PIN, valveCirculationState);
+    ioExpander.setEfuse(EFUSE_VALVE_RETOUR_PIN, valveRetourState);
 }
 
 /**
@@ -108,11 +82,11 @@ void setValvesState(bool valve1State, bool valve2State, bool valve3State, bool v
  * @param airValveState     State of the air valve. (OPEN/CLOSE)
  * @param safetyValveState  State of the safety valve. (OPEN/CLOSE)
  */
-void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState, bool safetyValveState)
+void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState)
 {
-    O2Valve.set(o2ValveState);
-    CO2Valve.set(co2ValveState);
-    airValve.set(airValveState);
+    ioExpander.setEfuse(EFUSE_VALVE_O2_PIN, o2ValveState);
+    ioExpander.setEfuse(EFUSE_VALVE_CO2_PIN, co2ValveState);
+    ioExpander.setEfuse(EFUSE_VALVE_AIR_PIN, airValveState);
     // safetyValve.set(safetyValveState);
 }
 
@@ -138,12 +112,11 @@ void setPumpsSpeed(uint8_t approvPumpSpeed, uint8_t sensorPumpSpeed, uint16_t cu
 /**
  * @brief Set the state of the heaters.
  * @param heaterState       State of the heater. (0-100%)
- * @param patchHeaterState  State of the patch heater. (ON/OFF)
+ *
  */
-void setHeatersState(float heaterState, bool patchHeaterState)
+void setHeatersState(float heaterState)
 {
     heater.setLevel(heaterState);
-    patchHeater.set(patchHeaterState);
 }
 
 /**
@@ -200,8 +173,7 @@ void updatePressureChamberController()
 
     setPressureChamberValvesState(pressureChamber.getValveState(O2),
                                   pressureChamber.getValveState(CO2),
-                                  pressureChamber.getValveState(AIR),
-                                  pressureChamber.getValveState(SAFETY));
+                                  pressureChamber.getValveState(AIR));
 
     co2Sensor.update();
 }
