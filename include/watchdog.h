@@ -6,7 +6,7 @@
 
 constexpr uint8_t WATCHDOG_TIMER = 60;
 
-void initWatchDog(uint8_t watchdogTime);
+void initWatchDog();
 void kickWatchDog();
 
 #endif // WATCHDOG_H

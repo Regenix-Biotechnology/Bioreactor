@@ -1,5 +1,7 @@
 #include "main.h"
 
+uint32_t waitTime;
+
 void setup()
 {
     Serial.begin(SERIAL_BAUDRATE);
@@ -7,7 +9,8 @@ void setup()
     Serial.println("Hello, World!");
 
     beginBioreactorController();
-    initWatchDog(WATCHDOG_TIMER);
+    waitTime = millis();
+    initWatchDog();
 }
 
 void loop()
@@ -49,4 +52,10 @@ void loop()
     // updatePressureChamberController();
     // updateBioreactorState();
     kickWatchDog();
+    if (millis() - waitTime > 10000)
+    {
+        while (true)
+        {
+        }
+    }
 }
