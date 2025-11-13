@@ -7,7 +7,7 @@
 #include "Pump_dc.h"
 #include "Pump_stepper.h"
 #include "ssr_relay.h"
-#include "relay.h"
+#include "ioExpander.h"
 #include "pins.h"
 #include "temperature_controller.h"
 #include "bioreactor_controller.h"
@@ -35,9 +35,7 @@ extern PumpDC sensorPump;
 extern PumpStepper cultureChamberPump1;
 extern PumpStepper cultureChamberPump2;
 extern SSR_Relay heater;
-extern Relay heaterFan;
-extern Relay interiorFan;
-extern Relay patchHeater;
+extern IOExpander ioExpander;
 extern TemperatureController temperatureController;
 
 // Global variables
