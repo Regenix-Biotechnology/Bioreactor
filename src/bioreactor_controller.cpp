@@ -45,9 +45,13 @@ void beginBioreactorController()
 
 /**
  * @brief Set the state of the fans.
- * @param heaterFanState    State of the heater fan. (ON/OFF)
- * @param interiorFanState  State of the interior fan. (ON/OFF)
- * @param exteriorFanState  State of the exterior fan. (ON/OFF)
+ * @param heaterFanState        State of the heater fan. (ON/OFF)
+ * @param circulationFanState   State of the interior fan. (ON/OFF)
+ * @param rightFanState         State of the exterior fan. (ON/OFF)
+ * @param leftFanState          State of the exterior fan. (ON/OFF)
+ * @param pcbFanState           State of the PCB fan. (ON/OFF)
+ * @param lowVoltFanState       State of the 24V fan. (ON/OFF)
+ * @param highvoltFanState      State of the 120V fan. (ON/OFF)
  */
 void setFansState(bool heaterFanState, bool circulationFanState, bool rightFanState, bool leftFanState, bool pcbFanState, bool lowVoltFanState, bool highvoltFanState)
 {
@@ -62,17 +66,15 @@ void setFansState(bool heaterFanState, bool circulationFanState, bool rightFanSt
 
 /**
  * @brief Set the state of the valves.
- * @param valve1State   State of the valve 1. (OPEN/CLOSE)
- * @param valve2State   State of the valve 2. (OPEN/CLOSE)
- * @param valve3State   State of the valve 3. (OPEN/CLOSE)
- * @param valve4State   State of the valve 4. (OPEN/CLOSE)
- * @param valve5State   State of the valve 5. (OPEN/CLOSE)
+ * @param valveApprovState        State of the supply valve. (OPEN/CLOSE)
+ * @param valveCirculationState   State of the circulation valve. (OPEN/CLOSE)
+ * @param valveReturnState        State of the Return valve. (OPEN/CLOSE)
  */
-void setValvesState(bool valveApprovState, bool valveCirculationState, bool valveRetourState)
+void setValvesState(bool valveSupplyState, bool valveCirculationState, bool valveReturnState)
 {
-    ioExpander.setEfuse(EFUSE_VALVE_APPROV_PIN, valveApprovState);
+    ioExpander.setEfuse(EFUSE_VALVE_APPROV_PIN, valveSupplyState);
     ioExpander.setEfuse(EFUSE_VALVE_CIRCULATION_PIN, valveCirculationState);
-    ioExpander.setEfuse(EFUSE_VALVE_RETOUR_PIN, valveRetourState);
+    ioExpander.setEfuse(EFUSE_VALVE_RETOUR_PIN, valveReturnState);
 }
 
 /**
@@ -80,14 +82,12 @@ void setValvesState(bool valveApprovState, bool valveCirculationState, bool valv
  * @param o2ValveState      State of the O2 valve. (OPEN/CLOSE)
  * @param co2ValveState     State of the CO2 valve. (OPEN/CLOSE)
  * @param airValveState     State of the air valve. (OPEN/CLOSE)
- * @param safetyValveState  State of the safety valve. (OPEN/CLOSE)
  */
 void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState)
 {
     ioExpander.setEfuse(EFUSE_VALVE_O2_PIN, o2ValveState);
     ioExpander.setEfuse(EFUSE_VALVE_CO2_PIN, co2ValveState);
     ioExpander.setEfuse(EFUSE_VALVE_AIR_PIN, airValveState);
-    // safetyValve.set(safetyValveState);
 }
 
 /**
