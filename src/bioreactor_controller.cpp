@@ -164,8 +164,6 @@ void updateTemperatureController()
         lastTemperatureControllerTime = millis();
         float airTemperature = 0;
         sht40.getData(&airTemperature);
-        Serial.print("> Air Temperature: ");
-        Serial.println(airTemperature);
         pyroscience.fetchData();
         float waterTemperature = pyroscience.getLastTemperature();
 
