@@ -27,6 +27,7 @@ uint8_t testState = 0;
  */
 void beginBioreactorController()
 {
+    ioExpander.begin(); // Initialize the IO Expander first to ensure a short delay before turning the valves and fans off
     muxI2c.begin(&Wire);
     for (uint8_t i = 0; i < NB_TEMP_SENSOR; i++)
         sht40[i].begin(&Wire, i, &muxI2c);
@@ -39,29 +40,27 @@ void beginBioreactorController()
     sensorPump.begin();
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
-
-    ioExpander.begin();
 }
 
 /**
  * @brief Set the state of the fans.
- * @param heaterFanState        State of the heater fan. (ON/OFF)
- * @param circulationFanState   State of the interior fan. (ON/OFF)
- * @param rightFanState         State of the exterior fan. (ON/OFF)
- * @param leftFanState          State of the exterior fan. (ON/OFF)
- * @param pcbFanState           State of the PCB fan. (ON/OFF)
- * @param lowVoltFanState       State of the 24V fan. (ON/OFF)
- * @param highvoltFanState      State of the 120V fan. (ON/OFF)
+ * @param heaterFanState        State of the heater fan (ON/OFF)
+ * @param circulationFanState   State of the interior circulation fan (ON/OFF) that circulates air inside the bioreactor
+ * @param rightFanState         State of the right fan (ON/OFF) to cool the right side box containing the stepper pumps
+ * @param leftFanState          State of the left fan (ON/OFF) to cool the left side box containing the stepper motors pumps
+ * @param pcbFanState           State of the PCB fan (ON/OFF) to cool the PCB board
+ * @param lowVoltFanState       State of the 24V fan (ON/OFF) to cool the low voltage power supply side of the electrical panel
+ * @param highVoltFanState      State of the 120V fan (ON/OFF) to cool the high voltage power supply side of the electrical panel
  */
-void setFansState(bool heaterFanState, bool circulationFanState, bool rightFanState, bool leftFanState, bool pcbFanState, bool lowVoltFanState, bool highvoltFanState)
+void setFansState(bool heaterFanState, bool circulationFanState, bool rightFanState, bool leftFanState, bool pcbFanState, bool lowVoltFanState, bool highVoltFanState)
 {
-    ioExpander.setEfuse(EFUSE_FAN_HEATER_PIN, heaterFanState);
-    ioExpander.setEfuse(EFUSE_FAN_CIRCULATION_PIN, circulationFanState);
-    ioExpander.setEfuse(EFUSE_FAN_RIGHT_PIN, rightFanState);
-    ioExpander.setEfuse(EFUSE_FAN_LEFT_PIN, leftFanState);
-    ioExpander.setEfuse(EFUSE_FAN_PCB_PIN, pcbFanState);
-    ioExpander.setEfuse(EFUSE_FAN_24_PIN, lowVoltFanState);
-    ioExpander.setEfuse(EFUSE_FAN_120_PIN, highvoltFanState);
+    ioExpander.setEfuse(EFUSE_FAN_HEATER_INDEX, heaterFanState);
+    ioExpander.setEfuse(EFUSE_FAN_CIRCULATION_INDEX, circulationFanState);
+    ioExpander.setEfuse(EFUSE_FAN_RIGHT_INDEX, rightFanState);
+    ioExpander.setEfuse(EFUSE_FAN_LEFT_INDEX, leftFanState);
+    ioExpander.setEfuse(EFUSE_FAN_PCB_INDEX, pcbFanState);
+    ioExpander.setEfuse(EFUSE_FAN_LOW_VOLT_INDEX, lowVoltFanState);
+    ioExpander.setEfuse(EFUSE_FAN_HIGH_VOLT_INDEX, highVoltFanState);
 }
 
 /**
@@ -72,9 +71,9 @@ void setFansState(bool heaterFanState, bool circulationFanState, bool rightFanSt
  */
 void setValvesState(bool valveSupplyState, bool valveCirculationState, bool valveReturnState)
 {
-    ioExpander.setEfuse(EFUSE_VALVE_APPROV_PIN, valveSupplyState);
-    ioExpander.setEfuse(EFUSE_VALVE_CIRCULATION_PIN, valveCirculationState);
-    ioExpander.setEfuse(EFUSE_VALVE_RETOUR_PIN, valveReturnState);
+    ioExpander.setEfuse(EFUSE_VALVE_SUPPLY_INDEX, valveSupplyState);
+    ioExpander.setEfuse(EFUSE_VALVE_CIRCULATION_INDEX, valveCirculationState);
+    ioExpander.setEfuse(EFUSE_VALVE_RETURN_INDEX, valveReturnState);
 }
 
 /**
@@ -85,9 +84,9 @@ void setValvesState(bool valveSupplyState, bool valveCirculationState, bool valv
  */
 void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState)
 {
-    ioExpander.setEfuse(EFUSE_VALVE_O2_PIN, o2ValveState);
-    ioExpander.setEfuse(EFUSE_VALVE_CO2_PIN, co2ValveState);
-    ioExpander.setEfuse(EFUSE_VALVE_AIR_PIN, airValveState);
+    ioExpander.setEfuse(EFUSE_VALVE_O2_INDEX, o2ValveState);
+    ioExpander.setEfuse(EFUSE_VALVE_CO2_INDEX, co2ValveState);
+    ioExpander.setEfuse(EFUSE_VALVE_AIR_INDEX, airValveState);
 }
 
 /**
