@@ -44,6 +44,8 @@ void loop()
         break;
     }
 
+    updateSensors();
+    printBioreactorStateToSerial();
     updateTemperatureController();
     updatePressureChamberController();
     // updateBioreactorState(); // To be implemented when communication with the GUI will be available

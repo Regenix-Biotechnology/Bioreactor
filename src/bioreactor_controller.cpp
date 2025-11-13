@@ -13,12 +13,14 @@ SSR_Relay heater(HEATER_PIN);
 IOExpander ioExpander(&Wire);
 TemperatureController temperatureController;
 PressureChamberController pressureChamber;
+VisiFermRS485 dissolvedOxygenSensor(RS485_2_RX_PIN, RS485_2_TX_PIN, Serial2);
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
 unsigned long lastTemperatureControllerTime = 0;
 unsigned long lastPressureChamberControllerTime = 0;
 unsigned long lastPressureChamberControllerTimePrint = 0;
+unsigned long lastPrintTime = 0;
 uint8_t testState = 0;
 
 /**
@@ -31,6 +33,7 @@ void beginBioreactorController()
     pyroscience.begin(&Serial1);
     co2Sensor.begin();
     o2Sensor.begin();
+    dissolvedOxygenSensor.begin();
 
     // Pumps
     approvPump.begin();
@@ -172,4 +175,30 @@ void updatePressureChamberController()
                                   pressureChamber.getValveState(AIR));
 
     co2Sensor.update();
+}
+
+/**
+ * @brief Print all relevant information to the Serial monitor.
+ *
+ * @note All prints of the code should be done in this function to keep the Serial output organized.
+ */
+void printBioreactorStateToSerial()
+{
+    if (millis() - lastPrintTime > PRINT_UPDATE_INTERVAL)
+    {
+        Serial.println("> Bioreactor State: " + String(static_cast<int>(bioreactorState)));
+        Serial.println("> DO Sensor (%sat): " + String(dissolvedOxygenSensor.getOxygen()));
+
+        /* Add more prints here*/
+
+        lastPrintTime = millis();
+    }
+}
+
+/**
+ * @brief Update needed sensors. Must be called in the main loop.
+ */
+void updateSensors()
+{
+    dissolvedOxygenSensor.update();
 }

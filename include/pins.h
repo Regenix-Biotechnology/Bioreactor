@@ -9,9 +9,9 @@
 
 // PUMPS
 constexpr int APPROV_PUMP_PIN_1 = 14;
-constexpr int APPROV_PUMP_PIN_2 = 32;
+constexpr int APPROV_PUMP_PIN_2 = 0;
 constexpr int SENSOR_PUMP_PIN_1 = 0; // not working need extender
-constexpr int SENSOR_PUMP_PIN_2 = 33;
+constexpr int SENSOR_PUMP_PIN_2 = 0;
 constexpr int CULTURE_CHAMBER_PUMP_1_PIN_1 = 0;  // not working need extender
 constexpr int CULTURE_CHAMBER_PUMP_1_PIN_2 = 0;  // not working need extender
 constexpr int CULTURE_CHAMBER_PUMP_2_PIN_1 = 13; // not working need extender
@@ -29,6 +29,9 @@ constexpr int PYROSCIENCE_TX_PIN = 0; // not working need extender
 constexpr int RS485_RX_PIN = 16;
 constexpr int RS485_TX_PIN = 17;
 constexpr int RS485_DE_PIN = 15;
+
+constexpr uint8_t RS485_2_RX_PIN = 32;
+constexpr uint8_t RS485_2_TX_PIN = 33;
 
 // eFuses (via IO Expander)
 // Io Expander outputs 0-15 are 24V
