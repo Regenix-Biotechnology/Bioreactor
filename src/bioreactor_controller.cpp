@@ -1,8 +1,7 @@
 #include "bioreactor_controller.h"
 
 // Objects declaration
-SHT40 sht40[NB_TEMP_SENSOR];
-I2CMux muxI2c;
+SHT40 sht40;
 Pyroscience pyroscience;
 GMP251 co2Sensor(RS485_RX_PIN, RS485_TX_PIN, RS485_DE_PIN, Serial1);
 O2Sensor o2Sensor;
@@ -28,9 +27,7 @@ uint8_t testState = 0;
 void beginBioreactorController()
 {
     ioExpander.begin(); // Initialize the IO Expander first to ensure a short delay before turning the valves and fans off
-    muxI2c.begin(&Wire);
-    for (uint8_t i = 0; i < NB_TEMP_SENSOR; i++)
-        sht40[i].begin(&Wire, i, &muxI2c);
+    sht40.begin(&Wire);
     pyroscience.begin(&Serial1);
     co2Sensor.begin();
     o2Sensor.begin();
@@ -138,7 +135,7 @@ void updateTemperatureController()
     {
         lastTemperatureControllerTime = millis();
         float airTemperature = 0;
-        sht40[0].getData(&airTemperature);
+        sht40.getData(&airTemperature);
         pyroscience.fetchData();
         float waterTemperature = pyroscience.getLastTemperature();
 
