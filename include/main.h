@@ -10,6 +10,7 @@
 #include "pins.h"
 #include "temperature_controller.h"
 #include "bioreactor_controller.h"
+#include "watchdog.h"
 
 enum class eBioreactorState
 {

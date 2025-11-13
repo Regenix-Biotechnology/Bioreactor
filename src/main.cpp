@@ -7,6 +7,7 @@ void setup()
     Serial.println("Hello, World!");
 
     beginBioreactorController();
+    initWatchDog(WATCHDOG_TIMER);
 }
 
 void loop()
@@ -47,4 +48,5 @@ void loop()
     heater.update();
     // updatePressureChamberController();
     // updateBioreactorState();
+    kickWatchDog();
 }
