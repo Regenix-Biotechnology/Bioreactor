@@ -21,10 +21,6 @@ constexpr int CULTURE_CHAMBER_PUMP_2_PIN_2 = 0;  // not working need extender
 constexpr int I2C_SDA_PIN = 21;
 constexpr int I2C_SCL_PIN = 22;
 
-// PYROSCIENCE
-constexpr int PYROSCIENCE_RX_PIN = 0; // not working need extender
-constexpr int PYROSCIENCE_TX_PIN = 0; // not working need extender
-
 // CO2 RS485
 constexpr int RS485_RX_PIN = 16;
 constexpr int RS485_TX_PIN = 17;

@@ -2,7 +2,6 @@
 
 // Objects declaration
 SHT40 sht40;
-Pyroscience pyroscience;
 GMP251 co2Sensor(RS485_RX_PIN, RS485_TX_PIN, RS485_DE_PIN, Serial1);
 O2Sensor o2Sensor;
 PumpDC approvPump(APPROV_PUMP_PIN_1, APPROV_PUMP_PIN_2);
@@ -14,6 +13,8 @@ IOExpander ioExpander(&Wire);
 TemperatureController temperatureController;
 PressureChamberController pressureChamber;
 VisiFermRS485 dissolvedOxygenSensor(RS485_2_RX_PIN, RS485_2_TX_PIN, Serial2);
+AtlasPHSensor pHSensor(&Wire);
+AtlasTempSensor tempSensor(&Wire);
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
@@ -30,10 +31,11 @@ void beginBioreactorController()
 {
     ioExpander.begin(); // Initialize the IO Expander first to ensure a short delay before turning the valves and fans off
     sht40.begin(&Wire);
-    pyroscience.begin(&Serial1);
     co2Sensor.begin();
     o2Sensor.begin();
     dissolvedOxygenSensor.begin();
+    pHSensor.begin();
+    tempSensor.begin();
 
     // Pumps
     approvPump.begin();
@@ -139,8 +141,7 @@ void updateTemperatureController()
         lastTemperatureControllerTime = millis();
         float airTemperature = 0;
         sht40.getData(&airTemperature);
-        pyroscience.fetchData();
-        float waterTemperature = pyroscience.getLastTemperature();
+        float waterTemperature = tempSensor.getTemperatureC();
 
         temperatureController.update(waterTemperature, airTemperature);
     }
@@ -188,6 +189,8 @@ void printBioreactorStateToSerial()
     {
         Serial.println("> Bioreactor State: " + String(static_cast<int>(bioreactorState)));
         Serial.println("> DO Sensor (%sat): " + String(dissolvedOxygenSensor.getOxygen()));
+        Serial.println("> pH Sensor (pH): " + String(pHSensor.getPH()));
+        Serial.println("> Temp Sensor (°C): " + String(tempSensor.getTemperatureC()));
 
         /* Add more prints here*/
 
@@ -201,4 +204,6 @@ void printBioreactorStateToSerial()
 void updateSensors()
 {
     dissolvedOxygenSensor.update();
+    pHSensor.update();
+    tempSensor.update();
 }
