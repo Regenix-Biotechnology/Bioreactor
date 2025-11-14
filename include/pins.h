@@ -17,6 +17,11 @@ constexpr int CULTURE_CHAMBER_PUMP_1_PIN_2 = 0;  // not working need extender
 constexpr int CULTURE_CHAMBER_PUMP_2_PIN_1 = 13; // not working need extender
 constexpr int CULTURE_CHAMBER_PUMP_2_PIN_2 = 0;  // not working need extender
 
+// SPI
+constexpr uint8_t SPI_CS_DRV_1_PIN = 25;
+constexpr uint8_t SPI_CS_DRV_2_PIN = 26;
+constexpr uint8_t SPI_CS_DRV_3_PIN = 27;
+
 // I2C
 constexpr int I2C_SDA_PIN = 21;
 constexpr int I2C_SCL_PIN = 22;
