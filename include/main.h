@@ -41,6 +41,7 @@ extern TemperatureController temperatureController;
 extern VisiFermRS485 dissolvedOxygenSensor;
 extern AtlasPHSensor pHSensor;
 extern AtlasTempSensor tempSensor;
+extern GMP251 co2Sensor;
 
 // Global variables
 extern eBioreactorState bioreactorState;

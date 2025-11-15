@@ -36,6 +36,7 @@ void beginBioreactorController()
     dissolvedOxygenSensor.begin();
     pHSensor.begin();
     tempSensor.begin();
+    heater.begin();
 
     // Pumps
     approvPump.begin();
@@ -190,10 +191,15 @@ void printBioreactorStateToSerial()
         Serial.println("> Bioreactor State: " + String(static_cast<int>(bioreactorState)));
         Serial.println("> DO Sensor (%sat): " + String(dissolvedOxygenSensor.getOxygen()));
         Serial.println("> pH Sensor (pH): " + String(pHSensor.getPH()));
-        Serial.println("> Temp Sensor (°C): " + String(tempSensor.getTemperatureC()));
+        Serial.println("> Water Temperature (°C): " + String(tempSensor.getTemperatureC()));
+        Serial.println("> Air Temperature (°C): " + String(sht40.getLastTemperature()));
+        Serial.println("> Air Humidity (%RH): " + String(sht40.getLastHumidity()));
+        Serial.println("> Heater Power (%): " + String(temperatureController.getHeaterPower()));
+        Serial.println("> CO2 Concentration (ppm): " + String(co2Sensor.getCO2()));
 
         /* Add more prints here*/
 
+        Serial.println("");
         lastPrintTime = millis();
     }
 }
