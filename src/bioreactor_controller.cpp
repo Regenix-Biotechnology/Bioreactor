@@ -15,6 +15,8 @@ PressureChamberController pressureChamber;
 VisiFermRS485 dissolvedOxygenSensor(RS485_2_RX_PIN, RS485_2_TX_PIN, Serial2);
 AtlasPHSensor pHSensor(&Wire);
 AtlasTempSensor tempSensor(&Wire);
+LimitSwitch limitSwitch(LIMIT_SWITCH_PIN);
+LedI2C ledI2C;
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
@@ -22,6 +24,8 @@ unsigned long lastTemperatureControllerTime = 0;
 unsigned long lastPressureChamberControllerTime = 0;
 unsigned long lastPressureChamberControllerTimePrint = 0;
 unsigned long lastPrintTime = 0;
+unsigned long lastLEDUpdateTime = 0;
+uint8_t lastLEDState = 0;
 uint8_t testState = 0;
 
 /**
@@ -37,6 +41,8 @@ void beginBioreactorController()
     pHSensor.begin();
     tempSensor.begin();
     heater.begin();
+    limitSwitch.begin();
+    ledI2C.begin(&Wire);
 
     // Pumps
     approvPump.begin();
@@ -212,4 +218,23 @@ void updateSensors()
     dissolvedOxygenSensor.update();
     pHSensor.update();
     tempSensor.update();
+}
+
+/**
+ * @brief Update the LED state. Must be called in the main loop.
+ *
+ * Currently, the LED only indicates if the door is open or closed but more states can be added later (ex: error state).
+ */
+void updateLEDState()
+{
+    bool isDoorOpen = limitSwitch.getDoorState();
+    eLedState ledState = isDoorOpen ? LED_STATE_DOOR_OPEN : LED_STATE_IDLE;
+
+    // Update the LED at each change for fast response and at every LED_UPDATE_INTERVAL to ensure periodic updates
+    if (ledState != lastLEDState || (millis() - lastLEDUpdateTime) > LED_UPDATE_INTERVAL)
+    {
+        lastLEDState = ledState;
+        ledI2C.sendState(ledState);
+        lastLEDUpdateTime = millis();
+    }
 }

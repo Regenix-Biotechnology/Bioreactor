@@ -48,6 +48,7 @@ void loop()
     printBioreactorStateToSerial();
     updateTemperatureController();
     updatePressureChamberController();
+    updateLEDState();
     // updateBioreactorState(); // To be implemented when communication with the GUI will be available
     serialReader(); // This is used for DEBUG only
     cultureChamberPump2.update();

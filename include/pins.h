@@ -8,14 +8,14 @@
 */
 
 // PUMPS
-constexpr int APPROV_PUMP_PIN_1 = 14;
+constexpr int APPROV_PUMP_PIN_1 = 0;
 constexpr int APPROV_PUMP_PIN_2 = 0;
 constexpr int SENSOR_PUMP_PIN_1 = 0; // not working need extender
 constexpr int SENSOR_PUMP_PIN_2 = 0;
-constexpr int CULTURE_CHAMBER_PUMP_1_PIN_1 = 0;  // not working need extender
-constexpr int CULTURE_CHAMBER_PUMP_1_PIN_2 = 0;  // not working need extender
-constexpr int CULTURE_CHAMBER_PUMP_2_PIN_1 = 13; // not working need extender
-constexpr int CULTURE_CHAMBER_PUMP_2_PIN_2 = 0;  // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_1_PIN_1 = 0; // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_1_PIN_2 = 0; // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_2_PIN_1 = 0; // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_2_PIN_2 = 0; // not working need extender
 
 // I2C
 constexpr int I2C_SDA_PIN = 21;
@@ -56,6 +56,9 @@ constexpr uint8_t DEBUG_LED_2_INDEX = 22;
 constexpr uint8_t DEBUG_LED_3_INDEX = 23;
 
 // SSR RELAY
-constexpr int HEATER_PIN = 4;
+constexpr uint8_t HEATER_PIN = 4;
+
+// LIMIT SWITCH
+constexpr uint8_t LIMIT_SWITCH_PIN = 13;
 
 #endif // PINS_H
