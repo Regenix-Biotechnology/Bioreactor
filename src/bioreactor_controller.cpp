@@ -94,7 +94,7 @@ void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool a
     ioExpander.setEfuse(EFUSE_VALVE_CO2_INDEX, co2ValveState);
     ioExpander.setEfuse(EFUSE_VALVE_AIR_INDEX, airValveState);
 }
-bool motor_once = true;
+
 /**
  * @brief Set the speed of the pumps.
  *
@@ -107,16 +107,14 @@ bool motor_once = true;
  */
 void setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cultureChamberPump1Speed, float cultureChamberPump2Speed)
 {
-    if (millis() - lastMotorSetSpeedTime > MOTOR_SET_SPEED_MSG_INTERVAL && motor_once)
+    if (millis() - lastMotorSetSpeedTime > MOTOR_SET_SPEED_MSG_INTERVAL)
     {
         approvPump.setSpeed(approvPumpSpeed);
         circulationPump.setSpeed(circulationPumpSpeed);
         cultureChamberPump1.setSpeed(cultureChamberPump1Speed);
         cultureChamberPump2.setSpeed(cultureChamberPump2Speed);
+
         lastMotorSetSpeedTime = millis();
-        Serial.println("motor");
-        Serial.println(lastMotorSetSpeedTime);
-        motor_once = false;
     }
 }
 
