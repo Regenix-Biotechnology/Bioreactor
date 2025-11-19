@@ -15,11 +15,11 @@ void loop()
     switch (bioreactorState)
     {
     case eBioreactorState::IDLE:
-        setFansState(OFF, OFF, OFF);
-        setPumpsSpeed(OFF, OFF, OFF, OFF);
-        setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
-        setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
-        setHeatersState(OFF, OFF);
+        setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+        // setPumpsSpeed(OFF, OFF, OFF, OFF);
+        setValvesState(CLOSE, CLOSE, CLOSE);
+        setPressureChamberValvesState(OFF, OFF, OFF);
+        setHeatersState(OFF);
         break;
     case eBioreactorState::APPROV:
         /* code */
@@ -32,11 +32,12 @@ void loop()
         break;
     case eBioreactorState::TEST: // For the fluidic and heating system test
     {
-        setFansState(ON, OFF, OFF);
-        setPumpsSpeed(PUMP_MAX_SPEED, OFF, OFF, OFF);
-        setValvesState(CLOSE, CLOSE, CLOSE, CLOSE, CLOSE);
-        setPressureChamberValvesState(CLOSE, CLOSE, CLOSE, CLOSE);
-        setHeatersState(temperatureController.getHeaterPower(), temperatureController.isPatchHeatingNeeded());
+        setFansState(ON, ON, ON, ON, ON, ON, ON);
+        // setPumpsSpeed(255, OFF, OFF, 255);
+        setValvesState(CLOSE, CLOSE, CLOSE);
+        setPressureChamberValvesState(OFF, OFF, OFF);
+        setPressureChamberState(ON);
+        setHeatersState(temperatureController.getHeaterPower());
         break;
     }
     default:
@@ -44,9 +45,12 @@ void loop()
         break;
     }
 
+    updateSensors();
+    printBioreactorStateToSerial();
     updateTemperatureController();
-    heater.update();
-    // updatePressureChamberController();
-    // updateBioreactorState();
+    updatePressureChamberController();
+    // updateBioreactorState(); // To be implemented when communication with the GUI will be available
+    serialReader(); // This is used for DEBUG only
+    cultureChamberPump2.update();
     kickWatchDog();
 }

@@ -50,7 +50,6 @@ private:
     static constexpr uint8_t I2C_READ_DELAY = 10;
 
     uint8_t crc8(const uint8_t *data, int len);
-
     uint8_t rxBuffer[SHT40_RSP_SIZE];
     bool isInit;
     float temperature;
