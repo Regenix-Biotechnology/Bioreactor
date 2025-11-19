@@ -5,7 +5,7 @@ const uint8_t StepperMotor::MOTOR_DRV_AMAX_ADDR[MOTOR_NAME_MAX] = {0x26, 0x46};
 const uint8_t StepperMotor::MOTOR_DRV_SET_SPEED_ADDR[MOTOR_NAME_MAX] = {0x27, 0x47};
 const uint8_t StepperMotor::MOTOR_DRV_SET_MODE_ADDR[MOTOR_NAME_MAX] = {0x20, 0x40};
 const uint8_t StepperMotor::SET_SPEED_CONFIG_MSG_ADDR_LIST[MOTOR_NAME_MAX][CONFIG_MSG_SIZE] = {{0x6C, 0x30, 0x2C, 0x10, 0x32, 0x31, 0x26}, {0x7C, 0x50, 0x4C, 0x18, 0x52, 0x51, 0x46}};
-const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST[CONFIG_MSG_SIZE] = {0x000100C5, RUNNING_TORQUE, 0x00002710, 0x003701C8, 0x00061A80, 0x00007530, 0x00001388};
+const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST[CONFIG_MSG_SIZE] = {0x010100C5, RUNNING_TORQUE * 2, 0x00002710, 0x003501C8, 0x00061A80, 0x00007530, 0x00001388};
 
 /**
  * @brief Construct a new StepperMotor object
@@ -54,16 +54,18 @@ eMotorStatus StepperMotor::setSpeed(float speed)
         return MOTOR_STATUS_NOT_INITIALISED;
 
     eMotorMode direction = MOTOR_MODE_SPEED_CONTROL_CLOCKWISE;
+    uint32_t torque = RUNNING_TORQUE;
     if (speed == 0.0)
     {
-        _drive_handle->tmc_write(MOTOR_DRV_IHOLD_IRUN_ADDR[_motorName], 0);
+        torque = 0;
     }
     else if (speed < 0.0)
     {
         direction = MOTOR_MODE_SPEED_CONTROL_COUNTERCLOCKWISE;
+        speed = fabsf(speed);
     }
 
-    _drive_handle->tmc_write(MOTOR_DRV_IHOLD_IRUN_ADDR[_motorName], RUNNING_TORQUE);
+    _drive_handle->tmc_write(MOTOR_DRV_IHOLD_IRUN_ADDR[_motorName], torque);
     _drive_handle->tmc_write(MOTOR_DRV_SET_SPEED_ADDR[_motorName], uint32_t(speed * ML_PER_MIN_TO_REG));
     _drive_handle->tmc_write(MOTOR_DRV_SET_MODE_ADDR[_motorName], direction);
 

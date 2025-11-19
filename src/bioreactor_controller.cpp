@@ -6,7 +6,7 @@ Pyroscience pyroscience;
 GMP251 co2Sensor(RS485_RX_PIN, RS485_TX_PIN, RS485_DE_PIN, Serial1);
 O2Sensor o2Sensor;
 DriveTmc5041 driveStepper1(&SPI, SPI_CS_DRV_1_PIN);
-DriveTmc5041 driveStepper3(&SPI, SPI_CS_DRV_1_PIN);
+DriveTmc5041 driveStepper3(&SPI, SPI_CS_DRV_3_PIN);
 StepperMotor approvPump(&driveStepper1, MOTOR_1);
 StepperMotor circulationPump(&driveStepper1, MOTOR_2);
 StepperMotor cultureChamberPump1(&driveStepper3, MOTOR_1);
@@ -94,7 +94,7 @@ void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool a
     ioExpander.setEfuse(EFUSE_VALVE_CO2_INDEX, co2ValveState);
     ioExpander.setEfuse(EFUSE_VALVE_AIR_INDEX, airValveState);
 }
-
+bool motor_once = true;
 /**
  * @brief Set the speed of the pumps.
  *
@@ -107,12 +107,16 @@ void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool a
  */
 void setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cultureChamberPump1Speed, float cultureChamberPump2Speed)
 {
-    if (millis() - lastMotorSetSpeedTime > MOTOR_SET_SPEED_MSG_INTERVAL)
+    if (millis() - lastMotorSetSpeedTime > MOTOR_SET_SPEED_MSG_INTERVAL && motor_once)
     {
         approvPump.setSpeed(approvPumpSpeed);
         circulationPump.setSpeed(circulationPumpSpeed);
         cultureChamberPump1.setSpeed(cultureChamberPump1Speed);
         cultureChamberPump2.setSpeed(cultureChamberPump2Speed);
+        lastMotorSetSpeedTime = millis();
+        Serial.println("motor");
+        Serial.println(lastMotorSetSpeedTime);
+        motor_once = false;
     }
 }
 

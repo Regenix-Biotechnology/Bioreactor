@@ -21,6 +21,7 @@ DriveTmc5041::DriveTmc5041(SPIClass *spi_handle, uint8_t cs)
 eMotorStatus DriveTmc5041::begin()
 {
   pinMode(_cs, OUTPUT);
+  digitalWrite(_cs, HIGH);
   if (!_spi)
     return MOTOR_STATUS_NULL_VARIABLE;
 
@@ -40,11 +41,11 @@ eMotorStatus DriveTmc5041::begin()
 void DriveTmc5041::tmc_write(uint8_t address, uint32_t data)
 {
   digitalWrite(_cs, LOW);
-  SPI.transfer(address | 0b10000000); // Write bit
-  SPI.transfer((data >> 24) & 0xFF);
-  SPI.transfer((data >> 16) & 0xFF);
-  SPI.transfer((data >> 8) & 0xFF);
-  SPI.transfer(data & 0xFF);
+  _spi->transfer(address | 0b10000000); // Write bit
+  _spi->transfer((data >> 24) & 0xFF);
+  _spi->transfer((data >> 16) & 0xFF);
+  _spi->transfer((data >> 8) & 0xFF);
+  _spi->transfer(data & 0xFF);
   digitalWrite(_cs, HIGH);
 }
 
@@ -58,7 +59,7 @@ uint32_t DriveTmc5041::tmc_read(uint8_t address)
 {
   uint32_t value = 0;
   digitalWrite(_cs, LOW);
-  SPI.transfer(address & 0x7F);
+  _spi->transfer(address & 0x7F);
 
   for (int i = 0; i < 4; i++)
     value = (value << 8) | SPI.transfer(0x00);
