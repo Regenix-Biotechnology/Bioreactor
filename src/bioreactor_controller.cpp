@@ -202,6 +202,7 @@ void printBioreactorStateToSerial()
         Serial.println("> Air Humidity (%RH): " + String(sht40.getLastHumidity()));
         Serial.println("> Heater Power (%): " + String(temperatureController.getHeaterPower()));
         Serial.println("> CO2 Concentration (ppm): " + String(co2Sensor.getCO2()));
+        Serial.println("> O2 Concentration (%): " + String(o2Sensor.getO2()));
 
         /* Add more prints here*/
 
