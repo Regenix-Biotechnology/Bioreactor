@@ -50,6 +50,7 @@ void loop()
     printBioreactorStateToSerial();
     updateTemperatureController();
     updatePressureChamberController();
+    receiveSerialCommand();
     // updateBioreactorState(); // To be implemented when communication with the GUI will be available
     serialReader(); // This is used for DEBUG only
 }

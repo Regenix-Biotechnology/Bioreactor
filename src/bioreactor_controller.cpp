@@ -16,6 +16,7 @@ IOExpander ioExpander(&Wire);
 TemperatureController temperatureController;
 PressureChamberController pressureChamber;
 VisiFermRS485 dissolvedOxygenSensor(RS485_2_RX_PIN, RS485_2_TX_PIN, Serial2);
+Preferences bioreactorParameter;
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
@@ -46,6 +47,44 @@ void beginBioreactorController()
     circulationPump.begin();
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
+    beginBioreactorPreferences();
+}
+
+/**
+ * @brief Setter for bioreactor state
+ *
+ * @param state
+ */
+void setBioreactorState(uint8_t state_int)
+{
+    eBioreactorState state = (eBioreactorState)state_int;
+    if (state >= eBioreactorState::MAX_STATES)
+    {
+        return;
+    }
+
+    bioreactorState = state;
+    bioreactorParameter.putShort("state", (int16_t)state);
+    return;
+}
+
+/**
+ * @brief Get all the culture parameter from memory
+ */
+void beginBioreactorPreferences()
+{
+    bioreactorParameter.begin("bioreactor");
+
+    float temperature = bioreactorParameter.getFloat("temperature", 37.0);
+    float ph = bioreactorParameter.getFloat("ph", 7.0);
+    float oxyDissous = bioreactorParameter.getFloat("do", 100.0);
+    eBioreactorState state = (eBioreactorState)bioreactorParameter.getShort("state", (int16_t)eBioreactorState::IDLE);
+
+    temperatureController.setReferenceTemperature(temperature);
+    // ph
+    // oxy_dissous
+    bioreactorState = state;
+    // pump
 }
 
 /**
@@ -211,4 +250,94 @@ void printBioreactorStateToSerial()
 void updateSensors()
 {
     dissolvedOxygenSensor.update();
+}
+
+void receiveSerialCommand()
+{
+    if (Serial.available())
+    {
+        String rx = Serial.readStringUntil('\n');
+
+        uint8_t rx_buff[sizeof(float) * 6];
+        if (rx == "STATE=APPROV")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::APPROV);
+        }
+        if (rx == "STATE=HEAT")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::PREPARE);
+        }
+        if (rx == "STATE=CULTURE")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::RUN);
+        }
+        if (rx == "STATE=TEST")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::TEST);
+        }
+        if (rx == "STATE=IDLE")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::IDLE);
+        }
+        if (sscanf(rx.c_str(), "TEMP=%f", (float *)rx_buff))
+        {
+            float temp = *((float *)rx_buff);
+            temperatureController.setReferenceTemperature(temp);
+            bioreactorParameter.putFloat("temperature", temp);
+        }
+        if (sscanf(rx.c_str(), "PH=%f", (float *)rx_buff))
+        {
+            float ph = *((float *)rx_buff);
+            bioreactorParameter.putFloat("ph", ph);
+        }
+        if (sscanf(rx.c_str(), "DO=%f", (float *)rx_buff))
+        {
+            float oxy_percent = *((float *)rx_buff);
+            bioreactorParameter.putFloat("do", oxy_percent);
+        }
+        if (sscanf(rx.c_str(), "PUMP-SPEED=%f,%f,%f,%f", &(((float *)rx_buff)[0]), &(((float *)rx_buff)[1]), &(((float *)rx_buff)[2]), &(((float *)rx_buff)[3])))
+        {
+            uint8_t i = 0;
+            float approvPumpSpeed = *((float *)(&(rx_buff[sizeof(float) * i++])));
+            float circulationPumpSpeed = *((float *)(&(rx_buff[sizeof(float) * i++])));
+            float cultureChamberPump1Speed = *((float *)(&(rx_buff[sizeof(float) * i++])));
+            float cultureChamberPump2Speed = *((float *)(&(rx_buff[sizeof(float) * i++])));
+            // set pump
+            // save pump
+            setPumpsSpeed(approvPumpSpeed, circulationPumpSpeed, cultureChamberPump1Speed, cultureChamberPump2Speed);
+        }
+        if (sscanf(rx.c_str(), "CALIB-PH=%d", rx_buff))
+        {
+            uint8_t ph_calib = *((uint8_t *)rx_buff);
+            // set ph_calib
+            Serial.print("set calib ph to ");
+            Serial.println(ph_calib);
+            // Serial.println("> Bioreactor calib cmd: " + String(static_cast<int>(ph_calib)));
+            if (ph_calib == 4)
+            {
+                // ph calib
+            }
+            else if (ph_calib == 7)
+            {
+                // ph calib
+            }
+            else if (ph_calib == 10)
+            {
+                // ph calib
+            }
+        }
+        if (sscanf(rx.c_str(), "CALIB-DO=%d", rx_buff))
+        {
+            uint8_t do_calib = *((uint8_t *)rx_buff);
+            // set do_calib
+            if (do_calib == 0)
+            {
+                // do calib
+            }
+            else if (do_calib == 100)
+            {
+                // do calib
+            }
+        }
+    }
 }
