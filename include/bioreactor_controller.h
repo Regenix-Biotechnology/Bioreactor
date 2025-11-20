@@ -18,5 +18,6 @@ void updateTemperatureController();
 void updatePressureChamberController();
 void updateSensors();
 void printBioreactorStateToSerial();
+void updateLEDState();
 
 #endif
