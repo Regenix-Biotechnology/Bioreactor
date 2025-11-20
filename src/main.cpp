@@ -31,7 +31,7 @@ void loop()
         break;
     case eBioreactorState::TEST: // For the fluidic and heating system test
     {
-        setFansState(ON, OFF, OFF, OFF, OFF, OFF, ON);
+        setFansState(ON, ON, ON, ON, ON, ON, ON);
         // setPumpsSpeed(255, OFF, OFF, 255);
         setValvesState(CLOSE, CLOSE, CLOSE);
         setPressureChamberValvesState(OFF, OFF, OFF);
