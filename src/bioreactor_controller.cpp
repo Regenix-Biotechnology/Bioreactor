@@ -4,10 +4,12 @@
 SHT40 sht40(&Wire);
 GMP251 co2Sensor(RS485_RX_PIN, RS485_TX_PIN, RS485_DE_PIN, Serial1);
 O2Sensor o2Sensor;
-PumpDC approvPump(APPROV_PUMP_PIN_1, APPROV_PUMP_PIN_2);
-PumpDC sensorPump(SENSOR_PUMP_PIN_1, SENSOR_PUMP_PIN_2);
-PumpStepper cultureChamberPump1(CULTURE_CHAMBER_PUMP_1_PIN_1, CULTURE_CHAMBER_PUMP_1_PIN_2);
-PumpStepper cultureChamberPump2(CULTURE_CHAMBER_PUMP_2_PIN_1, CULTURE_CHAMBER_PUMP_2_PIN_2);
+DriveTmc5041 driveStepper1(&SPI, SPI_CS_DRV_1_PIN);
+DriveTmc5041 driveStepper3(&SPI, SPI_CS_DRV_3_PIN);
+StepperMotor approvPump(&driveStepper1, MOTOR_1);
+StepperMotor cultureChamberPump2(&driveStepper1, MOTOR_2);
+StepperMotor cultureChamberPump1(&driveStepper3, MOTOR_1);
+StepperMotor circulationPump(&driveStepper3, MOTOR_2);
 SSR_Relay heater(HEATER_PIN);
 IOExpander ioExpander(&Wire);
 TemperatureController temperatureController;
@@ -26,6 +28,7 @@ unsigned long lastPressureChamberControllerTimePrint = 0;
 unsigned long lastPrintTime = 0;
 unsigned long lastLEDUpdateTime = 0;
 uint8_t lastLEDState = 0;
+unsigned long lastMotorSetSpeedTime = 0;
 uint8_t testState = 0;
 
 /**
@@ -44,8 +47,11 @@ void beginBioreactorController()
     limitSwitch.begin();
 
     // Pumps
+    SPI.begin();
+    driveStepper1.begin();
+    driveStepper3.begin();
     approvPump.begin();
-    sensorPump.begin();
+    circulationPump.begin();
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
 }
@@ -100,20 +106,24 @@ void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool a
 /**
  * @brief Set the speed of the pumps.
  *
- * MAX_SPEED for DC pumps is 255 (0-255)
- * MAX_SPEED for stepper pumps is 1000 (0-1000)
+ * Speed is in float ml/min and +/- for direction
  *
  * @param approvPumpSpeed           Speed of the approv pump
- * @param sensorPumpSpeed           Speed of the sensor pump
+ * @param circulationPumpSpeed           Speed of the sensor pump
  * @param cultureChamberPump1Speed  Speed of the culture chamber pump 1
  * @param cultureChamberPump2Speed  Speed of the culture chamber pump 2
  */
-void setPumpsSpeed(uint8_t approvPumpSpeed, uint8_t sensorPumpSpeed, uint16_t cultureChamberPump1Speed, uint16_t cultureChamberPump2Speed)
+void setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cultureChamberPump1Speed, float cultureChamberPump2Speed)
 {
-    // approvPump.setSpeed(approvPumpSpeed);
-    // sensorPump.setSpeed(sensorPumpSpeed);
-    // cultureChamberPump1.setSpeed(cultureChamberPump1Speed);
-    // cultureChamberPump2.setSpeed(cultureChamberPump2Speed);
+    if (millis() - lastMotorSetSpeedTime > MOTOR_SET_SPEED_MSG_INTERVAL)
+    {
+        approvPump.setSpeed(approvPumpSpeed);
+        circulationPump.setSpeed(circulationPumpSpeed);
+        cultureChamberPump1.setSpeed(cultureChamberPump1Speed);
+        cultureChamberPump2.setSpeed(cultureChamberPump2Speed);
+
+        lastMotorSetSpeedTime = millis();
+    }
 }
 
 /**
