@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include "SHT40.h"
-#include "Pyroscience.h"
 #include "stepper_motor.h"
 #include "ssr_relay.h"
 #include "ioExpander.h"
@@ -34,7 +33,6 @@ enum class eBioreactorState
 
 // Objects declaration (extern to be used both in main.cpp and bioreactor_controller.cpp)
 extern SHT40 sht40;
-extern Pyroscience pyroscience;
 extern DriveTmc5041 driveStepper1;
 extern DriveTmc5041 driveStepper3;
 extern StepperMotor approvPump;
