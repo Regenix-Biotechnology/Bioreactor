@@ -7,6 +7,7 @@ void setup()
     Serial.println("Hello, World!");
 
     beginBioreactorController();
+    initWatchDog();
 }
 
 void loop()
@@ -31,7 +32,7 @@ void loop()
         break;
     case eBioreactorState::TEST: // For the fluidic and heating system test
     {
-        setFansState(ON, OFF, OFF, OFF, OFF, OFF, ON);
+        setFansState(ON, ON, ON, ON, ON, ON, ON);
         // setPumpsSpeed(255, OFF, OFF, 255);
         setValvesState(CLOSE, CLOSE, CLOSE);
         setPressureChamberValvesState(OFF, OFF, OFF);
@@ -52,4 +53,5 @@ void loop()
     // updateBioreactorState(); // To be implemented when communication with the GUI will be available
     serialReader(); // This is used for DEBUG only
     cultureChamberPump2.update();
+    kickWatchDog();
 }
