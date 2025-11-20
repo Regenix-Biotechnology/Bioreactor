@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include "SHT40.h"
-#include "Pyroscience.h"
 #include "Pump_dc.h"
 #include "Pump_stepper.h"
 #include "ssr_relay.h"
@@ -17,6 +16,8 @@
 #include "O2Sensor.h"
 #include "gmp251.h"
 #include "visiferm_RS485.h"
+#include "AtlasPHSensor.h"
+#include "AtlasTempSensor.h"
 
 enum class eBioreactorState
 {
@@ -31,7 +32,6 @@ enum class eBioreactorState
 
 // Objects declaration (extern to be used both in main.cpp and bioreactor_controller.cpp)
 extern SHT40 sht40;
-extern Pyroscience pyroscience;
 extern PumpDC approvPump;
 extern PumpDC sensorPump;
 extern PumpStepper cultureChamberPump1;
@@ -40,6 +40,9 @@ extern SSR_Relay heater;
 extern IOExpander ioExpander;
 extern TemperatureController temperatureController;
 extern VisiFermRS485 dissolvedOxygenSensor;
+extern AtlasPHSensor pHSensor;
+extern AtlasTempSensor tempSensor;
+extern GMP251 co2Sensor;
 
 // Global variables
 extern eBioreactorState bioreactorState;
