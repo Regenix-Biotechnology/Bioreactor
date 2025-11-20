@@ -21,11 +21,12 @@ class LedI2C
 {
 public:
     /**
-     * @brief Initialize I2C as master.
+     * @brief Constructor to initialize the I2C communication with the Arduino used for LED control.
+     * @param i2cBus Pointer to the TwoWire instance to use.
      */
-    void begin(TwoWire *i2cBus)
+    LedI2C(TwoWire *i2cBus)
+        : _wire(i2cBus)
     {
-        _wire = i2cBus;
     }
 
     /**

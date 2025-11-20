@@ -1,7 +1,7 @@
 #include "bioreactor_controller.h"
 
 // Objects declaration
-SHT40 sht40;
+SHT40 sht40(&Wire);
 GMP251 co2Sensor(RS485_RX_PIN, RS485_TX_PIN, RS485_DE_PIN, Serial1);
 O2Sensor o2Sensor;
 PumpDC approvPump(APPROV_PUMP_PIN_1, APPROV_PUMP_PIN_2);
@@ -16,7 +16,7 @@ VisiFermRS485 dissolvedOxygenSensor(RS485_2_RX_PIN, RS485_2_TX_PIN, Serial2);
 AtlasPHSensor pHSensor(&Wire);
 AtlasTempSensor tempSensor(&Wire);
 LimitSwitch limitSwitch(LIMIT_SWITCH_PIN);
-LedI2C ledI2C;
+LedI2C ledI2C(&Wire);
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
@@ -34,7 +34,7 @@ uint8_t testState = 0;
 void beginBioreactorController()
 {
     ioExpander.begin(); // Initialize the IO Expander first to ensure a short delay before turning the valves and fans off
-    sht40.begin(&Wire);
+    sht40.begin();
     co2Sensor.begin();
     o2Sensor.begin();
     dissolvedOxygenSensor.begin();
@@ -42,7 +42,6 @@ void beginBioreactorController()
     tempSensor.begin();
     heater.begin();
     limitSwitch.begin();
-    ledI2C.begin(&Wire);
 
     // Pumps
     approvPump.begin();
