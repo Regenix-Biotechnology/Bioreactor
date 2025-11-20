@@ -11,6 +11,7 @@
 #include "pins.h"
 #include "temperature_controller.h"
 #include "bioreactor_controller.h"
+#include "watchdog.h"
 #include "utils.h"
 #include "pressure_chamber_controller.h"
 #include "O2Sensor.h"

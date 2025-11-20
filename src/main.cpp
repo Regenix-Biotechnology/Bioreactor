@@ -7,6 +7,7 @@ void setup()
     Serial.println("Hello, World!");
 
     beginBioreactorController();
+    initWatchDog();
 }
 
 void loop()
@@ -51,4 +52,5 @@ void loop()
     // updateBioreactorState(); // To be implemented when communication with the GUI will be available
     serialReader(); // This is used for DEBUG only
     cultureChamberPump2.update();
+    kickWatchDog();
 }
