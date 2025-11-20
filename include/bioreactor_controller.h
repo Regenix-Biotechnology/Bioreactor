@@ -2,7 +2,6 @@
 #define BIOREACTOR_CONTROLLER_H
 
 #include "main.h"
-#include <Preferences.h>
 
 /**
  * This file contains the functions that are called in the main loop to control the bioreactor.
