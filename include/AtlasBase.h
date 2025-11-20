@@ -68,7 +68,7 @@ protected:
     unsigned long _lastReadyTime = 0;
     unsigned long _nextPollDue = 0;
     unsigned long _lastCommTime = 0;
-    float _lastValue = NAN;
+    float _lastValue = 0.0;
     eAtlasStatus _status = ATLAS_STATUS_NOT_INITIALISED;
 
     static constexpr uint8_t SUCCESS_STATUS_BYTE = 0x01;
@@ -78,7 +78,7 @@ protected:
     static constexpr const char *MEASUREMENT_REQUEST_CMD = "R";
     static constexpr unsigned long NB_POLL_INTERVAL_MS = 50;
     static constexpr unsigned long NB_MAX_CONVERSION_MS = 900;
-    static constexpr unsigned long COMM_LOSS_NAN_TIMEOUT_MS = 15000;
+    static constexpr unsigned long COMM_LOSS_TIMEOUT_MS = 15000;
     static constexpr float EPSILON = 0.05f; // General small value for float comparisons
 };
 
