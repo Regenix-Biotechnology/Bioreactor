@@ -1,25 +1,23 @@
 #include "SHT40.h"
 
 /**
- * @brief Constructor to initialize the SHT40 sensor variable. To default state
+ * @brief Constructor to initialize the SHT40 sensor variable to default state
  */
-SHT40::SHT40()
-    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(nullptr)
+SHT40::SHT40(TwoWire *i2cBus)
+    : isInit(false), temperature(0.0), humidity(0.0), i2cBus(i2cBus)
 {
     memset(this->rxBuffer, 0, SHT40_RSP_SIZE);
 }
 
 /**
- * @brief Initialise the sht40 with the i2cBus sent in parameter
+ * @brief Initialise the sht40 sensor
  *
- * @param i2cBus The I2C Wire to use for this sensor
  * @return eSHT40Status SHT40_STATUS_OK if init is succesful else return error code
  */
-eSHT40Status SHT40::begin(TwoWire *i2cBus)
+eSHT40Status SHT40::begin()
 {
     if (i2cBus == nullptr)
         return SHT40_STATUS_INVALID_I2C_BUS;
-    this->i2cBus = i2cBus;
     this->isInit = true;
     return SHT40_STATUS_OK;
 }

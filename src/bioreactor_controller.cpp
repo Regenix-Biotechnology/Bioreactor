@@ -1,8 +1,7 @@
 #include "bioreactor_controller.h"
 
 // Objects declaration
-SHT40 sht40;
-Pyroscience pyroscience;
+SHT40 sht40(&Wire);
 GMP251 co2Sensor(RS485_RX_PIN, RS485_TX_PIN, RS485_DE_PIN, Serial1);
 O2Sensor o2Sensor;
 DriveTmc5041 driveStepper1(&SPI, SPI_CS_DRV_1_PIN);
@@ -16,6 +15,10 @@ IOExpander ioExpander(&Wire);
 TemperatureController temperatureController;
 PressureChamberController pressureChamber;
 VisiFermRS485 dissolvedOxygenSensor(RS485_2_RX_PIN, RS485_2_TX_PIN, Serial2);
+AtlasPHSensor pHSensor(&Wire);
+AtlasTempSensor tempSensor(&Wire);
+LimitSwitch limitSwitch(LIMIT_SWITCH_PIN);
+LedI2C ledI2C(&Wire);
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
@@ -23,6 +26,8 @@ unsigned long lastTemperatureControllerTime = 0;
 unsigned long lastPressureChamberControllerTime = 0;
 unsigned long lastPressureChamberControllerTimePrint = 0;
 unsigned long lastPrintTime = 0;
+unsigned long lastLEDUpdateTime = 0;
+uint8_t lastLEDState = 0;
 unsigned long lastMotorSetSpeedTime = 0;
 uint8_t testState = 0;
 
@@ -32,11 +37,14 @@ uint8_t testState = 0;
 void beginBioreactorController()
 {
     ioExpander.begin(); // Initialize the IO Expander first to ensure a short delay before turning the valves and fans off
-    sht40.begin(&Wire);
-    pyroscience.begin(&Serial1);
+    sht40.begin();
     co2Sensor.begin();
     o2Sensor.begin();
     dissolvedOxygenSensor.begin();
+    pHSensor.begin();
+    tempSensor.begin();
+    heater.begin();
+    limitSwitch.begin();
 
     // Pumps
     SPI.begin();
@@ -149,8 +157,7 @@ void updateTemperatureController()
         lastTemperatureControllerTime = millis();
         float airTemperature = 0;
         sht40.getData(&airTemperature);
-        pyroscience.fetchData();
-        float waterTemperature = pyroscience.getLastTemperature();
+        float waterTemperature = tempSensor.getTemperatureC();
 
         temperatureController.update(waterTemperature, airTemperature);
     }
@@ -198,9 +205,17 @@ void printBioreactorStateToSerial()
     {
         Serial.println("> Bioreactor State: " + String(static_cast<int>(bioreactorState)));
         Serial.println("> DO Sensor (%sat): " + String(dissolvedOxygenSensor.getOxygen()));
+        Serial.println("> pH Sensor (pH): " + String(pHSensor.getPH()));
+        Serial.println("> Water Temperature (°C): " + String(tempSensor.getTemperatureC()));
+        Serial.println("> Air Temperature (°C): " + String(sht40.getLastTemperature()));
+        Serial.println("> Air Humidity (%RH): " + String(sht40.getLastHumidity()));
+        Serial.println("> Heater Power (%): " + String(temperatureController.getHeaterPower()));
+        Serial.println("> CO2 Concentration (ppm): " + String(co2Sensor.getCO2()));
+        Serial.println("> O2 Concentration (%): " + String(o2Sensor.getO2()));
 
         /* Add more prints here*/
 
+        Serial.println("");
         lastPrintTime = millis();
     }
 }
@@ -211,4 +226,25 @@ void printBioreactorStateToSerial()
 void updateSensors()
 {
     dissolvedOxygenSensor.update();
+    pHSensor.update();
+    tempSensor.update();
+}
+
+/**
+ * @brief Update the LED state. Must be called in the main loop.
+ *
+ * Currently, the LED only indicates if the door is open or closed but more states can be added later (ex: error state).
+ */
+void updateLEDState()
+{
+    bool isDoorOpen = limitSwitch.getDoorState();
+    eLedState ledState = isDoorOpen ? LED_STATE_DOOR_OPEN : LED_STATE_IDLE;
+
+    // Update the LED at each change for fast response and at every LED_UPDATE_INTERVAL to ensure periodic updates
+    if (ledState != lastLEDState || (millis() - lastLEDUpdateTime) > LED_UPDATE_INTERVAL)
+    {
+        lastLEDState = ledState;
+        ledI2C.sendState(ledState);
+        lastLEDUpdateTime = millis();
+    }
 }
