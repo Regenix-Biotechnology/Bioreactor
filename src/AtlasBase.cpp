@@ -18,9 +18,9 @@ void AtlasBase::update()
 {
     unsigned long now = millis();
 
-    if ((now - _lastCommTime) > COMM_LOSS_NAN_TIMEOUT_MS && _lastCommTime != 0)
+    if ((now - _lastCommTime) > COMM_LOSS_TIMEOUT_MS && _lastCommTime != 0)
     {
-        _lastValue = NAN;
+        _lastValue = 0.0;
     }
 
     requestMeasurement();
@@ -91,9 +91,9 @@ eAtlasStatus AtlasBase::pollOnce()
     if (statusByte == SUCCESS_STATUS_BYTE)
     {
         float val = cleanString(buf);
-        if (isnan(val) || val == 0.0f || isValueFault(val))
+        if (val == 0.0f || isValueFault(val))
         {
-            _lastValue = NAN;
+            _lastValue = 0.0;
             _state = ST_ERROR;
             return _status = ATLAS_STATUS_PARSING_ERROR;
         }

@@ -19,6 +19,7 @@ AtlasPHSensor pHSensor(&Wire);
 AtlasTempSensor tempSensor(&Wire);
 LimitSwitch limitSwitch(LIMIT_SWITCH_PIN);
 LedI2C ledI2C(&Wire);
+Preferences bioreactorParameter;
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
@@ -54,6 +55,44 @@ void beginBioreactorController()
     circulationPump.begin();
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
+    beginBioreactorPreferences();
+}
+
+/**
+ * @brief Setter for bioreactor state
+ *
+ * @param state
+ */
+void setBioreactorState(uint8_t state_int)
+{
+    eBioreactorState state = (eBioreactorState)state_int;
+    if (state >= eBioreactorState::MAX_STATES)
+    {
+        return;
+    }
+
+    bioreactorState = state;
+    bioreactorParameter.putShort("state", (int16_t)state);
+    return;
+}
+
+/**
+ * @brief Get all the culture parameter from memory
+ */
+void beginBioreactorPreferences()
+{
+    bioreactorParameter.begin("bioreactor");
+
+    float temperature = bioreactorParameter.getFloat("temperature", 37.0);
+    float ph = bioreactorParameter.getFloat("ph", 7.0);
+    float oxyDissous = bioreactorParameter.getFloat("do", 100.0);
+    eBioreactorState state = (eBioreactorState)bioreactorParameter.getShort("state", (int16_t)eBioreactorState::IDLE);
+
+    temperatureController.setReferenceTemperature(temperature);
+    // ph
+    // oxy_dissous
+    bioreactorState = state;
+    // pump
 }
 
 /**

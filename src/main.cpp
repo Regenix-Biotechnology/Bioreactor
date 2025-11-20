@@ -52,6 +52,7 @@ void loop()
     updateTemperatureController();
     updatePressureChamberController();
     updateLEDState();
+    receiveSerialCommand();
     // updateBioreactorState(); // To be implemented when communication with the GUI will be available
     serialReader(); // This is used for DEBUG only
     kickWatchDog();

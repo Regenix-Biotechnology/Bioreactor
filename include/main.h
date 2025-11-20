@@ -2,6 +2,7 @@
 #define MAIN_H
 
 #include <Arduino.h>
+#include <Preferences.h>
 #include "SHT40.h"
 #include "stepper_motor.h"
 #include "ssr_relay.h"
@@ -48,6 +49,7 @@ extern AtlasTempSensor tempSensor;
 extern GMP251 co2Sensor;
 extern LimitSwitch limitSwitch;
 extern LedI2C ledI2C;
+extern Preferences bioreactorParameter;
 
 // Global variables
 extern eBioreactorState bioreactorState;
