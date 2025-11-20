@@ -7,6 +7,7 @@ void setup()
     Serial.println("Hello, World!");
 
     beginBioreactorController();
+    initWatchDog();
 }
 
 void loop()
@@ -50,7 +51,9 @@ void loop()
     printBioreactorStateToSerial();
     updateTemperatureController();
     updatePressureChamberController();
+    updateLEDState();
     receiveSerialCommand();
     // updateBioreactorState(); // To be implemented when communication with the GUI will be available
     serialReader(); // This is used for DEBUG only
+    kickWatchDog();
 }

@@ -26,8 +26,8 @@ typedef enum
 class SHT40
 {
 public:
-    SHT40();
-    eSHT40Status begin(TwoWire *i2cBus);
+    SHT40(TwoWire *i2cBus);
+    eSHT40Status begin();
     float getLastTemperature() const;
     float getLastHumidity() const;
     bool isConnected();

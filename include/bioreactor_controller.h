@@ -19,6 +19,7 @@ void updateTemperatureController();
 void updatePressureChamberController();
 void updateSensors();
 void printBioreactorStateToSerial();
+void updateLEDState();
 void setBioreactorState(uint8_t state);
 void receiveSerialCommand();
 void beginBioreactorPreferences();

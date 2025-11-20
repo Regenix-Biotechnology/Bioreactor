@@ -8,14 +8,14 @@
 */
 
 // PUMPS
-constexpr int APPROV_PUMP_PIN_1 = 14;
+constexpr int APPROV_PUMP_PIN_1 = 0;
 constexpr int APPROV_PUMP_PIN_2 = 0;
 constexpr int SENSOR_PUMP_PIN_1 = 0; // not working need extender
 constexpr int SENSOR_PUMP_PIN_2 = 0;
-constexpr int CULTURE_CHAMBER_PUMP_1_PIN_1 = 0;  // not working need extender
-constexpr int CULTURE_CHAMBER_PUMP_1_PIN_2 = 0;  // not working need extender
-constexpr int CULTURE_CHAMBER_PUMP_2_PIN_1 = 13; // not working need extender
-constexpr int CULTURE_CHAMBER_PUMP_2_PIN_2 = 0;  // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_1_PIN_1 = 0; // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_1_PIN_2 = 0; // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_2_PIN_1 = 0; // not working need extender
+constexpr int CULTURE_CHAMBER_PUMP_2_PIN_2 = 0; // not working need extender
 
 // SPI
 constexpr uint8_t SPI_CS_DRV_1_PIN = 25;
@@ -25,10 +25,6 @@ constexpr uint8_t SPI_CS_DRV_3_PIN = 27;
 // I2C
 constexpr int I2C_SDA_PIN = 21;
 constexpr int I2C_SCL_PIN = 22;
-
-// PYROSCIENCE
-constexpr int PYROSCIENCE_RX_PIN = 0; // not working need extender
-constexpr int PYROSCIENCE_TX_PIN = 0; // not working need extender
 
 // CO2 RS485
 constexpr int RS485_RX_PIN = 16;
@@ -40,21 +36,21 @@ constexpr uint8_t RS485_2_TX_PIN = 33;
 
 // eFuses (via IO Expander)
 // Io Expander outputs 0-15 are 24V
-constexpr uint8_t EFUSE_VALVE_SUPPLY_INDEX = 0;
-constexpr uint8_t EFUSE_VALVE_CIRCULATION_INDEX = 1;
-constexpr uint8_t EFUSE_VALVE_RETURN_INDEX = 2;
+constexpr uint8_t EFUSE_VALVE_SUPPLY_INDEX = 11;
+constexpr uint8_t EFUSE_VALVE_CIRCULATION_INDEX = 12;
+constexpr uint8_t EFUSE_VALVE_RETURN_INDEX = 6;
 
-constexpr uint8_t EFUSE_VALVE_O2_INDEX = 3;
-constexpr uint8_t EFUSE_VALVE_CO2_INDEX = 4;
-constexpr uint8_t EFUSE_VALVE_AIR_INDEX = 5;
+constexpr uint8_t EFUSE_VALVE_AIR_INDEX = 0;
+constexpr uint8_t EFUSE_VALVE_CO2_INDEX = 1;
+constexpr uint8_t EFUSE_VALVE_O2_INDEX = 2;
 
-constexpr uint8_t EFUSE_FAN_CIRCULATION_INDEX = 6;
 constexpr uint8_t EFUSE_FAN_PCB_INDEX = 7;
-constexpr uint8_t EFUSE_FAN_HEATER_INDEX = 8;
+constexpr uint8_t EFUSE_FAN_CIRCULATION_INDEX = 14;
+constexpr uint8_t EFUSE_FAN_HEATER_INDEX = 15;
 
 // Io Expander outputs 16-19 are 12V
-constexpr uint8_t EFUSE_FAN_RIGHT_INDEX = 16;
-constexpr uint8_t EFUSE_FAN_LEFT_INDEX = 17;
+constexpr uint8_t EFUSE_FAN_LEFT_INDEX = 16;
+constexpr uint8_t EFUSE_FAN_RIGHT_INDEX = 17;
 constexpr uint8_t EFUSE_FAN_LOW_VOLT_INDEX = 18;
 constexpr uint8_t EFUSE_FAN_HIGH_VOLT_INDEX = 19;
 
@@ -65,6 +61,9 @@ constexpr uint8_t DEBUG_LED_2_INDEX = 22;
 constexpr uint8_t DEBUG_LED_3_INDEX = 23;
 
 // SSR RELAY
-constexpr int HEATER_PIN = 23;
+constexpr uint8_t HEATER_PIN = 4;
+
+// LIMIT SWITCH
+constexpr uint8_t LIMIT_SWITCH_PIN = 13;
 
 #endif // PINS_H
