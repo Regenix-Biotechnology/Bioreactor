@@ -55,6 +55,10 @@ void receiveSerialCommand()
         {
             setBioreactorState((uint8_t)eBioreactorState::TEST);
         }
+        if (rx == "STATE=OPEN-VALVES")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::OPEN_VALVES);
+        }
         if (rx == "STATE=IDLE")
         {
             setBioreactorState((uint8_t)eBioreactorState::IDLE);
@@ -74,6 +78,22 @@ void receiveSerialCommand()
         {
             float oxy_percent = *((float *)rx_buff);
             bioreactorParameter.putFloat("do", oxy_percent);
+        }
+        if (sscanf(rx.c_str(), "CO2=%f", (float *)rx_buff))
+        {
+            float CO2_PPM = *((float *)rx_buff);
+            bioreactorParameter.putFloat("CO2", CO2_PPM);
+            pressureChamber.setReferenceLevel(CO2, CO2_PPM);
+            Serial.print("CO2 Reference Level updated to: ");
+            Serial.println(CO2_PPM);
+        }
+        if (sscanf(rx.c_str(), "O2=%f", (float *)rx_buff))
+        {
+            float O2_PPM = *((float *)rx_buff);
+            bioreactorParameter.putFloat("O2", O2_PPM);
+            pressureChamber.setReferenceLevel(O2, O2_PPM);
+            Serial.print("O2 Reference Level updated to: ");
+            Serial.println(O2_PPM);
         }
         if (sscanf(rx.c_str(), "PUMP-SPEED=%f,%f,%f,%f", &(((float *)rx_buff)[0]), &(((float *)rx_buff)[1]), &(((float *)rx_buff)[2]), &(((float *)rx_buff)[3])))
         {

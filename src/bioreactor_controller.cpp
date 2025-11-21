@@ -88,9 +88,14 @@ void beginBioreactorPreferences()
     float temperature = bioreactorParameter.getFloat("temperature", 37.0);
     float ph = bioreactorParameter.getFloat("ph", 7.0);
     float oxyDissous = bioreactorParameter.getFloat("do", 100.0);
+    float co2 = bioreactorParameter.getFloat("CO2", 50000.0);
+    float dioxyg = bioreactorParameter.getFloat("O2", 85.0);
     eBioreactorState state = (eBioreactorState)bioreactorParameter.getShort("state", (int16_t)eBioreactorState::IDLE);
 
     temperatureController.setReferenceTemperature(temperature);
+    pressureChamber.setReferenceLevel(CO2, co2);
+    pressureChamber.setReferenceLevel(O2, dioxyg);
+
     // ph
     // oxy_dissous
     bioreactorState = state;

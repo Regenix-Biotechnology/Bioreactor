@@ -36,6 +36,7 @@ enum class eBioreactorState
     RINSING_RETURN,
     REDUCE_OVERFLOW,
     TEST,
+    OPEN_VALVES,
 
     MAX_STATE
 };
@@ -58,6 +59,7 @@ extern GMP251 co2Sensor;
 extern LimitSwitch limitSwitch;
 extern LedI2C ledI2C;
 extern Preferences bioreactorParameter;
+extern PressureChamberController pressureChamber;
 
 // Global variables
 extern eBioreactorState bioreactorState;
