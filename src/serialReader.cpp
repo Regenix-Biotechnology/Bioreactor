@@ -35,6 +35,22 @@ void receiveSerialCommand()
         {
             setBioreactorState((uint8_t)eBioreactorState::CLEANING_RETURN);
         }
+        if (rx == "STATE=RINSING")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::RINSING_LIQUID_APPROV);
+        }
+        if (rx == "STATE=RINSING-CIRCUL")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::RINSING_CIRCULATION);
+        }
+        if (rx == "STATE=RINSING-RETURN")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::RINSING_RETURN);
+        }
+        if (rx == "STATE=REDUCE-OVERFLOW")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::REDUCE_OVERFLOW);
+        }
         if (rx == "STATE=TEST")
         {
             setBioreactorState((uint8_t)eBioreactorState::TEST);

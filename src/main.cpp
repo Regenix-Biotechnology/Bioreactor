@@ -92,11 +92,11 @@ void loop()
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
         setPumpsSpeed(OFF, 150.0, 50.0, 50.0);
         setValvesState(CLOSE, OPEN, CLOSE);
-        setPressureChamberState(ON);
+        setPressureChamberState(OFF);
         setHeatersState(OFF);
 
         // switch after 10 min to CLEANING_RETURN
-        if (millis() - stateTimer > 10 * MINUTE)
+        if (millis() - stateTimer > 15 * MINUTE)
         {
             setBioreactorState((uint8_t)eBioreactorState::CLEANING_RETURN);
             stateTimer = millis();
@@ -104,7 +104,7 @@ void loop()
         break;
     case eBioreactorState::CLEANING_RETURN:
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
-        setPumpsSpeed(-200.0, -50.0, -50.0, -50.0);
+        setPumpsSpeed(-200.0, -150.0, -50.0, -50.0);
         setValvesState(CLOSE, OPEN, OPEN);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
@@ -112,7 +112,7 @@ void loop()
         // switch after 10 min to RINSING_LIQUID_APPROV
         if (millis() - stateTimer > 5 * MINUTE)
         {
-            setBioreactorState((uint8_t)eBioreactorState::RINSING_LIQUID_APPROV);
+            setBioreactorState((uint8_t)eBioreactorState::IDLE);
             stateTimer = millis();
         }
         break;
@@ -124,7 +124,7 @@ void loop()
         setHeatersState(OFF);
 
         // switch after 5 min to RINSING_CIRCULATION
-        if (millis() - stateTimer > 5 * MINUTE)
+        if (millis() - stateTimer > 6 * MINUTE)
         {
             setBioreactorState((uint8_t)eBioreactorState::RINSING_CIRCULATION);
             stateTimer = millis();
@@ -139,7 +139,7 @@ void loop()
         setHeatersState(OFF);
 
         // switch after 10 min to RINSING_RETURN
-        if (millis() - stateTimer > 10 * MINUTE)
+        if (millis() - stateTimer > 15 * MINUTE)
         {
             setBioreactorState((uint8_t)eBioreactorState::RINSING_RETURN);
             stateTimer = millis();
@@ -148,13 +148,28 @@ void loop()
     case eBioreactorState::RINSING_RETURN:
         // start after rinsing liquid is finished
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
-        setPumpsSpeed(-200.0, -250.0, -50.0, -50.0);
-        setValvesState(CLOSE, OPEN, OPEN);
+        setPumpsSpeed(OFF, OFF, -50.0, -50.0);
+        setValvesState(OPEN, OPEN, CLOSE);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
 
         // switch after 10 min to IDLE
-        if (millis() - stateTimer > 5 * MINUTE)
+        if (millis() - stateTimer > 3 * MINUTE)
+        {
+            setBioreactorState((uint8_t)eBioreactorState::REDUCE_OVERFLOW);
+            stateTimer = millis();
+        }
+        break;
+    case eBioreactorState::REDUCE_OVERFLOW: // reduce a bit the quantity of liquid in the sensor vial
+        // start after rinsing liquid is finished
+        setFansState(OFF, OFF, ON, ON, ON, ON, ON);
+        setPumpsSpeed(OFF, -100.0, 0.0, 0.0);
+        setValvesState(OPEN, OPEN, CLOSE);
+        setPressureChamberState(OFF);
+        setHeatersState(OFF);
+
+        // switch after 10 min to IDLE
+        if (millis() - stateTimer > 1 * MINUTE)
         {
             setBioreactorState((uint8_t)eBioreactorState::IDLE);
             stateTimer = millis();
@@ -162,7 +177,7 @@ void loop()
         break;
     case eBioreactorState::TEST: // For the fluidic and heating system test
         setFansState(ON, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(10.0, -10.0, 10.0, -10.0);
+        setPumpsSpeed(OFF, OFF, OFF, OFF);
         setValvesState(OPEN, OPEN, OPEN);
         setPressureChamberState(ON);
         setHeatersState(OFF);
