@@ -31,6 +31,7 @@ unsigned long lastLEDUpdateTime = 0;
 uint8_t lastLEDState = 0;
 unsigned long lastMotorSetSpeedTime = 0;
 uint8_t testState = 0;
+unsigned long stateTimer;
 
 /**
  * @brief Call the "begin" of every objects in the bioreactor controller.
@@ -66,13 +67,14 @@ void beginBioreactorController()
 void setBioreactorState(uint8_t state_int)
 {
     eBioreactorState state = (eBioreactorState)state_int;
-    if (state >= eBioreactorState::MAX_STATES)
+    if (state >= eBioreactorState::MAX_STATE)
     {
         return;
     }
 
     bioreactorState = state;
     bioreactorParameter.putShort("state", (int16_t)state);
+    stateTimer = millis();
     return;
 }
 
@@ -120,13 +122,13 @@ void setFansState(bool heaterFanState, bool circulationFanState, bool rightFanSt
  * @brief Set the state of the valves.
  * @param valveApprovState        State of the supply valve. (OPEN/CLOSE)
  * @param valveCirculationState   State of the circulation valve. (OPEN/CLOSE)
- * @param valveReturnState        State of the Return valve. (OPEN/CLOSE)
+ * @param valveCleaningState      State of the cleaning solution valve. (OPEN/CLOSE)
  */
-void setValvesState(bool valveSupplyState, bool valveCirculationState, bool valveReturnState)
+void setValvesState(bool valveSupplyState, bool valveCirculationState, bool valveCleaningState)
 {
     ioExpander.setEfuse(EFUSE_VALVE_SUPPLY_INDEX, valveSupplyState);
     ioExpander.setEfuse(EFUSE_VALVE_CIRCULATION_INDEX, valveCirculationState);
-    ioExpander.setEfuse(EFUSE_VALVE_RETURN_INDEX, valveReturnState);
+    ioExpander.setEfuse(EFUSE_VALVE_RETURN_INDEX, valveCleaningState);
 }
 
 /**
@@ -170,9 +172,12 @@ void setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cult
  * @param heaterState       State of the heater. (0-100%)
  *
  */
-void setHeatersState(float heaterState)
+void setHeatersState(bool heaterState)
 {
-    heater.setLevel(heaterState);
+    if (heaterState)
+        heater.setLevel(temperatureController.getHeaterPower());
+    else
+        heater.setLevel(OFF);
 }
 
 /**

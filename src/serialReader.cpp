@@ -19,6 +19,22 @@ void receiveSerialCommand()
         {
             setBioreactorState((uint8_t)eBioreactorState::RUN);
         }
+        if (rx == "STATE=RETURN")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::GROWTH_LIQUID_RETURN);
+        }
+        if (rx == "STATE=CLEANING")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::CLEANING_LIQUID_APPROV);
+        }
+        if (rx == "STATE=CLEANING-CIRCUL")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::CLEANING_CIRCULATION);
+        }
+        if (rx == "STATE=CLEANING-RETURN")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::CLEANING_RETURN);
+        }
         if (rx == "STATE=TEST")
         {
             setBioreactorState((uint8_t)eBioreactorState::TEST);

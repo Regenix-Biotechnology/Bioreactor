@@ -38,7 +38,7 @@ constexpr uint8_t RS485_2_TX_PIN = 33;
 // Io Expander outputs 0-15 are 24V
 constexpr uint8_t EFUSE_VALVE_SUPPLY_INDEX = 11;
 constexpr uint8_t EFUSE_VALVE_CIRCULATION_INDEX = 12;
-constexpr uint8_t EFUSE_VALVE_RETURN_INDEX = 6;
+constexpr uint8_t EFUSE_VALVE_RETURN_INDEX = 10;
 
 constexpr uint8_t EFUSE_VALVE_AIR_INDEX = 0;
 constexpr uint8_t EFUSE_VALVE_CO2_INDEX = 1;

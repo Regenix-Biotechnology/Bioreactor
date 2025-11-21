@@ -13,7 +13,7 @@ void setValvesState(bool valveSupplyState, bool valveCirculationState, bool valv
 void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState);
 void setPressureChamberState(bool state);
 void setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cultureChamberPump1Speed, float cultureChamberPump2Speed);
-void setHeatersState(float heaterState);
+void setHeatersState(bool heaterState);
 void updateTemperatureController();
 void updatePressureChamberController();
 void updateSensors();
