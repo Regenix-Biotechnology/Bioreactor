@@ -63,6 +63,10 @@ void receiveSerialCommand()
         {
             setBioreactorState((uint8_t)eBioreactorState::IDLE);
         }
+        if (rx == "STATE=SAMPLING")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::SAMPLING);
+        }
         if (sscanf(rx.c_str(), "TEMP=%f", (float *)rx_buff))
         {
             float temp = *((float *)rx_buff);

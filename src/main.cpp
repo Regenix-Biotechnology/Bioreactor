@@ -189,6 +189,13 @@ void loop()
         setPressureChamberState(OFF);
         setHeatersState(OFF);
         break;
+    case eBioreactorState::SAMPLING:
+        setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+        setPumpsSpeed(-50.0, OFF, OFF, OFF);
+        setValvesState(OPEN, CLOSE, CLOSE);
+        setPressureChamberState(OFF);
+        setHeatersState(OFF);
+        break;
     default:
         /* code */
         break;

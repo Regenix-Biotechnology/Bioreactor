@@ -37,6 +37,7 @@ enum class eBioreactorState
     REDUCE_OVERFLOW,
     TEST,
     OPEN_VALVES,
+    SAMPLING,
 
     MAX_STATE
 };
