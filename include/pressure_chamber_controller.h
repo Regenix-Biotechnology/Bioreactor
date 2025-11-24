@@ -2,6 +2,7 @@
 #define PRESSURE_CHAMBER_CONTROLLER_H
 
 #include <Arduino.h>
+#include "gmp251.h"
 
 typedef enum
 {
@@ -12,6 +13,8 @@ typedef enum
     MAX_VALVES
 } eValves;
 
+extern GMP251 co2Sensor;
+
 /**
  * @class TemperatureController
  * @brief Implements the control loop for the pressure chamber (O2, CO2, air)
@@ -21,6 +24,9 @@ class PressureChamberController
 public:
     PressureChamberController();
     void update(float o2Concentration, float co2Concentration, float pressure);
+    void updateO2(float o2Concentration, float co2Concentration, float pressure);
+    void updateCo2(float o2Concentration, float co2Concentration, float pressure);
+    void updatePressure(float o2Concentration, float co2Concentration, float pressure);
     bool getValveState(eValves Valve) const;
     void setReferenceLevel(eValves Valve, float ReferenceLevel);
     void setPressureChamberState(bool state) { this->pressureChamberState = state; }

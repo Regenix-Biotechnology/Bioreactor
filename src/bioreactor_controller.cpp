@@ -261,6 +261,11 @@ void printBioreactorStateToSerial()
         Serial.println("> Heater Power (%): " + String(temperatureController.getHeaterPower()));
         Serial.println("> CO2 Concentration (ppm): " + String(co2Sensor.getCO2()));
         Serial.println("> O2 Concentration (%): " + String(o2Sensor.getO2()));
+        Serial.println("> O2 status: " + String(o2Sensor.getStatus()));
+        Serial.println("> PH status: " + String(pHSensor.getStatus()));
+        Serial.println("> Temperature culture status: " + String(tempSensor.getStatus()));
+        Serial.println("> CO2 status: " + String(co2Sensor.getStatus()));
+        Serial.println("> DO status: " + String(dissolvedOxygenSensor.getStatus()));
 
         /* Add more prints here*/
 
