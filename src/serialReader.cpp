@@ -11,23 +11,23 @@ void receiveSerialCommand()
         {
             setBioreactorState((uint8_t)eBioreactorState::APPROV);
         }
-        if (rx == "STATE=HEAT")
+        if (rx == "STATE=PREPARE")
         {
             setBioreactorState((uint8_t)eBioreactorState::PREPARE);
         }
-        if (rx == "STATE=CULTURE")
+        if (rx == "STATE=RUN")
         {
             setBioreactorState((uint8_t)eBioreactorState::RUN);
         }
-        if (rx == "STATE=RETURN")
+        if (rx == "STATE=CELL-RETURN")
         {
-            setBioreactorState((uint8_t)eBioreactorState::GROWTH_LIQUID_RETURN);
+            setBioreactorState((uint8_t)eBioreactorState::CELL_RETURN);
         }
-        if (rx == "STATE=CLEANING")
+        if (rx == "STATE=CLEANING-APPROV")
         {
-            setBioreactorState((uint8_t)eBioreactorState::CLEANING_LIQUID_APPROV);
+            setBioreactorState((uint8_t)eBioreactorState::CLEANING_APPROV);
         }
-        if (rx == "STATE=CLEANING-CIRCUL")
+        if (rx == "STATE=CLEANING-CIRCULATION")
         {
             setBioreactorState((uint8_t)eBioreactorState::CLEANING_CIRCULATION);
         }
@@ -35,9 +35,9 @@ void receiveSerialCommand()
         {
             setBioreactorState((uint8_t)eBioreactorState::CLEANING_RETURN);
         }
-        if (rx == "STATE=RINSING")
+        if (rx == "STATE=RINSING-APPROV")
         {
-            setBioreactorState((uint8_t)eBioreactorState::RINSING_LIQUID_APPROV);
+            setBioreactorState((uint8_t)eBioreactorState::RINSING_APPROV);
         }
         if (rx == "STATE=RINSING-CIRCUL")
         {
@@ -66,6 +66,15 @@ void receiveSerialCommand()
         if (rx == "STATE=SAMPLING")
         {
             setBioreactorState((uint8_t)eBioreactorState::SAMPLING);
+        }
+        if (sscanf(rx.c_str(), "STATE=%d", (uint8_t *)rx_buff))
+        {
+            eBioreactorState state = (eBioreactorState) * ((uint8_t *)rx_buff);
+            if (state >= eBioreactorState::MAX_STATE)
+            {
+                return;
+            }
+            setBioreactorState((uint8_t)state);
         }
         if (sscanf(rx.c_str(), "TEMP=%f", (float *)rx_buff))
         {

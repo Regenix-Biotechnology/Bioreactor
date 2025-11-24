@@ -36,8 +36,8 @@ private:
     static constexpr float KP_FAN = 20.0f;
     static constexpr float KI_FAN = 0.0001f;
     static constexpr float KD_FAN = 0.0f;
-    static constexpr float KP_AIR = 5.0f;
-    static constexpr float KI_AIR = 0.0001f;
+    static constexpr float KP_AIR = 7.0f;
+    static constexpr float KI_AIR = 0.0005f;
     static constexpr float MILLIS_TO_SECONDS = 1000.0f;
 };
 

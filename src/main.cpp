@@ -57,7 +57,7 @@ void loop()
         setHeatersState(ON);
         // switch when user command received (to IDLE)
         break;
-    case eBioreactorState::GROWTH_LIQUID_RETURN:
+    case eBioreactorState::CELL_RETURN:
         // start when user send command (from IDLE after culture is finished)
         setFansState(OFF, ON, ON, ON, ON, ON, ON);
         setPumpsSpeed(-200.0, -150.0, -50.0, -50.0);
@@ -72,7 +72,7 @@ void loop()
             stateTimer = millis();
         }
         break;
-    case eBioreactorState::CLEANING_LIQUID_APPROV:
+    case eBioreactorState::CLEANING_APPROV:
         // start when user send command (from IDLE after growth liquid returned)
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
         setPumpsSpeed(200.0, OFF, OFF, OFF);
@@ -116,7 +116,7 @@ void loop()
             stateTimer = millis();
         }
         break;
-    case eBioreactorState::RINSING_LIQUID_APPROV:
+    case eBioreactorState::RINSING_APPROV:
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
         setPumpsSpeed(200.0, OFF, OFF, OFF);
         setValvesState(OPEN, CLOSE, CLOSE);
