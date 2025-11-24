@@ -60,7 +60,7 @@ void loop()
     case eBioreactorState::GROWTH_LIQUID_RETURN:
         // start when user send command (from IDLE after culture is finished)
         setFansState(OFF, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(-200.0, -50.0, -50.0, -50.0);
+        setPumpsSpeed(-200.0, -150.0, -50.0, -50.0);
         setValvesState(OPEN, OPEN, CLOSE);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
