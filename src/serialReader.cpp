@@ -57,11 +57,6 @@ void receiveSerialCommand()
             setBioreactorState((uint8_t)eBioreactorState::RINSING_RETURN);
             Serial.println("Bioreactor State set to RINSING_RETURN");
         }
-        if (rx == "STATE=REDUCE-OVERFLOW")
-        {
-            setBioreactorState((uint8_t)eBioreactorState::REDUCE_OVERFLOW);
-            Serial.println("Bioreactor State set to REDUCE_OVERFLOW");
-        }
         if (rx == "STATE=TEST")
         {
             setBioreactorState((uint8_t)eBioreactorState::TEST);
@@ -76,94 +71,94 @@ void receiveSerialCommand()
         {
             setBioreactorState((uint8_t)eBioreactorState::IDLE);
             Serial.println("Bioreactor State set to IDLE");
-            if (rx == "STATE=SAMPLING")
+        }
+        if (rx == "STATE=SAMPLING")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::SAMPLING);
+            Serial.println("Bioreactor State set to SAMPLING");
+        }
+        if (sscanf(rx.c_str(), "STATE=%d", (uint8_t *)rx_buff))
+        {
+            eBioreactorState state = (eBioreactorState) * ((uint8_t *)rx_buff);
+            if (state >= eBioreactorState::MAX_STATE)
             {
-                setBioreactorState((uint8_t)eBioreactorState::SAMPLING);
-                Serial.println("Bioreactor State set to SAMPLING");
+                return;
             }
-            if (sscanf(rx.c_str(), "STATE=%d", (uint8_t *)rx_buff))
-            {
-                eBioreactorState state = (eBioreactorState) * ((uint8_t *)rx_buff);
-                if (state >= eBioreactorState::MAX_STATE)
-                {
-                    return;
-                }
-                setBioreactorState((uint8_t)state);
-                Serial.print("Bioreactor State set to: ");
-                Serial.println(static_cast<int>(state));
-            }
-            if (sscanf(rx.c_str(), "TEMP=%f", (float *)rx_buff))
-            {
-                float temp = *((float *)rx_buff);
-                temperatureController.setReferenceTemperature(temp);
-                bioreactorParameter.putFloat("temperature", temp);
-                Serial.print("Temperature Reference updated to: ");
-                Serial.println(temp);
-            }
-            if (sscanf(rx.c_str(), "PH=%f", (float *)rx_buff))
-            {
-                float ph = *((float *)rx_buff);
-                bioreactorParameter.putFloat("ph", ph);
-                Serial.print("pH Reference updated to: ");
-                Serial.println(ph);
-            }
-            if (sscanf(rx.c_str(), "DO=%f", (float *)rx_buff))
-            {
-                float oxy_percent = *((float *)rx_buff);
-                bioreactorParameter.putFloat("do", oxy_percent);
-                Serial.print("Dissolved Oxygen Reference updated to: ");
-                Serial.println(oxy_percent);
-            }
-            if (sscanf(rx.c_str(), "CO2=%f", (float *)rx_buff))
-            {
-                float CO2_PPM = *((float *)rx_buff);
-                bioreactorParameter.putFloat("CO2", CO2_PPM);
-                pressureChamber.setReferenceLevel(CO2, CO2_PPM);
-                Serial.print("CO2 Reference Level updated to: ");
-                Serial.println(CO2_PPM);
-            }
-            if (sscanf(rx.c_str(), "O2=%f", (float *)rx_buff))
-            {
-                float O2_PPM = *((float *)rx_buff);
-                bioreactorParameter.putFloat("O2", O2_PPM);
-                pressureChamber.setReferenceLevel(O2, O2_PPM);
-                Serial.print("O2 Reference Level updated to: ");
-                Serial.println(O2_PPM);
-            }
-            if (sscanf(rx.c_str(), "PUMP-SPEED=%f,%f,%f,%f", &(((float *)rx_buff)[0]), &(((float *)rx_buff)[1]), &(((float *)rx_buff)[2]), &(((float *)rx_buff)[3])))
-            {
-                // uint8_t i = 0;
-                // float approvPumpSpeed = *((float *)(&(rx_buff[sizeof(float) * i++])));
-                // float circulationPumpSpeed = *((float *)(&(rx_buff[sizeof(float) * i++])));
-                // float cultureChamberPump1Speed = *((float *)(&(rx_buff[sizeof(float) * i++])));
-                // float cultureChamberPump2Speed = *((float *)(&(rx_buff[sizeof(float) * i++])));
-                // // set pump
-                // // save pump
-                // setPumpsSpeed(approvPumpSpeed, circulationPumpSpeed, cultureChamberPump1Speed, cultureChamberPump2Speed);
-            }
-            if (rx == "CALIB-PH=4")
-            {
-                pHSensor.calibrateSinglePoint(eCalibrationValues::CAL_PH_4);
-                Serial.println("pH Sensor calibrated at pH 4");
-            }
-            if (rx == "CALIB-PH=7")
-            {
-                pHSensor.calibrateSinglePoint(eCalibrationValues::CAL_PH_7);
-                Serial.println("pH Sensor calibrated at pH 7");
-            }
-            if (rx == "CALIB-PH=10")
-            {
-                pHSensor.calibrateSinglePoint(eCalibrationValues::CAL_PH_10);
-                Serial.println("pH Sensor calibrated at pH 10");
-            }
-            if (rx == "CALIB-DO=0")
-            {
-                // do calib
-            }
-            if (rx == "CALIB-DO=100")
-            {
-                // do calib
-            }
+            setBioreactorState((uint8_t)state);
+            Serial.print("Bioreactor State set to: ");
+            Serial.println(static_cast<int>(state));
+        }
+        if (sscanf(rx.c_str(), "TEMP=%f", (float *)rx_buff))
+        {
+            float temp = *((float *)rx_buff);
+            temperatureController.setReferenceTemperature(temp);
+            bioreactorParameter.putFloat("temperature", temp);
+            Serial.print("Temperature Reference updated to: ");
+            Serial.println(temp);
+        }
+        if (sscanf(rx.c_str(), "PH=%f", (float *)rx_buff))
+        {
+            float ph = *((float *)rx_buff);
+            bioreactorParameter.putFloat("ph", ph);
+            Serial.print("pH Reference updated to: ");
+            Serial.println(ph);
+        }
+        if (sscanf(rx.c_str(), "DO=%f", (float *)rx_buff))
+        {
+            float oxy_percent = *((float *)rx_buff);
+            bioreactorParameter.putFloat("do", oxy_percent);
+            Serial.print("Dissolved Oxygen Reference updated to: ");
+            Serial.println(oxy_percent);
+        }
+        if (sscanf(rx.c_str(), "CO2=%f", (float *)rx_buff))
+        {
+            float CO2_PPM = *((float *)rx_buff);
+            bioreactorParameter.putFloat("CO2", CO2_PPM);
+            pressureChamber.setReferenceLevel(CO2, CO2_PPM);
+            Serial.print("CO2 Reference Level updated to: ");
+            Serial.println(CO2_PPM);
+        }
+        if (sscanf(rx.c_str(), "O2=%f", (float *)rx_buff))
+        {
+            float O2_PPM = *((float *)rx_buff);
+            bioreactorParameter.putFloat("O2", O2_PPM);
+            pressureChamber.setReferenceLevel(O2, O2_PPM);
+            Serial.print("O2 Reference Level updated to: ");
+            Serial.println(O2_PPM);
+        }
+        if (sscanf(rx.c_str(), "PUMP-SPEED=%f,%f,%f,%f", &(((float *)rx_buff)[0]), &(((float *)rx_buff)[1]), &(((float *)rx_buff)[2]), &(((float *)rx_buff)[3])))
+        {
+            // uint8_t i = 0;
+            // float approvPumpSpeed = *((float *)(&(rx_buff[sizeof(float) * i++])));
+            // float circulationPumpSpeed = *((float *)(&(rx_buff[sizeof(float) * i++])));
+            // float cultureChamberPump1Speed = *((float *)(&(rx_buff[sizeof(float) * i++])));
+            // float cultureChamberPump2Speed = *((float *)(&(rx_buff[sizeof(float) * i++])));
+            // // set pump
+            // // save pump
+            // setPumpsSpeed(approvPumpSpeed, circulationPumpSpeed, cultureChamberPump1Speed, cultureChamberPump2Speed);
+        }
+        if (rx == "CALIB-PH=4")
+        {
+            pHSensor.calibrateSinglePoint(eCalibrationValues::CAL_PH_4);
+            Serial.println("pH Sensor calibrated at pH 4");
+        }
+        if (rx == "CALIB-PH=7")
+        {
+            pHSensor.calibrateSinglePoint(eCalibrationValues::CAL_PH_7);
+            Serial.println("pH Sensor calibrated at pH 7");
+        }
+        if (rx == "CALIB-PH=10")
+        {
+            pHSensor.calibrateSinglePoint(eCalibrationValues::CAL_PH_10);
+            Serial.println("pH Sensor calibrated at pH 10");
+        }
+        if (rx == "CALIB-DO=0")
+        {
+            // do calib
+        }
+        if (rx == "CALIB-DO=100")
+        {
+            // do calib
         }
     }
 }

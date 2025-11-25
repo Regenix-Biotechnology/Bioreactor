@@ -34,7 +34,6 @@ enum class eBioreactorState
     RINSING_APPROV,
     RINSING_CIRCULATION,
     RINSING_RETURN,
-    REDUCE_OVERFLOW,
     TEST,
     OPEN_VALVES,
     SAMPLING,
