@@ -148,15 +148,15 @@ void loop()
     case eBioreactorState::RINSING_RETURN:
         // start after rinsing liquid is finished
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
-        setPumpsSpeed(-100.0, -75.0, -50.0, -50.0);
-        setValvesState(CLOSE, OPEN, CLOSE);
+        setPumpsSpeed(-200.0, -125.0, -50.0, -50.0);
+        setValvesState(CLOSE, OPEN, OPEN);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
 
-        // switch after 2 min to IDLE
+        // switch after 2 min to OPEN_VALVES
         if (millis() - stateTimer > 2 * MINUTE)
         {
-            setBioreactorState((uint8_t)eBioreactorState::IDLE);
+            setBioreactorState((uint8_t)eBioreactorState::OPEN_VALVES);
             stateTimer = millis();
         }
         break;
@@ -180,6 +180,13 @@ void loop()
         setValvesState(OPEN, CLOSE, CLOSE);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
+        break;
+    case eBioreactorState::HEATING:
+        setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+        setPumpsSpeed(OFF, OFF, OFF, OFF);
+        setValvesState(CLOSE, CLOSE, CLOSE);
+        setPressureChamberState(OFF);
+        setHeatersState(ON);
         break;
     default:
         /* code */

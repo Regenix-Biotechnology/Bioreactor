@@ -37,6 +37,7 @@ enum class eBioreactorState
     TEST,
     OPEN_VALVES,
     SAMPLING,
+    HEATING,
 
     MAX_STATE
 };

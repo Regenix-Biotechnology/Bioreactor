@@ -77,6 +77,11 @@ void receiveSerialCommand()
             setBioreactorState((uint8_t)eBioreactorState::SAMPLING);
             Serial.println("Bioreactor State set to SAMPLING");
         }
+        if (rx == "STATE=HEATING")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::HEATING);
+            Serial.println("Bioreactor State set to HEATING");
+        }
         if (sscanf(rx.c_str(), "STATE=%d", (uint8_t *)rx_buff))
         {
             eBioreactorState state = (eBioreactorState) * ((uint8_t *)rx_buff);
