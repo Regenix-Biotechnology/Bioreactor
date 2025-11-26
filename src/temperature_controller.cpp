@@ -25,7 +25,12 @@ void TemperatureController::update(float waterTemp, float airTemp)
     float dt = (float)(currentTime - prevTime) / MILLIS_TO_SECONDS;
     float error = (tempRef - waterTemp);
     this->integralErrorAir += error * dt;
-    float targetAirTemp = KP_AIR * error + KI_AIR * integralErrorAir + tempRef;
+
+    float adjustedKP_AIR = KP_AIR;
+    if (error < 0) // More aggressive for cooling
+        adjustedKP_AIR = KP_AIR * 3.0f;
+
+    float targetAirTemp = adjustedKP_AIR * error + KI_AIR * integralErrorAir + tempRef;
 
     // --- PID Control for the Heater ---
     error = targetAirTemp - airTemp;
