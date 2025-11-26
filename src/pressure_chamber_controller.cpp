@@ -153,11 +153,8 @@ bool PressureChamberController::getValveState(eValves Valve) const
     case O2:
         return (timeBeforeClosingO2Valve > millis()) ? true : false;
     case CO2:
-        // if (!co2Sensor.getStatus() == GMP_251_STATUS_OK){
-        //     return false;
-        // }
         // bool status = (co2Sensor.getStatus() == eGMP251Status::GMP_251_STATUS_OK) || (co2Sensor.getStatus() == eGMP251Status::GMP_251_STATUS_INITIALIZED);
-        return ((timeBeforeClosingCO2Valve > millis()) && true) ? true : false;
+        return ((timeBeforeClosingCO2Valve > millis())) ? true : false;
     case AIR:
         return (timeBeforeClosingAirValve > millis()) ? true : false;
     case SAFETY:

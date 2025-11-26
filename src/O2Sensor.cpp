@@ -29,10 +29,14 @@ float O2Sensor::getO2()
 {
     float vol;
     uint8_t buf[DATA_BUFFER_SIZE] = {};
-    readData(OXYGEN_DATA, buf, DATA_BUFFER_SIZE);
+    eO2SensorStatus status = readData(OXYGEN_DATA, buf, DATA_BUFFER_SIZE);
     vol = static_cast<float>(buf[0]) +
           static_cast<float>(buf[1]) / DECIMAL_PLACE_1 +
           static_cast<float>(buf[2]) / DECIMAL_PLACE_2;
+
+    if (status != O2_SENSOR_STATUS_OK)
+        return 0.0f;
+
     return vol;
 }
 
