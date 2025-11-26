@@ -206,10 +206,16 @@ void loop()
         break;
     case eBioreactorState::SAMPLING:
         setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-        setPumpsSpeed(-50.0, OFF, OFF, OFF);
+        setPumpsSpeed(-80.0, OFF, OFF, OFF);
         setValvesState(OPEN, CLOSE, CLOSE);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
+
+        if (millis() - stateTimer > 0.75 * MINUTE)
+        {
+            setBioreactorState((uint8_t)eBioreactorState::RUN);
+            stateTimer = millis();
+        }
         break;
     case eBioreactorState::HEATING:
         setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
