@@ -28,9 +28,9 @@ void TemperatureController::update(float waterTemp, float airTemp)
 
     float adjustedKP_AIR = KP_AIR;
     if (error < 0) // More aggressive for cooling
-        adjustedKP_AIR = KP_AIR * 3.0f;
+        adjustedKP_AIR = KP_AIR * 6.0f;
 
-    float targetAirTemp = adjustedKP_AIR * error + KI_AIR * integralErrorAir + tempRef;
+    float targetAirTemp = adjustedKP_AIR * error + KI_AIR * integralErrorAir + tempRef - TEMPERATURE_DIFFERENCE_OFFSET;
 
     // --- PID Control for the Heater ---
     error = targetAirTemp - airTemp;
