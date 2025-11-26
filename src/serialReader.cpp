@@ -62,6 +62,11 @@ void receiveSerialCommand()
             setBioreactorState((uint8_t)eBioreactorState::REDUCE_OVERFLOW);
             Serial.println("Bioreactor State set to REDUCE_OVERFLOW");
         }
+        if (rx == "STATE=RETURN-START")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::RETURN_START);
+            Serial.println("Bioreactor State set to RETURN_START");
+        }
         if (rx == "STATE=TEST")
         {
             setBioreactorState((uint8_t)eBioreactorState::TEST);

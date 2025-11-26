@@ -160,6 +160,21 @@ void loop()
             stateTimer = millis();
         }
         break;
+    case eBioreactorState::RETURN_START:
+        // start after rinsing liquid is finished
+        setFansState(OFF, OFF, ON, ON, ON, ON, ON);
+        setPumpsSpeed(-200.0, -140.0, CLOSE, CLOSE);
+        setValvesState(CLOSE, CLOSE, OPEN);
+        setPressureChamberState(OFF);
+        setHeatersState(OFF);
+
+        // switch after 10 min to IDLE
+        if (millis() - stateTimer > 3 * MINUTE)
+        {
+            setBioreactorState((uint8_t)eBioreactorState::IDLE);
+            stateTimer = millis();
+        }
+        break;
     case eBioreactorState::REDUCE_OVERFLOW: // reduce a bit the quantity of liquid in the sensor vial
         // start after rinsing liquid is finished
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
