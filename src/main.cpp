@@ -175,6 +175,20 @@ void loop()
             stateTimer = millis();
         }
         break;
+    case eBioreactorState::RETURN_BEFORE_CULTURE:
+        setFansState(OFF, OFF, ON, ON, ON, ON, ON);
+        setPumpsSpeed(-200.0, -150.0, 0.0, 0.0);
+        setValvesState(CLOSE, CLOSE, OPEN);
+        setPressureChamberState(OFF);
+        setHeatersState(OFF);
+
+        // switch after 10 min to RINSING_LIQUID_APPROV
+        // if (millis() - stateTimer > 5 * MINUTE)
+        // {
+        //     setBioreactorState((uint8_t)eBioreactorState::IDLE);
+        //     stateTimer = millis();
+        // }
+        break;
     case eBioreactorState::TEST: // For the fluidic and heating system test
         setFansState(ON, ON, ON, ON, ON, ON, ON);
         setPumpsSpeed(OFF, OFF, OFF, OFF);

@@ -51,6 +51,10 @@ void receiveSerialCommand()
         {
             setBioreactorState((uint8_t)eBioreactorState::REDUCE_OVERFLOW);
         }
+        if (rx == "STATE=RETURN_BEFORE_CULTURE")
+        {
+            setBioreactorState((uint8_t)eBioreactorState::RETURN_BEFORE_CULTURE);
+        }
         if (rx == "STATE=TEST")
         {
             setBioreactorState((uint8_t)eBioreactorState::TEST);
