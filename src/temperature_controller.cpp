@@ -7,7 +7,6 @@ TemperatureController::TemperatureController()
     : integralError(0.0f),
       prevError(0.0f),
       pwmHeater(0),
-      patchState(false),
       tempRef(37.0f)
 {
 }
@@ -21,16 +20,20 @@ TemperatureController::TemperatureController()
  */
 void TemperatureController::update(float waterTemp, float airTemp)
 {
-    // --- Activation of Patch Heating ---
-    this->patchState = waterTemp < (tempRef - TEMPERATURE_REFERENCE_OFFSET);
-
     // --- Compute Target Air Temperature ---
-    float targetAirTemp = KP_AIR * (tempRef - waterTemp) + tempRef;
-
-    // --- PID Control for the Heater ---
     unsigned long currentTime = millis();
     float dt = (float)(currentTime - prevTime) / MILLIS_TO_SECONDS;
-    float error = targetAirTemp - airTemp;
+    float error = (tempRef - waterTemp);
+    this->integralErrorAir += error * dt;
+
+    float adjustedKP_AIR = KP_AIR;
+    if (error < 0) // More aggressive for cooling
+        adjustedKP_AIR = KP_AIR * 6.0f;
+
+    float targetAirTemp = adjustedKP_AIR * error + KI_AIR * integralErrorAir + tempRef - TEMPERATURE_DIFFERENCE_OFFSET;
+
+    // --- PID Control for the Heater ---
+    error = targetAirTemp - airTemp;
     float derivative = (error - prevError) / dt;
     this->integralError += error * dt;
     this->prevError = error;
@@ -50,8 +53,6 @@ void TemperatureController::update(float waterTemp, float airTemp)
     // Serial.print(heaterControl);
     // Serial.print(" Heater Power: ");
     // Serial.print(this->pwmHeater);
-    // Serial.print(" Patch State: ");
-    // Serial.println(this->patchState);
 }
 
 /**
@@ -60,14 +61,6 @@ void TemperatureController::update(float waterTemp, float airTemp)
 float TemperatureController::getHeaterPower() const
 {
     return this->pwmHeater;
-}
-
-/**
- * @brief Returns if the patch needs to be activated.
- */
-bool TemperatureController::isPatchHeatingNeeded() const
-{
-    return this->patchState;
 }
 
 /**

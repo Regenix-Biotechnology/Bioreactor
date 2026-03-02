@@ -16,8 +16,8 @@ VisiFermRS485::VisiFermRS485(uint8_t rxPin,
       _rxLen(0),
       _waitStartMs(0),
       _lastReadTime(0),
-      _oxygen(NAN),
-      _temperature(NAN)
+      _oxygen(0.0),
+      _temperature(0.0)
 {
 }
 
@@ -50,7 +50,7 @@ eVisiFermStatus VisiFermRS485::update()
         if (tryReadFrame())
         {
             // full frame in _rxBuf
-            float parsedValue = NAN;
+            float parsedValue = 0.0;
 
             if (parseData(_rxBuf, _rxLen, parsedValue))
             {

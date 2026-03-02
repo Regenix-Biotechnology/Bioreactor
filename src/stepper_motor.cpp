@@ -53,7 +53,7 @@ eMotorStatus StepperMotor::setSpeed(float speed)
     if (!_isInit)
         return MOTOR_STATUS_NOT_INITIALISED;
 
-    eMotorMode direction = MOTOR_MODE_SPEED_CONTROL_CLOCKWISE;
+    eMotorMode direction = MOTOR_MODE_SPEED_CONTROL_COUNTERCLOCKWISE;
     uint32_t torque = RUNNING_TORQUE;
     if (speed == 0.0)
     {
@@ -61,7 +61,7 @@ eMotorStatus StepperMotor::setSpeed(float speed)
     }
     else if (speed < 0.0)
     {
-        direction = MOTOR_MODE_SPEED_CONTROL_COUNTERCLOCKWISE;
+        direction = MOTOR_MODE_SPEED_CONTROL_CLOCKWISE;
         speed = fabsf(speed);
     }
 

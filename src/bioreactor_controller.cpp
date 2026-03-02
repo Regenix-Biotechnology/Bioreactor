@@ -19,6 +19,7 @@ AtlasPHSensor pHSensor(&Wire);
 AtlasTempSensor tempSensor(&Wire);
 LimitSwitch limitSwitch(LIMIT_SWITCH_PIN);
 LedI2C ledI2C(&Wire);
+Preferences bioreactorParameter;
 
 // Global variables
 eBioreactorState bioreactorState = eBioreactorState::TEST;
@@ -30,6 +31,7 @@ unsigned long lastLEDUpdateTime = 0;
 uint8_t lastLEDState = 0;
 unsigned long lastMotorSetSpeedTime = 0;
 uint8_t testState = 0;
+unsigned long stateTimer;
 
 /**
  * @brief Call the "begin" of every objects in the bioreactor controller.
@@ -54,6 +56,50 @@ void beginBioreactorController()
     circulationPump.begin();
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
+    beginBioreactorPreferences();
+}
+
+/**
+ * @brief Setter for bioreactor state
+ *
+ * @param state
+ */
+void setBioreactorState(uint8_t state_int)
+{
+    eBioreactorState state = (eBioreactorState)state_int;
+    if (state >= eBioreactorState::MAX_STATE)
+    {
+        return;
+    }
+
+    bioreactorState = state;
+    bioreactorParameter.putShort("state", (int16_t)state);
+    stateTimer = millis();
+    return;
+}
+
+/**
+ * @brief Get all the culture parameter from memory
+ */
+void beginBioreactorPreferences()
+{
+    bioreactorParameter.begin("bioreactor");
+
+    float temperature = bioreactorParameter.getFloat("temperature", 37.0);
+    float ph = bioreactorParameter.getFloat("ph", 7.0);
+    float oxyDissous = bioreactorParameter.getFloat("do", 100.0);
+    float co2 = bioreactorParameter.getFloat("CO2", 50000.0);
+    float dioxyg = bioreactorParameter.getFloat("O2", 85.0);
+    eBioreactorState state = (eBioreactorState)bioreactorParameter.getShort("state", (int16_t)eBioreactorState::IDLE);
+
+    temperatureController.setReferenceTemperature(temperature);
+    pressureChamber.setReferenceLevel(CO2, co2);
+    pressureChamber.setReferenceLevel(O2, dioxyg);
+
+    // ph
+    // oxy_dissous
+    bioreactorState = state;
+    // pump
 }
 
 /**
@@ -81,13 +127,13 @@ void setFansState(bool heaterFanState, bool circulationFanState, bool rightFanSt
  * @brief Set the state of the valves.
  * @param valveApprovState        State of the supply valve. (OPEN/CLOSE)
  * @param valveCirculationState   State of the circulation valve. (OPEN/CLOSE)
- * @param valveReturnState        State of the Return valve. (OPEN/CLOSE)
+ * @param valveCleaningState      State of the cleaning solution valve. (OPEN/CLOSE)
  */
-void setValvesState(bool valveSupplyState, bool valveCirculationState, bool valveReturnState)
+void setValvesState(bool valveSupplyState, bool valveCirculationState, bool valveCleaningState)
 {
     ioExpander.setEfuse(EFUSE_VALVE_SUPPLY_INDEX, valveSupplyState);
     ioExpander.setEfuse(EFUSE_VALVE_CIRCULATION_INDEX, valveCirculationState);
-    ioExpander.setEfuse(EFUSE_VALVE_RETURN_INDEX, valveReturnState);
+    ioExpander.setEfuse(EFUSE_VALVE_RETURN_INDEX, valveCleaningState);
 }
 
 /**
@@ -131,9 +177,12 @@ void setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cult
  * @param heaterState       State of the heater. (0-100%)
  *
  */
-void setHeatersState(float heaterState)
+void setHeatersState(bool heaterState)
 {
-    heater.setLevel(heaterState);
+    if (heaterState)
+        heater.setLevel(temperatureController.getHeaterPower());
+    else
+        heater.setLevel(OFF);
 }
 
 /**
@@ -212,6 +261,11 @@ void printBioreactorStateToSerial()
         Serial.println("> Heater Power (%): " + String(temperatureController.getHeaterPower()));
         Serial.println("> CO2 Concentration (ppm): " + String(co2Sensor.getCO2()));
         Serial.println("> O2 Concentration (%): " + String(o2Sensor.getO2()));
+        Serial.println("> O2 status: " + String(o2Sensor.getStatus()));
+        Serial.println("> PH status: " + String(pHSensor.getStatus()));
+        Serial.println("> Temperature culture status: " + String(tempSensor.getStatus()));
+        Serial.println("> CO2 status: " + String(co2Sensor.getStatus()));
+        Serial.println("> DO status: " + String(dissolvedOxygenSensor.getStatus()));
 
         /* Add more prints here*/
 

@@ -2,6 +2,7 @@
 #define PRESSURE_CHAMBER_CONTROLLER_H
 
 #include <Arduino.h>
+#include "gmp251.h"
 
 typedef enum
 {
@@ -12,6 +13,8 @@ typedef enum
     MAX_VALVES
 } eValves;
 
+extern GMP251 co2Sensor;
+
 /**
  * @class TemperatureController
  * @brief Implements the control loop for the pressure chamber (O2, CO2, air)
@@ -21,6 +24,9 @@ class PressureChamberController
 public:
     PressureChamberController();
     void update(float o2Concentration, float co2Concentration, float pressure);
+    void updateO2(float o2Concentration, float co2Concentration, float pressure);
+    void updateCo2(float o2Concentration, float co2Concentration, float pressure);
+    void updatePressure(float o2Concentration, float co2Concentration, float pressure);
     bool getValveState(eValves Valve) const;
     void setReferenceLevel(eValves Valve, float ReferenceLevel);
     void setPressureChamberState(bool state) { this->pressureChamberState = state; }
@@ -69,7 +75,7 @@ private:
     static constexpr float SECONDS_TO_MILLIS = 1000.0f;             // Convert seconds to milliseconds
     static constexpr float CO2_DISPLACEMENT_RATIO = 0.2f;           // Empirical factor to tune
     static constexpr float AIR_VALVE_OPEN_TIME = 1000.0f;           // Time to open the air valve (ms)
-    static constexpr float CORRECTION_FACTOR_O2 = 0.5f;             // Correction factor for O2
+    static constexpr float CORRECTION_FACTOR_O2 = 2.0f;             // Correction factor for O2
     static constexpr float CORRECTION_FACTOR_O2_REDUCTION = 40.0f;  // Correction factor for O2 reduction
     static constexpr float CORRECTION_FACTOR_CO2 = 1.0f;            // Correction factor for CO2
     static constexpr float CORRECTION_FACTOR_CO2_REDUCTION = 30.0f; // Correction factor for CO2 reduction

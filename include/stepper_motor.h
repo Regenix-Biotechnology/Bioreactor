@@ -44,7 +44,7 @@ private:
 
     static constexpr float FREQ_CLOCK = 13.3 * (10 ^ 6);                                                                                                     // Hz
     static constexpr float DEFREE_PER_STEP = 1.8;                                                                                                            // datasheet kamoer
-    static constexpr float ML_PER_RPM = 0.35;                                                                                                                // gros approx datasheet kamoer
+    static constexpr float ML_PER_RPM = 0.1388;                                                                                                              // gros approx datasheet kamoer
     static constexpr uint16_t MICRO_STEP_PER_STEP = 256;                                                                                                     // datasheet p.30
     static constexpr float REG_TO_ML_PER_MIN = (FREQ_CLOCK / 2 / (2 ^ 23) / MICRO_STEP_PER_STEP / (360 / DEFREE_PER_STEP)) /*rotation/s*/ * 60 * ML_PER_RPM; // conversion formula p. 52
     static constexpr float ML_PER_MIN_TO_REG = 1 / REG_TO_ML_PER_MIN;

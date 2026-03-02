@@ -2,6 +2,7 @@
 #define MAIN_H
 
 #include <Arduino.h>
+#include <Preferences.h>
 #include "SHT40.h"
 #include "stepper_motor.h"
 #include "ssr_relay.h"
@@ -26,9 +27,21 @@ enum class eBioreactorState
     APPROV,
     PREPARE,
     RUN,
-
+    CELL_RETURN,
+    CLEANING_APPROV,
+    CLEANING_CIRCULATION,
+    CLEANING_RETURN,
+    RINSING_APPROV,
+    RINSING_CIRCULATION,
+    RINSING_RETURN,
+    REDUCE_OVERFLOW,
+    RETURN_START,
     TEST,
-    MAX_STATES
+    OPEN_VALVES,
+    SAMPLING,
+    HEATING,
+
+    MAX_STATE
 };
 
 // Objects declaration (extern to be used both in main.cpp and bioreactor_controller.cpp)
@@ -48,12 +61,15 @@ extern AtlasTempSensor tempSensor;
 extern GMP251 co2Sensor;
 extern LimitSwitch limitSwitch;
 extern LedI2C ledI2C;
+extern Preferences bioreactorParameter;
+extern PressureChamberController pressureChamber;
 
 // Global variables
 extern eBioreactorState bioreactorState;
 extern unsigned long lastTemperatureControllerTime;
 extern unsigned long lastPrintTime;
 extern uint8_t testState;
+extern unsigned long stateTimer;
 
 // Global constants
 static constexpr bool OPEN = HIGH;
@@ -62,6 +78,7 @@ static constexpr bool ON = HIGH;
 static constexpr bool OFF = LOW;
 static constexpr uint8_t PUMP_MAX_SPEED = 255;
 static constexpr unsigned long TEMPERATURE_CONTROLLER_UPDATE_INTERVAL = 1000;
+static constexpr unsigned long MINUTE = 60000;
 static constexpr unsigned long PRINT_UPDATE_INTERVAL = 1000;
 static constexpr unsigned long PRESSURE_CHAMBER_CONTROLLER_UPDATE_INTERVAL = 60000; // Based on the GMP251 response time
 static constexpr unsigned long MOTOR_SET_SPEED_MSG_INTERVAL = 1250;
