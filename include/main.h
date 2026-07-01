@@ -20,6 +20,7 @@
 #include "AtlasTempSensor.h"
 #include "limitSwitch.h"
 #include "ledI2C.h"
+#include "TestSequence.h"
 
 enum class eBioreactorState
 {

@@ -266,6 +266,7 @@ void printBioreactorStateToSerial()
         Serial.println("> Temperature culture status: " + String(tempSensor.getStatus()));
         Serial.println("> CO2 status: " + String(co2Sensor.getStatus()));
         Serial.println("> DO status: " + String(dissolvedOxygenSensor.getStatus()));
+        Serial.println("> TEST status: " + String(getStatusSTATETEST()));
 
         /* Add more prints here*/
 
