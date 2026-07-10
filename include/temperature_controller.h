@@ -18,6 +18,7 @@ public:
     void update(float waterTemp, float airTemp);
     float getHeaterPower() const;
     void setReferenceTemperature(float tempRef);
+    float getReferenceTemperature();
 
 private:
     // Reference temperature.

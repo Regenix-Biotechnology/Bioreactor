@@ -175,5 +175,47 @@ void receiveSerialCommand()
         {
             // do calib
         }
+        // Test state commands
+        if (rx == "STATE_TEST=TEST_INIT")
+        {
+            setBioreactorTestState((uint8_t)eTestState::TEST_INIT);
+            Serial.println("Bioreactor Test State set to TEST_INIT");
+        }
+        if (rx == "STATE_TEST=TEST_STEP1_37C_10ML")
+        {
+            setBioreactorTestState((uint8_t)eTestState::TEST_STEP1_37C_10ML);
+            Serial.println("Bioreactor Test State set to TEST_STEP1_37C_10ML");
+        }
+        if (rx == "STATE_TEST=COOL_DOWN")
+        {
+            setBioreactorTestState((uint8_t)eTestState::COOL_DOWN);
+            Serial.println("Bioreactor Test State set to COOL_DOWN");
+        }
+        if (rx == "STATE_TEST=TEST_STEP2_37C_100ML")
+        {
+            setBioreactorTestState((uint8_t)eTestState::TEST_STEP2_37C_100ML);
+            Serial.println("Bioreactor Test State set to TEST_STEP2_37C_100ML");
+        }
+
+        if (rx == "STATE_TEST=TEST_STEP3_RAMP")
+        {
+            setBioreactorTestState((uint8_t)eTestState::TEST_STEP3_RAMP);
+            Serial.println("Bioreactor Test State set to TEST_STEP3_RAMP");
+        }
+        if (rx == "STATE_TEST=TEST_SET_37")
+        {
+            setBioreactorTestState((uint8_t)eTestState::TEST_SET_37);
+            Serial.println("Bioreactor Test State set to TEST_SET_37");
+        }
+        if (rx == "STATE_TEST=TEST_STEP4_37_5")
+        {
+            setBioreactorTestState((uint8_t)eTestState::TEST_STEP4_37_5);
+            Serial.println("Bioreactor Test State set to TEST_STEP4_37_5");
+        }
+        if (rx == "STATE_TEST=TEST_STEP5_36_5")
+        {
+            setBioreactorTestState((uint8_t)eTestState::TEST_STEP5_36_5);
+            Serial.println("Bioreactor Test State set to TEST_STEP5_36_5");
+        }
     }
 }

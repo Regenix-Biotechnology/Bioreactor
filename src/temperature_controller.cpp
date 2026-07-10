@@ -71,3 +71,12 @@ void TemperatureController::setReferenceTemperature(float tempRef)
 {
     this->tempRef = tempRef;
 }
+
+/**
+ * @brief Get the reference temperature for the control loop.
+ * @return tempRef The reference temperature (°C).
+ */
+float TemperatureController::getReferenceTemperature()
+{
+    return this->tempRef;
+}
