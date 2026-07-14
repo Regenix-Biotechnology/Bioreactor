@@ -27,7 +27,7 @@ void testSequenceTemperature()
     {
     case TEST_INIT:
         // Si c'est le tout premier passage dans cet état, on initialise le chrono
-
+        /*
         if (stateStartTime == 0)
         {
             setFansState(ON, ON, ON, ON, ON, ON, ON);
@@ -48,23 +48,33 @@ void testSequenceTemperature()
             currentState = eTestState::TEST_STEP1_37C_10ML;
             stabState = eStabilisationState::STAB_IDLE;
         }
-        /* TEST de la fonction stabilisation
-        if (stabState == STAB_IDLE)
-        {
-            setFansState(ON, ON, ON, ON, ON, ON, ON);
-            setPumpsSpeed(0, 50, 150, 50); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
-            setValvesState(CLOSE, OPEN, CLOSE);
-            setPressureChamberState(OFF);
-            setHeatersState(ON);
-            startStabilisation(27);
-        }
-        if (updateStabilisation(stabElapsedResult, 27))
-        {
-            currentState = eTestState::TestState_MAX;
-            stabState = eStabilisationState::STAB_IDLE;
-            startStabilisation(28);
-        }
         */
+        /*
+         setFansState(ON, ON, ON, ON, ON, ON, ON);
+         setPumpsSpeed(0, 50, 150, 50); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
+         setValvesState(CLOSE, OPEN, CLOSE);
+         setPressureChamberState(OFF);
+         setHeatersState(ON);
+         temperatureController.setReferenceTemperature(27.0);
+         */
+        setFansState(ON, ON, ON, ON, ON, ON, ON);
+        setPumpsSpeed(0, 50, 150, 50); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
+        setValvesState(CLOSE, OPEN, CLOSE);
+        setPressureChamberState(OFF);
+        setHeatersState(ON);
+        // TEST de la fonction stabilisation
+        if (stabState == STAB_IDLE || stabState == STAB_RUNNING)
+        {
+            startStabilisation(37);
+            // temperatureController.setReferenceTemperature(30);
+        }
+        if (updateStabilisation(stabElapsedResult, 37))
+        {
+            // currentState = eTestState::TestState_MAX;
+            // stabState = eStabilisationState::STAB_IDLE;
+            // startStabilisation(29);
+            temperatureController.setReferenceTemperature(31);
+        }
 
         break;
 
@@ -315,34 +325,36 @@ void testSequenceTemperatureRamp()
     }
 }
 
-// Lance une nouvelle stabilisation vers une température donnée
 /**
- * @brief Start a stabilisation on a target temperature
- * @param temperature The target temperature in °Celsius .
+ * @brief Get the state of the state machine "TestState" and return it.
+ * @return The Current state of the testSequenceTemperature state machine.
  */
 void startStabilisation(float temperature)
 {
-    // stabTargetTemp = temperature;
+    if (stabState == eStabilisationState::STAB_IDLE)
+    {
+        stabStartTime = millis();
+        stabLastOutOfRangeTime = millis();
+        stabState = eStabilisationState::STAB_RUNNING;
+    }
     temperatureController.setReferenceTemperature(temperature);
-    stabStartTime = millis();
-    stabLastOutOfRangeTime = millis();
-    stabState = eStabilisationState::STAB_RUNNING;
 }
 
 // À appeler à chaque tour de loop() — non-bloquant.
 // Retourne true quand la stabilisation est terminée.
-/**
- * @brief Check if the stabilidation is achievded or not.
- * @param stabTemperature The target temperature to stabilize on (°C).
- * @return The state of the stabilisation (true = achieved,false = sitll processing).
- */
 bool updateStabilisation(unsigned long &stabElapsedResult, float stabTemperature)
 {
-    if (stabState != STAB_RUNNING)
+    if (stabState == eStabilisationState::STAB_IDLE)
     {
-        return (stabState == STAB_DONE);
+        // Rien n'a été démarré
+        return false;
     }
-    temperatureController.update(temperatureEau, temperatureAir);
+    if (stabState == eStabilisationState::STAB_DONE)
+    {
+        return true;
+    }
+
+    temperatureEau = tempSensor.getTemperatureC();
 
     if (temperatureEau > stabTemperature - VARIATION_MAX &&
         temperatureEau < stabTemperature + VARIATION_MAX)
@@ -356,6 +368,7 @@ bool updateStabilisation(unsigned long &stabElapsedResult, float stabTemperature
     }
     else
     {
+        // On est sorti de la plage : on reset le chrono de stabilité
         stabLastOutOfRangeTime = millis();
     }
     return false;
@@ -380,8 +393,7 @@ eStabilisationState getStatusSTAB_STATE_TEST()
 }
 
 /**
- * @brief Setter for bioreactor state
- *
+ * @brief Setter for the bioreactor state
  * @param state
  */
 void setBioreactorTestState(uint8_t state_int)

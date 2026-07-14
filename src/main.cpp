@@ -42,7 +42,7 @@ void loop()
     case eBioreactorState::PREPARE:
         // start when approv is finished
         setFansState(ON, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(OFF, 150.0, OFF, OFF);
+        setPumpsSpeed(OFF, OFF, 150.0, OFF); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
         setValvesState(CLOSE, CLOSE, CLOSE);
         setPressureChamberState(ON);
         setHeatersState(ON);

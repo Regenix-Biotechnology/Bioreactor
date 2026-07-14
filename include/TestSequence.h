@@ -4,7 +4,7 @@
 #include "bioreactor_controller.h"
 
 #define TEST_TEMP1 31
-#define VARIATION_MAX 0.1
+#define VARIATION_MAX 0.2
 #define STABILISATION_TIME 5000
 #define STABILIZATION_DURATION_MS 300000UL // 5 minutes
 #define DEBIT_10ML 10
