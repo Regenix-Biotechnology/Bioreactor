@@ -207,14 +207,22 @@ void receiveSerialCommand()
             setBioreactorTestState((uint8_t)eTestState::TEST_SET_37);
             Serial.println("Bioreactor Test State set to TEST_SET_37");
         }
+        if (rx == "STATE_TEST=TEST_SET_37_2")
+        {
+            setBioreactorTestState((uint8_t)eTestState::TEST_SET_37);
+            setBioreacteurCompletedTest(0x07);
+            Serial.println("Bioreactor Test State set to TEST_SET_37");
+        }
         if (rx == "STATE_TEST=TEST_STEP4_37_5")
         {
             setBioreactorTestState((uint8_t)eTestState::TEST_STEP4_37_5);
+            setBioreacteurCompletedTest(0x00);
             Serial.println("Bioreactor Test State set to TEST_STEP4_37_5");
         }
         if (rx == "STATE_TEST=TEST_STEP5_36_5")
         {
             setBioreactorTestState((uint8_t)eTestState::TEST_STEP5_36_5);
+            setBioreacteurCompletedTest(0x07);
             Serial.println("Bioreactor Test State set to TEST_STEP5_36_5");
         }
     }

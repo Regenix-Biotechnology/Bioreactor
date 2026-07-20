@@ -3,13 +3,29 @@
 #include "main.h"
 #include "bioreactor_controller.h"
 
-#define TEST_TEMP1 31
-#define VARIATION_MAX 0.2
+// target temperature for the test
+#define TEST1_TEMP 32
+#define TEST2_TEMP 32
+#define TEST4_TEMP 37.5
+#define TEST5_TEMP 36.5
+
+// target temperature for the RAMP test
+#define RAMP_TEST_T1 32
+
+#define RAMP_TEST_T2 34
+#define RAMP_TEST_T3 37
+#define RAMP_TEST_T4 40
+#define RAMP_TEST_T5 42
+
+// conditional temperature for some test
+#define TEST1_C_TEMP 22
+#define TEMP_TH_LOW 22
+
+#define VARIATION_MAX 0.3
 #define STABILISATION_TIME 5000
 #define STABILIZATION_DURATION_MS 300000UL // 5 minutes
 #define DEBIT_10ML 10
 #define DEBIT_100ML 100
-#define TEMP_TH_LOW 30
 
 // États globaux de la séquence de test
 enum eTestState
@@ -38,31 +54,29 @@ enum eStabilisationState
 // État de la sous-machine "Ramp test"
 enum RampTestState
 {
-    TESR_RAMP_INIT = 0,
-    TESR_RAMP_32_34,
-    TESR_RAMP_34_37,
-    TESR_RAMP_37_40,
-    TESR_RAMP_40_42,
-    TESR_RAMP_42_40,
-    TESR_RAMP_40_37,
-    TESR_RAMP_37_34,
-    TESR_RAMP_34_32,
-    TESR_RAMP_DONE,
+    TEST_RAMP_INIT = 0,
+    TEST_RAMP_32_34,
+    TEST_RAMP_34_37,
+    TEST_RAMP_37_40,
+    TEST_RAMP_40_42,
+    TEST_RAMP_42_40,
+    TEST_RAMP_40_37,
+    TEST_RAMP_37_34,
+    TEST_RAMP_34_32,
+    TEST_RAMP_DONE,
     RampTestState_MAX
 };
 
-extern eTestState currentState;
-extern eStabilisationState stabState;
-extern RampTestState currentRampTestState;
-
+// State machine init
+// Take
 // protoypes
-
 void startStabilisation(float temperature);
 void testSequenceTemperature();
-bool updateStabilisation(unsigned long &stabElapsedResult, float stabTemperature);
+bool updateStabilisation(float stabTemperature);
 eTestState getStatusSTATETEST();
 eStabilisationState getStatusSTAB_STATE_TEST();
 void testSequenceTemperatureRamp();
 void setBioreactorTestState(uint8_t state_int);
+void setBioreacteurCompletedTest(uint8_t completed);
 
 #endif
