@@ -25,7 +25,7 @@ void testSequenceTemperature()
     {
     case TEST_INIT:
         setFansState(ON, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(0, 50, 150, 50); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
+        setPumpsSpeed(20, OFF, 60, 20); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
         setValvesState(CLOSE, OPEN, CLOSE);
         setPressureChamberState(OFF);
         setHeatersState(ON);
@@ -33,7 +33,7 @@ void testSequenceTemperature()
         {
             startStabilisation(TEST1_C_TEMP);
         }
-        if (updateStabilisation(TEST1_C_TEMP + 6))
+        if (updateStabilisation(TEST1_C_TEMP))
         {
             currentState = eTestState::TEST_STEP1_37C_10ML;
             stabState = eStabilisationState::STAB_IDLE;
@@ -42,7 +42,7 @@ void testSequenceTemperature()
         break;
 
     case TEST_STEP1_37C_10ML:
-        // 21°C(TEST1_C_TEMP) -> 37°C avec débit de 10ml/min (stabilisation 5 minutes)
+        // 30°C(TEST1_C_TEMP) -> 37°C avec débit de 10ml/min (stabilisation 5 minutes)
         if (stabState == STAB_IDLE || stabState == STAB_RUNNING)
         {
             temperatureEau = tempSensor.getTemperatureC();
@@ -63,15 +63,15 @@ void testSequenceTemperature()
         setHeatersState(OFF);
         if (stabState == STAB_IDLE || stabState == STAB_RUNNING)
         {
-            setPumpsSpeed(0, 50, 150, 50); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
+            setPumpsSpeed(50, 0, 110, 50); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
             startStabilisation(TEMP_TH_LOW);
         }
-        if (updateStabilisation(TEMP_TH_LOW + 6) && testCompleted == 0X01)
+        if (updateStabilisation(TEMP_TH_LOW) && testCompleted == 0X01)
         {
             currentState = eTestState::TEST_STEP2_37C_100ML;
             stabState = eStabilisationState::STAB_IDLE;
         }
-        if (updateStabilisation(TEMP_TH_LOW + 6) && testCompleted == 0X03)
+        if (updateStabilisation(TEMP_TH_LOW) && testCompleted == 0X03)
         {
             currentState = eTestState::TEST_STEP3_RAMP;
             stabState = eStabilisationState::STAB_IDLE;
@@ -154,11 +154,11 @@ void testSequenceTemperature()
         {
             stabState = eStabilisationState::STAB_IDLE;
             currentState = eTestState::TEST_DONE;
+            startStabilisation(36.45);
         }
         break;
 
     case TEST_DONE:
-        setHeatersState(OFF);
         break;
     }
 }
@@ -222,7 +222,8 @@ void testSequenceTemperatureRamp()
         if (updateStabilisation(40))
         {
             stabState = eStabilisationState::STAB_IDLE;
-            currentRampTestState = RampTestState::TEST_RAMP_40_42;
+            currentRampTestState = RampTestState::TEST_RAMP_40_37;
+            // currentRampTestState = RampTestState::TEST_RAMP_40_42; // Annulé du Cahier des charges
         }
         break;
 

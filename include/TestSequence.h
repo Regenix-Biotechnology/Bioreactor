@@ -4,24 +4,23 @@
 #include "bioreactor_controller.h"
 
 // target temperature for the test
-#define TEST1_TEMP 32
-#define TEST2_TEMP 32
+#define TEST1_TEMP 37
+#define TEST2_TEMP 37
 #define TEST4_TEMP 37.5
 #define TEST5_TEMP 36.5
 
 // target temperature for the RAMP test
 #define RAMP_TEST_T1 32
-
 #define RAMP_TEST_T2 34
 #define RAMP_TEST_T3 37
 #define RAMP_TEST_T4 40
 #define RAMP_TEST_T5 42
 
 // conditional temperature for some test
-#define TEST1_C_TEMP 22
-#define TEMP_TH_LOW 22
+#define TEST1_C_TEMP 32
+#define TEMP_TH_LOW 32
 
-#define VARIATION_MAX 0.3
+#define VARIATION_MAX 0.1
 #define STABILISATION_TIME 5000
 #define STABILIZATION_DURATION_MS 300000UL // 5 minutes
 #define DEBIT_10ML 10
