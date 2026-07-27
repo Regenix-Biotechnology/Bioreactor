@@ -51,6 +51,7 @@ void loop()
     case eBioreactorState::RUN:
         // start when user sent command
         setFansState(ON, ON, ON, ON, ON, ON, ON);
+        // setPumpsSpeed(OFF, 110.0, 50.0, 50.0);
         setPumpsSpeed(50, OFF, 150, 50); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
         setValvesState(CLOSE, OPEN, CLOSE);
         setPressureChamberState(ON);
@@ -235,7 +236,8 @@ void loop()
     updatePressureChamberController();
     updateLEDState();
     receiveSerialCommand();
-    // updateBioreactorState(); // To be implemented when communication with the GUI will be available
+    // updateCO2Controller();
+    //  updateBioreactorState(); // To be implemented when communication with the GUI will be available
     serialReader(); // This is used for DEBUG only
     kickWatchDog();
 }

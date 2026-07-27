@@ -11,6 +11,7 @@ StepperMotor cultureChamberPump2(&driveStepper1, MOTOR_2);
 StepperMotor cultureChamberPump1(&driveStepper3, MOTOR_1);
 StepperMotor circulationPump(&driveStepper3, MOTOR_2);
 SSR_Relay heater(HEATER_PIN);
+CO2Controller co2Controller;
 IOExpander ioExpander(&Wire);
 TemperatureController temperatureController;
 PressureChamberController pressureChamber;
@@ -28,7 +29,9 @@ unsigned long lastPressureChamberControllerTime = 0;
 unsigned long lastPressureChamberControllerTimePrint = 0;
 unsigned long lastPrintTime = 0;
 unsigned long lastLEDUpdateTime = 0;
+unsigned long lastCO2UpdateTime = millis() + 2200; // 2 secondes (le capteur mesure toutes les 2 secondes)
 uint8_t lastLEDState = 0;
+float CO2_Value = 0.0f;
 unsigned long lastMotorSetSpeedTime = 0;
 uint8_t testState = 0;
 unsigned long stateTimer;
@@ -304,4 +307,18 @@ void updateLEDState()
         ledI2C.sendState(ledState);
         lastLEDUpdateTime = millis();
     }
+}
+
+/**
+ * @brief Update the CO2 controller. Must be called in the main loop.
+ */
+void updateCO2Controller()
+{
+    if (millis() - lastCO2UpdateTime > 2000)
+    {
+        CO2_Value = ledI2C.getCO2Value();
+        lastCO2UpdateTime = millis();
+        Serial.println(CO2_Value);
+    }
+    // co2Controller.update(CO2_Value);
 }

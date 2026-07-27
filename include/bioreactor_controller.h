@@ -22,5 +22,6 @@ void updateLEDState();
 void setBioreactorState(uint8_t state);
 void receiveSerialCommand();
 void beginBioreactorPreferences();
+void updateCO2Controller();
 
 #endif

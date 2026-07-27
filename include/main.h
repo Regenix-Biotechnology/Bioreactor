@@ -21,6 +21,7 @@
 #include "limitSwitch.h"
 #include "ledI2C.h"
 #include "TestSequence.h"
+#include "co2_controller.h"
 
 enum class eBioreactorState
 {

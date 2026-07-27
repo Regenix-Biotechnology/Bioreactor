@@ -24,7 +24,7 @@
 #define STABILISATION_TIME 5000
 #define STABILIZATION_DURATION_MS 300000UL // 5 minutes
 #define DEBIT_10ML 10
-#define DEBIT_100ML 100
+#define DEBIT_100ML 50
 
 // États globaux de la séquence de test
 enum eTestState
