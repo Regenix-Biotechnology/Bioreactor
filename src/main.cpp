@@ -19,7 +19,7 @@ void loop()
         setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
         setPumpsSpeed(OFF, OFF, OFF, OFF);
         setValvesState(CLOSE, CLOSE, CLOSE);
-        setPressureChamberValvesState(OFF, OFF, OFF);
+        setPressureChamberValvesState(OFF, OFF, OFF, OFF);
         setHeatersState(OFF);
         stateTimer = millis();
         // switch when user command received
@@ -46,13 +46,15 @@ void loop()
         setValvesState(CLOSE, CLOSE, CLOSE);
         setPressureChamberState(ON);
         setHeatersState(ON);
-        // switch when user command received (to RUN)
+        // bool o2ValveState, co2ValveState, airValveState;
+        // setPressureChamberValvesState(o2ValveState, co2ValveState, airValveState);
+        //  switch when user command received (to RUN)
         break;
     case eBioreactorState::RUN:
         // start when user sent command
         setFansState(ON, ON, ON, ON, ON, ON, ON);
         // setPumpsSpeed(OFF, 110.0, 50.0, 50.0);
-        setPumpsSpeed(50, OFF, 150, 50); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
+        setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
         setValvesState(CLOSE, OPEN, CLOSE);
         setPressureChamberState(ON);
         setHeatersState(ON);
@@ -236,7 +238,7 @@ void loop()
     updatePressureChamberController();
     updateLEDState();
     receiveSerialCommand();
-    // updateCO2Controller();
+    updateCO2Controller();
     //  updateBioreactorState(); // To be implemented when communication with the GUI will be available
     serialReader(); // This is used for DEBUG only
     kickWatchDog();

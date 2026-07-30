@@ -1,6 +1,6 @@
 #include "ioExpander.h"
 
- // --- Constructor ---
+// --- Constructor ---
 /**
  * @brief Construct a new IOExpander object
  * @param pWire Pointer to the I²C interface (SDA/SCL)
@@ -12,7 +12,7 @@ IOExpander::IOExpander(TwoWire *pWire)
 
 /**
  * @brief Send I²C commands to the IO Expander
- * 
+ *
  * @param reg Register address to write to
  * @param data Pointer to the data buffer to send
  * @param len Number of bytes to transmit
@@ -29,9 +29,9 @@ bool IOExpander::writeBytes(uint8_t reg, const uint8_t *data, size_t len) const
 
 /**
  * @brief Initialize the IO Expander configuration and output states
- * 
+ *
  * This function configures all pins as outputs and clears the output registers.
- * 
+ *
  * @return true if initialization succeeds
  *           false if any I2C transmission fails
  */
@@ -57,11 +57,11 @@ bool IOExpander::begin()
     return true;
 }
 
-    /**
-     * @brief Enable or disable an eFuse output
-     * @param channel Output index (0–23).Channels 0–7 correspond to port P0, 8–15 to port P1, and 16–23 to port P2.
-     * @param outputState true → set HIGH (ON), false → set LOW (OFF)
-     */
+/**
+ * @brief Enable or disable an eFuse output
+ * @param channel Output index (0–23).Channels 0–7 correspond to port P0, 8–15 to port P1, and 16–23 to port P2.
+ * @param outputState true → set HIGH (ON), false → set LOW (OFF)
+ */
 void IOExpander::setEfuse(uint8_t channel, bool outputState)
 {
     if (channel >= OUTPUT_COUNT)
@@ -71,11 +71,11 @@ void IOExpander::setEfuse(uint8_t channel, bool outputState)
 
     // 0..7 -> port 0 (P0), 8..15 -> port 1 (P1), 16..23 -> port 2 (P2)
     uint8_t port = channel / 8;
-    uint8_t bit  = channel % 8;
+    uint8_t bit = channel % 8;
 
     if (outputState)
     {
-        _outputs[port] |= static_cast<uint8_t>(1U << bit);   // ON -> bit = 1
+        _outputs[port] |= static_cast<uint8_t>(1U << bit); // ON -> bit = 1
     }
     else
     {

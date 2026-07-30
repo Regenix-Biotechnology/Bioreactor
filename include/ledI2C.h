@@ -56,6 +56,7 @@ public:
             }
 
             // --- DEBUG: Inscription des octets bruts reçus ---
+            /*
             Serial.print("[I2C RAW]: ");
             for (size_t i = 0; i < sizeof(float); i++)
             {
@@ -66,7 +67,7 @@ public:
                 Serial.print(" ");
             }
             Serial.println();
-
+            */
             // Transfert sécurisé dans le float
             memcpy(&co2Received, buffer, sizeof(float));
 

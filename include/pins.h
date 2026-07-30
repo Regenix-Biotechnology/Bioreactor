@@ -43,6 +43,7 @@ constexpr uint8_t EFUSE_VALVE_RETURN_INDEX = 10;
 constexpr uint8_t EFUSE_VALVE_AIR_INDEX = 0;
 constexpr uint8_t EFUSE_VALVE_CO2_INDEX = 1;
 constexpr uint8_t EFUSE_VALVE_O2_INDEX = 2;
+constexpr uint8_t EFUSE_VALVE_CO2_ATM_INDEX = 3;
 
 constexpr uint8_t EFUSE_FAN_PCB_INDEX = 7;
 constexpr uint8_t EFUSE_FAN_CIRCULATION_INDEX = 14;

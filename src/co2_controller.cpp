@@ -8,21 +8,57 @@ CO2Controller::CO2Controller()
       co2MaxRef(800.0f + 50.0f)
 {
 }
+
+void CO2Controller::update(float co2Concentration)
+{
+    // --- Logique d'hystérésis pour le CO₂ ---
+
+    // 1. En dessous du seuil bas : on active l'injection de CO₂
+    if (co2Concentration < this->co2MinRef)
+    {
+        this->isCO2ValveOpen = true;
+    }
+    // 2. Au-dessus du seuil haut : on stoppe l'injection de CO₂
+    else if (co2Concentration > this->co2MaxRef)
+    {
+        this->isCO2ValveOpen = false;
+    }
+    // 3. Entre co2MinRef et co2MaxRef : zone morte (Deadband)
+    // On ne change rien à this->isCO2ValveOpen pour garder la stabilité.
+
+    // --- Application de la commande aux vannes ---
+    // Tu peux ici piloter directement tes sorties physiques (DigitalWrite, I2C, etc.)
+    if (this->isCO2ValveOpen)
+    {
+        // Code pour OUVRIR la vanne CO2 (ex: digitalWrite(CO2_VALVE_PIN, HIGH);)
+    }
+    else
+    {
+        // Code pour FERMER la vanne CO2 (ex: digitalWrite(CO2_VALVE_PIN, LOW);)
+    }
+}
+
+void CO2Controller::regulation()
+{
+    if (this->isCO2ValveOpen)
+    {
+        this->isCO2ValveOpen = false;
+    }
+}
+
 /**
  * @brief Calculates the time the valve should remain open based on the concentrations of gases and the pressure.
  * @param co2Concentration The concentration of CO2 in the chamber in ppm.
  * @param pressure The pressure in the chamber in Pa.
  */
+/*
 void CO2Controller::update(float co2Concentration)
 {
-
     float o2ValveTime = 0;
     float co2ValveTime = 0;
     float airValveTime = 0;
-
     float co2Error = co2Concentration - this->co2Ref;
-
-    // --- CO₂ Control Logic ---
+    // -- CO₂ Control Logic ---
     if (co2Error > 0)
     {
         float effectiveCO2Error = co2Error / co2Concentration;
@@ -40,10 +76,8 @@ void CO2Controller::update(float co2Concentration)
 
         // co2ValveTime = calculateTimeBeforeClosingValve(-co2Error) * correctionFactor;
     }
-
     // Apply the calculated times
     // this->timeBeforeClosingCO2Valve = millis() + static_cast<unsigned long>(co2ValveTime);
-
     // --- DEBUG OUTPUT ---
     // float printTimeBeforeClosingO2Valve = (timeBeforeClosingO2Valve - millis());
     // if (printTimeBeforeClosingO2Valve > 999999999)
@@ -57,7 +91,7 @@ void CO2Controller::update(float co2Concentration)
     // Serial.println(">O2 Opening Time: " + String(printTimeBeforeClosingO2Valve));
     // Serial.println(">CO2 Opening Time: " + String(printTimeBeforeClosingCO2Valve));
     // Serial.println(">Air Opening Time: " + String(printTimeBeforeClosingAirValve));
-}
+}*/
 /**
  * @brief Calculates the time before closing the valve based on the error.
  * @param error The error value.
@@ -87,11 +121,16 @@ float CO2Controller::calculateTimeBeforeClosingValve(float error)
 void CO2Controller::setReferenceLevel(float ReferenceLevel)
 {
     this->co2Ref = ReferenceLevel;
-    this->co2MinRef = ReferenceLevel - CO2_DEAD_ZONE;
-    this->co2MaxRef = ReferenceLevel + CO2_DEAD_ZONE;
+    this->co2MinRef = ReferenceLevel - CO2_DEAD_ZONE - 0.1f;
+    this->co2MaxRef = ReferenceLevel - CO2_DEAD_ZONE;
 }
 
 float CO2Controller::GetCO2Value()
 {
     // break;
+}
+
+bool CO2Controller::getValveState()
+{
+    return this->isCO2ValveOpen;
 }

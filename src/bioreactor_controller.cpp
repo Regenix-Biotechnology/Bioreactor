@@ -29,7 +29,8 @@ unsigned long lastPressureChamberControllerTime = 0;
 unsigned long lastPressureChamberControllerTimePrint = 0;
 unsigned long lastPrintTime = 0;
 unsigned long lastLEDUpdateTime = 0;
-unsigned long lastCO2UpdateTime = millis() + 2200; // 2 secondes (le capteur mesure toutes les 2 secondes)
+unsigned long lastCO2UpdateValueTime = millis() + 2200; // 2 secondes (le capteur mesure toutes les 2 secondes)
+unsigned long lastCO2UpdateTime = millis() + 2200;      // 2 secondes (le capteur mesure toutes les 2 secondes)
 uint8_t lastLEDState = 0;
 float CO2_Value = 0.0f;
 unsigned long lastMotorSetSpeedTime = 0;
@@ -56,7 +57,7 @@ void beginBioreactorController()
     driveStepper1.begin();
     driveStepper3.begin();
     approvPump.begin();
-    circulationPump.begin();
+    circulationPump.beginTB();
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
     beginBioreactorPreferences();
@@ -98,6 +99,7 @@ void beginBioreactorPreferences()
     temperatureController.setReferenceTemperature(temperature);
     pressureChamber.setReferenceLevel(CO2, co2);
     pressureChamber.setReferenceLevel(O2, dioxyg);
+    co2Controller.setReferenceLevel(0.5f);
 
     // ph
     // oxy_dissous
@@ -145,11 +147,12 @@ void setValvesState(bool valveSupplyState, bool valveCirculationState, bool valv
  * @param co2ValveState     State of the CO2 valve. (OPEN/CLOSE)
  * @param airValveState     State of the air valve. (OPEN/CLOSE)
  */
-void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState)
+void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState, bool co2AirValveState)
 {
     ioExpander.setEfuse(EFUSE_VALVE_O2_INDEX, o2ValveState);
     ioExpander.setEfuse(EFUSE_VALVE_CO2_INDEX, co2ValveState);
     ioExpander.setEfuse(EFUSE_VALVE_AIR_INDEX, airValveState);
+    ioExpander.setEfuse(EFUSE_VALVE_CO2_ATM_INDEX, co2AirValveState);
 }
 
 /**
@@ -241,7 +244,8 @@ void updatePressureChamberController()
 
     setPressureChamberValvesState(pressureChamber.getValveState(O2),
                                   pressureChamber.getValveState(CO2),
-                                  pressureChamber.getValveState(AIR));
+                                  pressureChamber.getValveState(AIR),
+                                  co2Controller.getValveState());
 
     co2Sensor.update();
 }
@@ -272,6 +276,7 @@ void printBioreactorStateToSerial()
         Serial.println(">  Water Temperature setpoint (°C): " + String(temperatureController.getReferenceTemperature()));
         Serial.println("> TEST status: " + String(getStatusSTATETEST()));
         Serial.println("> TEST STAB status: " + String(getStatusSTAB_STATE_TEST()));
+        Serial.println("> CO2 concentration (%) Bioreactor air: " + String(CO2_Value));
 
         /* Add more prints here*/
 
@@ -314,11 +319,19 @@ void updateLEDState()
  */
 void updateCO2Controller()
 {
-    if (millis() - lastCO2UpdateTime > 2000)
+    if (millis() - lastCO2UpdateValueTime > 2000)
     {
         CO2_Value = ledI2C.getCO2Value();
-        lastCO2UpdateTime = millis();
-        Serial.println(CO2_Value);
+        lastCO2UpdateValueTime = millis();
+        // Serial.println(CO2_Value);
     }
-    // co2Controller.update(CO2_Value);
+    if (millis() - lastCO2UpdateTime > 2000)
+    {
+        co2Controller.regulation();
+    }
+    if (millis() - lastCO2UpdateTime > 8000)
+    {
+        co2Controller.update(CO2_Value);
+        lastCO2UpdateTime = millis();
+    }
 }

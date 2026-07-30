@@ -13,11 +13,14 @@ public:
     void setReferenceLevel(float ReferenceLevel);
     void update(float co2Concentration);
     float GetCO2Value();
+    bool getValveState();
+    void regulation();
 
 private:
     float co2MinRef;
     float co2MaxRef;
     float co2Ref;
+    bool isCO2ValveOpen = false; // Stocke l'état d'hystérésis
 
     // Flow equations for the valves (Poiseuille's law).
     static constexpr float R = 0.0043;        // Radius of the inner diameter of the tube
@@ -27,8 +30,8 @@ private:
     static constexpr float MU_CO2 = 0.000015; // Viscosity of the fluid (CO2)
     static constexpr float V = 144;           // Volume of the pressure chamber (L)
     // Constants for the control loop.
-    static constexpr float CO2_REF = 50000.0f;     // ppm
-    static constexpr float CO2_DEAD_ZONE = 100.0f; // ppm
+    static constexpr float CO2_REF = 50000.0f;   // ppm
+    static constexpr float CO2_DEAD_ZONE = 0.1f; // %
 
     static constexpr float PERCENT_TO_LITERS = 0.01 * V;  // Convert percentage to liters
     static constexpr float PPM_TO_LITERS = 0.000001 * V;  // Convert ppm to liters
