@@ -8,7 +8,6 @@ typedef enum
 {
     MOTOR_1 = 0,
     MOTOR_2,
-
     MOTOR_NAME_MAX
 } eMotorName;
 
@@ -43,7 +42,7 @@ private:
     static const uint8_t MOTOR_DRV_SET_MODE_ADDR[MOTOR_NAME_MAX];
     static const uint8_t SET_SPEED_CONFIG_MSG_ADDR_LIST[MOTOR_NAME_MAX][CONFIG_MSG_SIZE];
     static const uint32_t SET_SPEED_CONFIG_MSG_DATA_LIST[CONFIG_MSG_SIZE];
-    static const uint32_t SET_SPEED_CONFIG_MSG_DATA_LIST_64[CONFIG_MSG_SIZE];
+    static const uint32_t SET_SPEED_CONFIG_MSG_DATA_LIST_32[CONFIG_MSG_SIZE];
 
     // Horloge interne standard TMC5041 (13.2 MHz - ajuster selon l'horloge réelle si externe)
     // static constexpr float FREQ_CLOCK = 13300000.0f;

@@ -52,8 +52,8 @@ void loop()
         break;
     case eBioreactorState::RUN:
         // start when user sent command
-        setFansState(ON, ON, ON, ON, ON, ON, ON);
-        // setPumpsSpeed(OFF, 110.0, 50.0, 50.0);
+        // setFansState(ON, ON, ON, ON, ON, ON, ON);
+        setPumpsSpeed(OFF, 110.0, 50.0, 50.0);
         setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
         setValvesState(CLOSE, OPEN, CLOSE);
         setPressureChamberState(ON);

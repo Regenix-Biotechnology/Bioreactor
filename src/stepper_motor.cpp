@@ -6,7 +6,7 @@ const uint8_t StepperMotor::MOTOR_DRV_SET_SPEED_ADDR[MOTOR_NAME_MAX] = {0x27, 0x
 const uint8_t StepperMotor::MOTOR_DRV_SET_MODE_ADDR[MOTOR_NAME_MAX] = {0x20, 0x40};
 const uint8_t StepperMotor::SET_SPEED_CONFIG_MSG_ADDR_LIST[MOTOR_NAME_MAX][CONFIG_MSG_SIZE] = {{0x6C, 0x30, 0x2C, 0x10, 0x32, 0x31, 0x26}, {0x7C, 0x50, 0x4C, 0x18, 0x52, 0x51, 0x46}};
 const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST[CONFIG_MSG_SIZE] = {0x010100C5, RUNNING_TORQUE * 2, 0x00002710, 0x003501C8, 0x00061A80, 0x00007530, 0x00001388};
-const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST_64[CONFIG_MSG_SIZE] = {0x080100C5, RUNNING_TORQUE * 2, 0x00002710, 0x003501C8, 0x00061A80, 0x00007530, 0x00001388}; // 128 step donc 25600 micro-pas
+const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST_32[CONFIG_MSG_SIZE] = {0x040100C5, RUNNING_TORQUE * 2, 0x00002710, 0x003501C8, 0x00061A80, 0x00007530, 0x00001388}; // 128 step donc 25600 micro-pas
 
 /**
  * @brief Construct a new StepperMotor object
@@ -58,7 +58,7 @@ eMotorStatus StepperMotor::beginTB()
     // Motor specific configuration
     for (uint8_t i = 0; i < CONFIG_MSG_SIZE; i++)
     {
-        _drive_handle->tmc_write(SET_SPEED_CONFIG_MSG_ADDR_LIST[_motorName][i], SET_SPEED_CONFIG_MSG_DATA_LIST_64[i]);
+        _drive_handle->tmc_write(SET_SPEED_CONFIG_MSG_ADDR_LIST[_motorName][i], SET_SPEED_CONFIG_MSG_DATA_LIST_32[i]);
     }
 
     _isInit = true;

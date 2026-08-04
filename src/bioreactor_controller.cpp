@@ -31,6 +31,7 @@ unsigned long lastPrintTime = 0;
 unsigned long lastLEDUpdateTime = 0;
 unsigned long lastCO2UpdateValueTime = millis() + 2200; // 2 secondes (le capteur mesure toutes les 2 secondes)
 unsigned long lastCO2UpdateTime = millis() + 2200;      // 2 secondes (le capteur mesure toutes les 2 secondes)
+unsigned int TSTABILISATION = 5000;
 uint8_t lastLEDState = 0;
 float CO2_Value = 0.0f;
 unsigned long lastMotorSetSpeedTime = 0;
@@ -99,7 +100,7 @@ void beginBioreactorPreferences()
     temperatureController.setReferenceTemperature(temperature);
     pressureChamber.setReferenceLevel(CO2, co2);
     pressureChamber.setReferenceLevel(O2, dioxyg);
-    co2Controller.setReferenceLevel(0.5f);
+    co2Controller.setReferenceLevel(4.5f);
 
     // ph
     // oxy_dissous
@@ -325,13 +326,5 @@ void updateCO2Controller()
         lastCO2UpdateValueTime = millis();
         // Serial.println(CO2_Value);
     }
-    if (millis() - lastCO2UpdateTime > 2000)
-    {
-        co2Controller.regulation();
-    }
-    if (millis() - lastCO2UpdateTime > 8000)
-    {
-        co2Controller.update(CO2_Value);
-        lastCO2UpdateTime = millis();
-    }
+    co2Controller.update(CO2_Value);
 }
