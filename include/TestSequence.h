@@ -67,13 +67,12 @@ enum RampTestState
 };
 
 // State machine init
-// Take
+eTestState getStatusSTATETEST();
+eStabilisationState getStatusSTAB_STATE_TEST();
 // protoypes
 void startStabilisation(float temperature);
 void testSequenceTemperature();
 bool updateStabilisation(float stabTemperature);
-eTestState getStatusSTATETEST();
-eStabilisationState getStatusSTAB_STATE_TEST();
 void testSequenceTemperatureRamp();
 void setBioreactorTestState(uint8_t state_int);
 void setBioreacteurCompletedTest(uint8_t completed);

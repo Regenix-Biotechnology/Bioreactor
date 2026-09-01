@@ -1,5 +1,7 @@
 #include "main.h"
 
+float puissnace_pompes;
+
 void setup()
 {
     Serial.begin(SERIAL_BAUDRATE);
@@ -27,13 +29,12 @@ void loop()
     case eBioreactorState::APPROV:
         // start when user send command
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
-        setPumpsSpeed(220.0, OFF, OFF, OFF);
-        setValvesState(OPEN, CLOSE, CLOSE);
+        setPumpsSpeed(120.0, OFF, OFF, OFF);
+        setValvesState(OPEN, CLOSE, CLOSE); // la bonne version
         setPressureChamberState(OFF);
         setHeatersState(OFF);
-
-        // switch after 5 min to PREPARE
-        if (millis() - stateTimer > 5 * MINUTE)
+        // switch after 10 min to PREPARE
+        if (millis() - stateTimer > 10 * MINUTE)
         {
             setBioreactorState((uint8_t)eBioreactorState::PREPARE);
             stateTimer = millis();
@@ -42,7 +43,7 @@ void loop()
     case eBioreactorState::PREPARE:
         // start when approv is finished
         setFansState(ON, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(OFF, OFF, 150.0, OFF); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
+        setPumpsSpeed(OFF, 150.0, OFF, OFF); // Culture 2,  APPROV, CIRCUL, CULTURE 1
         setValvesState(CLOSE, CLOSE, CLOSE);
         setPressureChamberState(ON);
         setHeatersState(ON);
@@ -52,9 +53,9 @@ void loop()
         break;
     case eBioreactorState::RUN:
         // start when user sent command
-        // setFansState(ON, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(OFF, 110.0, 50.0, 50.0);
-        setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
+        setFansState(ON, ON, ON, ON, ON, ON, ON);
+        setPumpsSpeed(OFF, 70.0, 20.0, 20.0);
+        // setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
         setValvesState(CLOSE, OPEN, CLOSE);
         setPressureChamberState(ON);
         setHeatersState(ON);
@@ -64,7 +65,8 @@ void loop()
         // start when user send command (from IDLE after culture is finished)
         setFansState(OFF, ON, ON, ON, ON, ON, ON);
         setPumpsSpeed(-200.0, -200.0, -50.0, -50.0);
-        setValvesState(OPEN, OPEN, CLOSE);
+        // setPumpsSpeed(OFF, OFF, 200.0, 200.0);
+        setValvesState(CLOSE, OPEN, OPEN); //       setValvesState(OPEN, OPEN, CLOSE);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
 
@@ -151,7 +153,7 @@ void loop()
     case eBioreactorState::RINSING_RETURN:
         // start after rinsing liquid is finished
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
-        setPumpsSpeed(-200.0, -125.0, -50.0, -50.0);
+        setPumpsSpeed(-150.0, -100.0, -20.0, -20.0);
         setValvesState(CLOSE, OPEN, OPEN);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
@@ -221,11 +223,21 @@ void loop()
         }
         break;
     case eBioreactorState::HEATING:
+        puissnace_pompes = 40.0f;
         setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
-        setPumpsSpeed(OFF, OFF, OFF, OFF);
+        setPumpsSpeed(puissnace_pompes, puissnace_pompes, puissnace_pompes, puissnace_pompes);
         setValvesState(CLOSE, CLOSE, CLOSE);
         setPressureChamberState(OFF);
-        setHeatersState(ON);
+        setHeatersState(OFF);
+        // switch after 1 min to IDLE
+        if (millis() - stateTimer > 1 * MINUTE)
+        {
+            if (puissnace_pompes < 200)
+            {
+                puissnace_pompes += 25;
+            }
+            stateTimer = millis();
+        }
         break;
     default:
         /* code */

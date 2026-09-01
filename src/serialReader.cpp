@@ -225,5 +225,15 @@ void receiveSerialCommand()
             setBioreacteurCompletedTest(0x07);
             Serial.println("Bioreactor Test State set to TEST_STEP5_36_5");
         }
+
+        uint32_t amax;
+        if (sscanf(rx.c_str(), "AMAX=%lu", &amax) == 1)
+        {
+            approvPump.setAMAX(amax);
+            circulationPump.setAMAX(amax);
+            cultureChamberPump1.setAMAX(amax);
+            cultureChamberPump2.setAMAX(amax);
+            Serial.println("AMAX Set : " + String(amax));
+        }
     }
 }

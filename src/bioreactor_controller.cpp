@@ -6,10 +6,10 @@ GMP251 co2Sensor(RS485_RX_PIN, RS485_TX_PIN, RS485_DE_PIN, Serial1);
 O2Sensor o2Sensor;
 DriveTmc5041 driveStepper1(&SPI, SPI_CS_DRV_1_PIN);
 DriveTmc5041 driveStepper3(&SPI, SPI_CS_DRV_3_PIN);
-StepperMotor approvPump(&driveStepper1, MOTOR_1);
+StepperMotor approvPump(&driveStepper3, MOTOR_2);
 StepperMotor cultureChamberPump2(&driveStepper1, MOTOR_2);
-StepperMotor cultureChamberPump1(&driveStepper3, MOTOR_1);
-StepperMotor circulationPump(&driveStepper3, MOTOR_2);
+StepperMotor circulationPump(&driveStepper3, MOTOR_1);
+StepperMotor cultureChamberPump1(&driveStepper1, MOTOR_1);
 SSR_Relay heater(HEATER_PIN);
 CO2Controller co2Controller;
 IOExpander ioExpander(&Wire);
@@ -57,8 +57,8 @@ void beginBioreactorController()
     SPI.begin();
     driveStepper1.begin();
     driveStepper3.begin();
-    approvPump.begin();
-    circulationPump.beginTB();
+    approvPump.begin128MS();
+    circulationPump.begin128MS();
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
     beginBioreactorPreferences();
@@ -157,10 +157,8 @@ void setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool a
 }
 
 /**
- * @brief Set the speed of the pumps.
- *
+ * @brief Set the speed of the pumps And the number iof micro-steps for each pump.
  * Speed is in float ml/min and +/- for direction
- *
  * @param approvPumpSpeed           Speed of the approv pump
  * @param circulationPumpSpeed           Speed of the sensor pump
  * @param cultureChamberPump1Speed  Speed of the culture chamber pump 1
@@ -170,11 +168,10 @@ void setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cult
 {
     if (millis() - lastMotorSetSpeedTime > MOTOR_SET_SPEED_MSG_INTERVAL)
     {
-        approvPump.setSpeed(approvPumpSpeed);
-        circulationPump.setSpeed(circulationPumpSpeed);
-        cultureChamberPump1.setSpeed(cultureChamberPump1Speed);
-        cultureChamberPump2.setSpeed(cultureChamberPump2Speed);
-
+        approvPump.setSpeed(approvPumpSpeed, 128);
+        circulationPump.setSpeed(circulationPumpSpeed, 128);
+        cultureChamberPump1.setSpeed(cultureChamberPump1Speed, 256);
+        cultureChamberPump2.setSpeed(cultureChamberPump2Speed, 256);
         lastMotorSetSpeedTime = millis();
     }
 }
@@ -275,11 +272,11 @@ void printBioreactorStateToSerial()
         Serial.println("> CO2 status: " + String(co2Sensor.getStatus()));
         Serial.println("> DO status: " + String(dissolvedOxygenSensor.getStatus()));
         Serial.println(">  Water Temperature setpoint (°C): " + String(temperatureController.getReferenceTemperature()));
-        Serial.println("> TEST status: " + String(getStatusSTATETEST()));
-        Serial.println("> TEST STAB status: " + String(getStatusSTAB_STATE_TEST()));
         Serial.println("> CO2 concentration (%) Bioreactor air: " + String(CO2_Value));
 
         /* Add more prints here*/
+        // Serial.println("> TEST status: " + String(getStatusSTATETEST()));
+        // Serial.println("> TEST Stabilisation status: " + String(getStatusSTAB_STATE_TEST()));
 
         Serial.println("");
         lastPrintTime = millis();

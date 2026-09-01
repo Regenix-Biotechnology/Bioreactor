@@ -72,7 +72,7 @@ extern unsigned long lastTemperatureControllerTime;
 extern unsigned long lastPrintTime;
 extern uint8_t testState;
 extern unsigned long stateTimer;
-
+extern float puissnace_pompes;
 // Global constants
 static constexpr bool OPEN = HIGH;
 static constexpr bool CLOSE = LOW;
