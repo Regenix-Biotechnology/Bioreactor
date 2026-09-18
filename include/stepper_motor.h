@@ -24,7 +24,6 @@ public:
     StepperMotor(DriveTmc5041 *drive_handle, eMotorName motorName);
 
     eMotorStatus begin();
-    eMotorStatus begin128MS();
     eMotorStatus setSpeed(float speed, uint16_t microStep);
     eMotorStatus stop();
     void setPumpSpeed(float speed, uint16_t microStep);
@@ -51,23 +50,20 @@ private:
     static const uint8_t MOTOR_DRV_IHOLD_IRUN_ADDR[MOTOR_NAME_MAX];
     static const uint8_t MOTOR_DRV_AMAX_ADDR[MOTOR_NAME_MAX];
     static const uint8_t MOTOR_DRV_VMAX_ADDR[MOTOR_NAME_MAX];
+    static const uint8_t MOTOR_DRV_XTARGET_ADDR[MOTOR_NAME_MAX];
+    static const uint8_t MOTOR_DRV_XACTUAL_ADDR[MOTOR_NAME_MAX];
     static const uint8_t MOTOR_DRV_SET_SPEED_ADDR[MOTOR_NAME_MAX];
     static const uint8_t MOTOR_DRV_SET_MODE_ADDR[MOTOR_NAME_MAX];
     static const uint8_t SET_SPEED_CONFIG_MSG_ADDR_LIST[MOTOR_NAME_MAX][CONFIG_MSG_SIZE];
     static const uint32_t SET_SPEED_CONFIG_MSG_DATA_LIST[CONFIG_MSG_SIZE];
     static const uint32_t SET_SPEED_CONFIG_MSG_DATA_LIST_32[CONFIG_MSG_SIZE];
 
-    static constexpr float FREQ_CLOCK = 13200000.0f;     // 13.3 * (10 ^ 6);                                                                                                           // Hz
-    static constexpr float DEFREE_PER_STEP = 1.8;        // datasheet kamoer
-    static constexpr float ML_PER_RPM = 0.1388f;         // gros approx datasheet kamoer
+    static constexpr float FREQ_CLOCK = 16000000.0f;     // 13.3 * (10 ^ 6);
+    static constexpr float DEGREE_PER_STEP = 1.8;        // datasheet kamoer
+    static constexpr float ML_PER_RPM = 2.128f;          //
     static constexpr uint16_t MICRO_STEP_PER_STEP = 256; // datasheet p.30
 
-    // 1. Number of micro step (ex: 200 * 256 = 51200)
-    static constexpr float MICROSTEPS_PER_REV = (360.0f / DEFREE_PER_STEP) * MICRO_STEP_PER_STEP;
-    // 2. Conversion factor mL/min ->  Register VMAX (CORRECTED)
-    static constexpr float ML_PER_MIN_TO_REG = (MICROSTEPS_PER_REV / (60.0f * ML_PER_RPM)) * (8388608.0f / (FREQ_CLOCK * 2.0f));
-    // 3. Inversion
-    static constexpr float REG_TO_ML_PER_MIN = 1.0f / ML_PER_MIN_TO_REG;
+    static constexpr float ML_PER_MIN_TO_REG = ML_PER_RPM * (MICRO_STEP_PER_STEP * 200 / 60.0f) * (16777216 / FREQ_CLOCK);
 
     DriveTmc5041 *_drive_handle;
     eMotorName _motorName;

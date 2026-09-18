@@ -57,8 +57,8 @@ void beginBioreactorController()
     SPI.begin();
     driveStepper1.begin();
     driveStepper3.begin();
-    approvPump.begin128MS();
-    circulationPump.begin128MS();
+    approvPump.begin();
+    circulationPump.begin();
     cultureChamberPump1.begin();
     cultureChamberPump2.begin();
     beginBioreactorPreferences();
@@ -170,8 +170,8 @@ void setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cult
     {
         approvPump.setSpeed(approvPumpSpeed, 128);
         circulationPump.setSpeed(circulationPumpSpeed, 128);
-        cultureChamberPump1.setSpeed(cultureChamberPump1Speed, 256);
-        cultureChamberPump2.setSpeed(cultureChamberPump2Speed, 256);
+        cultureChamberPump1.setSpeed(cultureChamberPump1Speed, 128);
+        cultureChamberPump2.setSpeed(cultureChamberPump2Speed, 128);
         lastMotorSetSpeedTime = millis();
     }
 }

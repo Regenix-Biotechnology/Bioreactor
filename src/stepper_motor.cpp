@@ -8,25 +8,8 @@ const uint8_t StepperMotor::SET_SPEED_CONFIG_MSG_ADDR_LIST[MOTOR_NAME_MAX][CONFI
     {0x6C, 0x30, 0x2C, 0x10, 0x32, 0x13, 0x26, 0x20, 0x23, 0x24, 0x25, 0x27, 0x28, 0x2A, 0x2B}, // Moteur 1
     {0x7C, 0x50, 0x4C, 0x18, 0x52, 0x18, 0x46, 0x40, 0x43, 0x44, 0x45, 0x47, 0x48, 0x4A, 0x4B}  // Moteur 2
 };
-const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST[CONFIG_MSG_SIZE] = {
-    0x10010145, // [0]  0x6C : CHOPCONF
-    0x00060F08, // [1]  0x30 : IHOLD_IRUN
-    0x00002710, // [2]  0x2C : TZEROWAIT
-    0x00000000, // [3]  0x10 : GCONF
-    0x00000006, // [4]  0x32 : TPOWERDOWN = 10 (comme driver.TPOWERDOWN(10))
-    0x000001F4, // [5]  0x13 : TPWMTHRS = 500 (comme driver.TPWMTHRS(500))
-    0x0000000A, // [6]  0x26 : AMAX
-    0x00000000, // [7]  0x20 : RAMPMODE
-    0x00000000, // [8]  0x23 : VSTART
-    0x00000002, // [9]  0x24 : A1
-    0x00120000, // [10] 0x25 : V1
-    0x00043E00, // [11] 0x27 : VMAX
-    0x00000100, // [12] 0x28 : DMAX
-    0x00000002, // [13] 0x2A : D1
-    0x00000030  // [14] 0x2B : VSTOP
-};
 
-const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST_32[CONFIG_MSG_SIZE] = {
+const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST[CONFIG_MSG_SIZE] = {
     0x11010145, // [0]  0x6C : CHOPCONF
     0x00060F08, // [1]  0x30 : IHOLD_IRUN
     0x00002710, // [2]  0x2C : TZEROWAIT
@@ -35,7 +18,7 @@ const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST_32[CONFIG_MSG_SIZE] 
     0x000001F4, // [5]  0x13 : TPWMTHRS = 500 (comme driver.TPWMTHRS(500))
     0x0000000A, // [6]  0x26 : AMAX
     0x00000000, // [7]  0x20 : RAMPMODE
-    0x00000000, // [8]  0x23 : VSTART
+    0x00000400, // [8]  0x23 : VSTART
     0x00000002, // [9]  0x24 : A1
     0x00120000, // [10] 0x25 : V1
     0x00043E00, // [11] 0x27 : VMAX
@@ -78,30 +61,6 @@ eMotorStatus StepperMotor::begin()
 }
 
 /**
- * @brief Initialise the motor specific control with only 128 micro-steps (maintain torque boost)
- * @return eMotorStatus MOTOR_STATUS_OK if no problem occured else return error code
- * @warning The TMC5041 object provided should already be begined before calling this
- */
-eMotorStatus StepperMotor::begin128MS()
-{
-    if (!_drive_handle)
-        return MOTOR_STATUS_NULL_VARIABLE;
-    if (_motorName >= MOTOR_NAME_MAX)
-        return MOTOR_STATUS_INCORRECT_VARIABLE;
-
-    // Motor specific configuration
-    for (uint8_t i = 0; i < CONFIG_MSG_SIZE; i++)
-    {
-        _drive_handle->tmc_write(SET_SPEED_CONFIG_MSG_ADDR_LIST[_motorName][i], SET_SPEED_CONFIG_MSG_DATA_LIST_32[i]);
-    }
-    // Correct : La fonction tmc_read retourne directement le uint32_t
-    uint32_t dummy_reset_read = _drive_handle->tmc_read(0x01);
-    (void)dummy_reset_read; // Évite un avertissement "unused variable" si la variable n'est pas réutilisée
-    _isInit = true;
-    return MOTOR_STATUS_OK;
-}
-
-/**
  * @brief Set the motor speed in ml/min
  * @param speed speed in ml/min (+ is clockwise, - is counterclockwise)
  * @param microStep number of micro-steps use by the motor (ex: 16, 32, 64, 128, 256)
@@ -114,10 +73,9 @@ eMotorStatus StepperMotor::setSpeed(float speed, uint16_t microStep)
         return MOTOR_STATUS_NOT_INITIALISED;
 
     eMotorMode direction = MOTOR_MODE_SPEED_CONTROL_COUNTERCLOCKWISE;
-    uint32_t torque = RUNNING_TORQUE;
+    uint32_t torque = 0x00060F06;
     if (speed == 0.0)
     {
-        torque = 0;
     }
     else if (speed < 0.0)
     {
@@ -129,7 +87,6 @@ eMotorStatus StepperMotor::setSpeed(float speed, uint16_t microStep)
         direction = MOTOR_MODE_SPEED_CONTROL_COUNTERCLOCKWISE;
         speed = fabsf(speed);
     }
-
     _drive_handle->tmc_write(MOTOR_DRV_IHOLD_IRUN_ADDR[_motorName], torque);
     _drive_handle->tmc_write(MOTOR_DRV_SET_SPEED_ADDR[_motorName], uint32_t(speed * ML_PER_MIN_TO_REG));
     _drive_handle->tmc_write(MOTOR_DRV_SET_MODE_ADDR[_motorName], direction);
