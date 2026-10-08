@@ -6,10 +6,10 @@ GMP251 co2Sensor(RS485_RX_PIN, RS485_TX_PIN, RS485_DE_PIN, Serial1);
 O2Sensor o2Sensor;
 DriveTmc5041 driveStepper1(&SPI, SPI_CS_DRV_1_PIN);
 DriveTmc5041 driveStepper3(&SPI, SPI_CS_DRV_3_PIN);
-StepperMotor approvPump(&driveStepper3, MOTOR_2);
-StepperMotor cultureChamberPump2(&driveStepper1, MOTOR_2);
-StepperMotor circulationPump(&driveStepper3, MOTOR_1);
-StepperMotor cultureChamberPump1(&driveStepper1, MOTOR_1);
+StepperMotor approvPump(&driveStepper3, MOTOR_2, StepperMotor::ML_PER_REV_6_ROLLERS);
+StepperMotor cultureChamberPump2(&driveStepper1, MOTOR_2, StepperMotor::ML_PER_REV_4_ROLLERS);
+StepperMotor circulationPump(&driveStepper3, MOTOR_1, StepperMotor::ML_PER_REV_6_ROLLERS);
+StepperMotor cultureChamberPump1(&driveStepper1, MOTOR_1, StepperMotor::ML_PER_REV_4_ROLLERS);
 SSR_Relay heater(HEATER_PIN);
 CO2Controller co2Controller;
 IOExpander ioExpander(&Wire);
@@ -59,8 +59,8 @@ void beginBioreactorController()
     driveStepper3.begin();
     approvPump.begin128MS();
     circulationPump.begin128MS();
-    cultureChamberPump1.begin();
-    cultureChamberPump2.begin();
+    cultureChamberPump1.begin128MS();
+    cultureChamberPump2.begin128MS();
     beginBioreactorPreferences();
 }
 
@@ -170,8 +170,8 @@ void setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cult
     {
         approvPump.setSpeed(approvPumpSpeed, 128);
         circulationPump.setSpeed(circulationPumpSpeed, 128);
-        cultureChamberPump1.setSpeed(cultureChamberPump1Speed, 256);
-        cultureChamberPump2.setSpeed(cultureChamberPump2Speed, 256);
+        cultureChamberPump1.setSpeed(cultureChamberPump1Speed, 128);
+        cultureChamberPump2.setSpeed(cultureChamberPump2Speed, 128);
         lastMotorSetSpeedTime = millis();
     }
 }

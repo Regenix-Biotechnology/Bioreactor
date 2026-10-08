@@ -54,24 +54,24 @@ void loop()
     case eBioreactorState::RUN:
         // start when user sent command
         setFansState(ON, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(OFF, 70.0, 20.0, 20.0);
-        // setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CULTURE 2, CIRCUL, CULTURE 1
+        setPumpsSpeed(5.0, 75.0, 20.0, 20.0);
+        // setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CIRCUL, CULTURE 2, CULTURE 1
         setValvesState(CLOSE, OPEN, CLOSE);
-        setPressureChamberState(ON);
-        setHeatersState(ON);
+        setPressureChamberState(OFF);
+        setHeatersState(OFF);
         // switch when user command received (to IDLE)
         break;
     case eBioreactorState::CELL_RETURN:
         // start when user send command (from IDLE after culture is finished)
         setFansState(OFF, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(-200.0, -200.0, -50.0, -50.0);
+        setPumpsSpeed(-80.0, -80.0, -30.0, -30.0);
         // setPumpsSpeed(OFF, OFF, 200.0, 200.0);
         setValvesState(CLOSE, OPEN, OPEN); //       setValvesState(OPEN, OPEN, CLOSE);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
 
         // switch after 10 min to IDLE
-        if (millis() - stateTimer > 5 * MINUTE)
+        if (millis() - stateTimer > 8 * MINUTE)
         {
             setBioreactorState((uint8_t)eBioreactorState::IDLE);
             stateTimer = millis();
@@ -195,12 +195,15 @@ void loop()
             stateTimer = millis();
         }
         break;
-    case eBioreactorState::TEST: // For the fluidic and heating system test
+    case eBioreactorState::TEST:
+        // start when user sent command
         setFansState(ON, ON, ON, ON, ON, ON, ON);
+        setPumpsSpeed(5.0, 86.0, 30.0, 30.0);
+        // setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CIRCUL, CULTURE 2, CULTURE 1
         setValvesState(CLOSE, OPEN, CLOSE);
         setPressureChamberState(OFF);
-        setHeatersState(ON);
-        testSequenceTemperature();
+        setHeatersState(OFF);
+        // switch when user command received (to IDLE)
         break;
     case eBioreactorState::OPEN_VALVES: // For the fluidic and heating system test
         setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
