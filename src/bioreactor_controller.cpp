@@ -57,10 +57,10 @@ void beginBioreactorController()
     SPI.begin();
     driveStepper1.begin();
     driveStepper3.begin();
-    approvPump.begin128MS();
-    circulationPump.begin128MS();
-    cultureChamberPump1.begin128MS();
-    cultureChamberPump2.begin128MS();
+    approvPump.begin();
+    circulationPump.begin();
+    cultureChamberPump1.begin();
+    cultureChamberPump2.begin();
     beginBioreactorPreferences();
 }
 
