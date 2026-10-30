@@ -62,11 +62,11 @@ bool IOExpander::begin()
  * @param channel Output index (0–23).Channels 0–7 correspond to port P0, 8–15 to port P1, and 16–23 to port P2.
  * @param outputState true → set HIGH (ON), false → set LOW (OFF)
  */
-void IOExpander::setEfuse(uint8_t channel, bool outputState)
+bool IOExpander::setEfuse(uint8_t channel, bool outputState)
 {
     if (channel >= OUTPUT_COUNT)
     {
-        return;
+        return false;
     }
 
     // 0..7 -> port 0 (P0), 8..15 -> port 1 (P1), 16..23 -> port 2 (P2)
@@ -82,5 +82,5 @@ void IOExpander::setEfuse(uint8_t channel, bool outputState)
         _outputs[port] &= static_cast<uint8_t>(~(1U << bit)); // OFF -> bit = 0
     }
 
-    writeBytes(IOE_REG_OUTPUT, _outputs, IOE_PORT_BYTES);
+    return writeBytes(IOE_REG_OUTPUT, _outputs, IOE_PORT_BYTES);
 }

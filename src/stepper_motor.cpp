@@ -89,7 +89,7 @@ eMotorStatus StepperMotor::setSpeed(float speed, uint16_t microStep)
         speed = fabsf(speed);
     }
     _drive_handle->tmc_write(MOTOR_DRV_IHOLD_IRUN_ADDR[_motorName], torque);
-    // _drive_handle->tmc_write(MOTOR_DRV_SET_SPEED_ADDR[_motorName], uint32_t(speed * ML_PER_MIN_TO_REG));
+    uint32_t real_speed = static_cast<uint32_t>(fabsf(speed) * ML_PER_MIN_TO_REG);
     _drive_handle->tmc_write(MOTOR_DRV_SET_SPEED_ADDR[_motorName], real_speed);
     _drive_handle->tmc_write(MOTOR_DRV_SET_MODE_ADDR[_motorName], direction);
     return MOTOR_STATUS_OK;

@@ -9,9 +9,7 @@
 #include "ioExpander.h"
 #include "pins.h"
 #include "temperature_controller.h"
-#include "bioreactor_controller.h"
 #include "watchdog.h"
-#include "utils.h"
 #include "pressure_chamber_controller.h"
 #include "O2Sensor.h"
 #include "gmp251.h"
@@ -20,31 +18,11 @@
 #include "AtlasTempSensor.h"
 #include "limitSwitch.h"
 #include "ledI2C.h"
-#include "TestSequence.h"
 #include "co2_controller.h"
+#include "cleaning_sequence.h"
 
-enum class eBioreactorState
-{
-    IDLE = 0,
-    APPROV,
-    PREPARE,
-    RUN,
-    CELL_RETURN,
-    CLEANING_APPROV,
-    CLEANING_CIRCULATION,
-    CLEANING_RETURN,
-    RINSING_APPROV,
-    RINSING_CIRCULATION,
-    RINSING_RETURN,
-    REDUCE_OVERFLOW,
-    RETURN_START,
-    TEST,
-    OPEN_VALVES,
-    SAMPLING,
-    HEATING,
-
-    MAX_STATE
-};
+#include "bioreactor_controller.h"
+#include "TestSequence.h"
 
 // Objects declaration (extern to be used both in main.cpp and bioreactor_controller.cpp)
 extern SHT40 sht40;
@@ -68,6 +46,7 @@ extern PressureChamberController pressureChamber;
 
 // Global variables
 extern eBioreactorState bioreactorState;
+extern eCleaningCycle cleaningCycle;
 extern unsigned long lastTemperatureControllerTime;
 extern unsigned long lastPrintTime;
 extern uint8_t testState;

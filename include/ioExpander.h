@@ -20,7 +20,7 @@ public:
 
     bool begin();
 
-    void setEfuse(uint8_t channel, bool outputState);
+    bool setEfuse(uint8_t channel, bool outputState);
 
     // --- Constants ---
     static constexpr uint8_t OUTPUT_COUNT = 24;         ///< 20 eFuses + 4 debug LEDs

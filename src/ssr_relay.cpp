@@ -4,7 +4,13 @@
  * @brief Constructor to initialize the relay control pin.
  * @param pin The control pin for the SSR relay.
  */
-SSR_Relay::SSR_Relay(uint8_t pin) : pin(pin), lastCheckTime(0) {}
+SSR_Relay::SSR_Relay(uint8_t pin)
+    : pin(pin),
+      lastCheckTime(0),
+      levelPWM(0),
+      currentPWMIndex(0)
+{
+}
 
 /**
  * @brief Initialise SSR relay pin and set default state.
@@ -13,6 +19,8 @@ void SSR_Relay::begin()
 {
     pinMode(this->pin, OUTPUT);
     digitalWrite(this->pin, LOW);
+    this->levelPWM = 0;
+    this->currentPWMIndex = 0;
 }
 
 /**
@@ -22,6 +30,11 @@ void SSR_Relay::begin()
 void SSR_Relay::setLevel(uint8_t level)
 {
     this->levelPWM = constrain(level, 0, MAX_PWM_INDEX);
+    if (this->levelPWM == 0)
+    {
+        digitalWrite(pin, LOW);
+        currentPWMIndex = 0;
+    }
 }
 
 /**

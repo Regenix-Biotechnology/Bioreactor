@@ -32,6 +32,15 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
     if (!this->pressureChamberState)
         return;
 
+    if (co2Sensor.getStatus() != GMP_251_STATUS_OK || co2Concentration <= 0.0f)
+    {
+        unsigned long now = millis();
+        this->timeBeforeClosingO2Valve = now;
+        this->timeBeforeClosingCO2Valve = now;
+        this->timeBeforeClosingAirValve = now;
+        return;
+    }
+
     float o2ValveTime = 0;
     float co2ValveTime = 0;
     float airValveTime = 0;
@@ -55,28 +64,27 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
     }
 
     // --- CO₂ Control Logic ---
-    if (co2Error > 0)
+    if (co2Concentration > this->co2MaxRef)
     {
-        float effectiveCO2Error = co2Error / co2Concentration;
+        float co2CorrectionError = co2Concentration - this->co2MaxRef;
+        float effectiveCO2Error = co2CorrectionError / co2Concentration;
         float airValveTimeFromCo2 = calculateTimeBeforeClosingValve(AIR, effectiveCO2Error) * CORRECTION_FACTOR_CO2_REDUCTION;
         airValveTime = max(airValveTime, airValveTimeFromCo2);
     }
-    else if (co2Error < 0)
+    else if (co2Concentration < this->co2MinRef)
     {
-        float correctionFactor = (-co2Error < SMALL_CO2_ERROR_THRESHOLD)
+        float co2CorrectionError = this->co2MinRef - co2Concentration;
+        float correctionFactor = (co2CorrectionError < SMALL_CO2_ERROR_THRESHOLD)
                                      ? CORRECTION_FACTOR_CO2_SMALL
                                      : CORRECTION_FACTOR_CO2;
 
-        // Serial.println(">CO2 Error: " + String(co2Error));
-        // Serial.println(">CO2 Error Correction Factor: " + String(correctionFactor));
-
-        co2ValveTime = calculateTimeBeforeClosingValve(CO2, -co2Error) * correctionFactor;
+        co2ValveTime = calculateTimeBeforeClosingValve(CO2, co2CorrectionError) * correctionFactor;
     }
 
     // --- Pressure Control Logic ---
     if (pressure < P_CHAMBER_MIN)
     {
-        float airValveTimeFromPressure = millis() + AIR_VALVE_OPEN_TIME;
+        float airValveTimeFromPressure = AIR_VALVE_OPEN_TIME;
         airValveTime = max(airValveTime, airValveTimeFromPressure);
     }
 
