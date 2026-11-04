@@ -59,6 +59,7 @@ static void printCommandError(
 static void printStatusSnapshot(bool hasId, uint32_t id)
 {
     const bool waitingForWater = isWaitingForWater(bioreactorState);
+    const bool waitingForDetergent = isWaitingForDetergent(bioreactorState);
     const String suffix = responseIdSuffix(hasId, id);
     Serial.println("STATUS:STATE=" + String(static_cast<int>(bioreactorState)) +
                    ";CYCLE=" + String(cleaningCycleName(cleaningCycle)) +
@@ -66,6 +67,8 @@ static void printStatusSnapshot(bool hasId, uint32_t id)
                    ";ERROR=" + String(getLastCleaningErrorCode()) + suffix);
     Serial.println(String("STATUS:WAITING_FOR_WATER=") +
                    (waitingForWater ? "yes" : "no") + suffix);
+    Serial.println(String("STATUS:WAITING_FOR_DETERGENT=") +
+                   (waitingForDetergent ? "yes" : "no") + suffix);
 }
 
 static bool parseStateName(const String &name, eBioreactorState &state)
@@ -121,7 +124,9 @@ static bool parseCleaningCycle(const String &name, eCleaningCycle &cycle)
 
 static bool parseCleaningPhase(const String &name, eBioreactorState &phase)
 {
-    if (name == "APPROV")
+    if (name == "WAITING_FOR_DETERGENT")
+        phase = eBioreactorState::CLEANING_WAITING_DETERGENT;
+    else if (name == "APPROV")
         phase = eBioreactorState::CLEANING_APPROV;
     else if (name == "CIRCULATION")
         phase = eBioreactorState::CLEANING_CIRCULATION;
@@ -255,13 +260,21 @@ void receiveSerialCommand()
             if (result == eCleaningCommandResult::ACCEPTED)
             {
                 Serial.println("OK:" + command + idSuffix);
-                Serial.println("EVENT:CLEANING:CYCLE_START;CYCLE=" +
-                               String(cleaningCycleName(cycle)) + ";PHASE=" +
-                               String(cleaningPhaseName(phase)));
-                Serial.println(cycle == eCleaningCycle::DETERGENT
-                                   ? "EVENT:CLEANING:DETERGENT_STARTED"
-                                   : "EVENT:CLEANING:RINSE_STARTED");
-                Serial.println("EVENT:CLEANING:" + cycleName + ":APPROV_STARTED");
+                if (phase == eBioreactorState::CLEANING_WAITING_DETERGENT)
+                {
+                    Serial.println("EVENT:CLEANING:WAITING_FOR_DETERGENT;CYCLE=DETERGENT;PHASE=WAITING_FOR_DETERGENT");
+                    Serial.println("EVENT:CLEANING:WAITING_FOR_DETERGENT_CONFIRMATION");
+                }
+                else
+                {
+                    Serial.println("EVENT:CLEANING:CYCLE_START;CYCLE=" +
+                                   String(cleaningCycleName(cycle)) + ";PHASE=" +
+                                   String(cleaningPhaseName(phase)));
+                    Serial.println(cycle == eCleaningCycle::DETERGENT
+                                       ? "EVENT:CLEANING:DETERGENT_STARTED"
+                                       : "EVENT:CLEANING:RINSE_STARTED");
+                    Serial.println("EVENT:CLEANING:" + cycleName + ":APPROV_STARTED");
+                }
             }
             else if (result == eCleaningCommandResult::ACTUATOR_FAILURE)
             {
@@ -353,7 +366,8 @@ void receiveSerialCommand()
                 bioreactorState == eBioreactorState::CLEANING_APPROV ||
                 bioreactorState == eBioreactorState::CLEANING_CIRCULATION ||
                 bioreactorState == eBioreactorState::CLEANING_RETURN ||
-                bioreactorState == eBioreactorState::CLEANING_WAITING_WATER;
+                bioreactorState == eBioreactorState::CLEANING_WAITING_WATER ||
+                bioreactorState == eBioreactorState::CLEANING_WAITING_DETERGENT;
             if (state == eBioreactorState::IDLE && cleaningActive)
             {
                 const eCleaningCycle stoppedCycle = cleaningCycle;

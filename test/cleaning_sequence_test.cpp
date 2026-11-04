@@ -14,10 +14,16 @@ int main()
     assert(static_cast<int>(eBioreactorState::MEDIA_CHANGE_TRASH) == 18);
     assert(static_cast<int>(eBioreactorState::MEDIA_CHANGE_APPROV) == 19);
     assert(static_cast<int>(eBioreactorState::CLEANING_WAITING_WATER) == 20);
+    assert(static_cast<int>(eBioreactorState::CLEANING_WAITING_DETERGENT) == 21);
 
     assert(isValidCleaningOperatorCommand(
         eBioreactorState::IDLE,
         eCleaningCycle::NONE,
+        eCleaningCycle::DETERGENT,
+        eBioreactorState::CLEANING_WAITING_DETERGENT));
+    assert(isValidCleaningOperatorCommand(
+        eBioreactorState::CLEANING_WAITING_DETERGENT,
+        eCleaningCycle::DETERGENT,
         eCleaningCycle::DETERGENT,
         eBioreactorState::CLEANING_APPROV));
     assert(isValidCleaningOperatorCommand(
@@ -26,6 +32,11 @@ int main()
         eCleaningCycle::RINSE,
         eBioreactorState::CLEANING_APPROV));
 
+    assert(!isValidCleaningOperatorCommand(
+        eBioreactorState::IDLE,
+        eCleaningCycle::NONE,
+        eCleaningCycle::DETERGENT,
+        eBioreactorState::CLEANING_APPROV));
     assert(!isValidCleaningOperatorCommand(
         eBioreactorState::IDLE,
         eCleaningCycle::NONE,
@@ -76,11 +87,13 @@ int main()
         eCleaningCycle::NONE,
         eBioreactorState::CLEANING_CIRCULATION));
     assert(isCleaningManagedState(eBioreactorState::CLEANING_WAITING_WATER));
+    assert(isCleaningManagedState(eBioreactorState::CLEANING_WAITING_DETERGENT));
     assert(!isCleaningManagedState(eBioreactorState::IDLE));
     assert(getSafeStartupState(eBioreactorState::CLEANING_APPROV) == eBioreactorState::IDLE);
     assert(getSafeStartupState(eBioreactorState::CLEANING_CIRCULATION) == eBioreactorState::IDLE);
     assert(getSafeStartupState(eBioreactorState::CLEANING_RETURN) == eBioreactorState::IDLE);
     assert(getSafeStartupState(eBioreactorState::CLEANING_WAITING_WATER) == eBioreactorState::IDLE);
+    assert(getSafeStartupState(eBioreactorState::CLEANING_WAITING_DETERGENT) == eBioreactorState::IDLE);
     assert(getSafeStartupState(eBioreactorState::RUN) == eBioreactorState::RUN);
     assert(nextCleaningCycle(eCleaningCycle::DETERGENT) == eCleaningCycle::DETERGENT);
     assert(nextCleaningStateAfterCycle(eCleaningCycle::DETERGENT) ==
@@ -99,9 +112,12 @@ int main()
     assert(canStopCleaningSequence(eBioreactorState::CLEANING_CIRCULATION));
     assert(canStopCleaningSequence(eBioreactorState::CLEANING_RETURN));
     assert(canStopCleaningSequence(eBioreactorState::CLEANING_WAITING_WATER));
+    assert(canStopCleaningSequence(eBioreactorState::CLEANING_WAITING_DETERGENT));
     assert(!canStopCleaningSequence(eBioreactorState::IDLE));
     assert(isWaitingForWater(eBioreactorState::CLEANING_WAITING_WATER));
+    assert(isWaitingForDetergent(eBioreactorState::CLEANING_WAITING_DETERGENT));
     assert(!isWaitingForWater(eBioreactorState::IDLE));
+    assert(!isWaitingForDetergent(eBioreactorState::IDLE));
 
     size_t commandLength = 0;
     bool hasId = false;
@@ -170,6 +186,10 @@ int main()
     }
     assert(!isHeaterPermitted(
         eBioreactorState::CLEANING_WAITING_WATER,
+        eCleaningCycle::DETERGENT,
+        true));
+    assert(!isHeaterPermitted(
+        eBioreactorState::CLEANING_WAITING_DETERGENT,
         eCleaningCycle::DETERGENT,
         true));
     return 0;

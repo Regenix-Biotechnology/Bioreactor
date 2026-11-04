@@ -1,4 +1,5 @@
 #include "temperature_controller.h"
+#include <math.h>
 
 /**
  * @brief Constructor to initialize the control loop parameters.
@@ -6,6 +7,8 @@
 TemperatureController::TemperatureController()
     : integralError(0.0f),
       prevError(0.0f),
+      prevTime(0),
+      integralErrorAir(0.0f),
       pwmHeater(0),
       tempRef(37.0f)
 {
@@ -20,17 +23,31 @@ TemperatureController::TemperatureController()
  */
 void TemperatureController::update(float waterTemp, float airTemp)
 {
+    if (!isfinite(waterTemp) || !isfinite(airTemp) || !isfinite(tempRef))
+    {
+        reset();
+        return;
+    }
+
     // --- Compute Target Air Temperature ---
     unsigned long currentTime = millis();
     float dt = (float)(currentTime - prevTime) / MILLIS_TO_SECONDS;
+    if (dt <= 0.0f)
+    {
+        reset();
+        return;
+    }
+
     float error = (tempRef - waterTemp);
+    if (error <= 0.0f)
+    {
+        reset();
+        return;
+    }
+
     this->integralErrorAir += error * dt;
 
-    float adjustedKP_AIR = KP_AIR;
-    if (error < 0) // More aggressive for cooling
-        adjustedKP_AIR = KP_AIR * 6.0f;
-
-    float targetAirTemp = adjustedKP_AIR * error + KI_AIR * integralErrorAir + tempRef - TEMPERATURE_DIFFERENCE_OFFSET;
+    float targetAirTemp = KP_AIR * error + KI_AIR * integralErrorAir + tempRef - TEMPERATURE_DIFFERENCE_OFFSET;
 
     // --- PID Control for the Heater ---
     error = targetAirTemp - airTemp;
@@ -39,7 +56,7 @@ void TemperatureController::update(float waterTemp, float airTemp)
     this->prevError = error;
     this->prevTime = currentTime;
 
-    float heaterControl = KP_FAN * error + KI_FAN * integralError + KD_FAN * derivative;
+    float heaterControl = KP_HEATER * error + KI_HEATER * integralError + KD_HEATER * derivative;
     this->pwmHeater = constrain(heaterControl, 0, 100);
 
     // --- Debug Output ---
@@ -56,7 +73,19 @@ void TemperatureController::update(float waterTemp, float airTemp)
 }
 
 /**
- * @brief Returns the computed fan power pwm between 0 and 255.
+ * @brief Clear accumulated controller state and stop the heater.
+ */
+void TemperatureController::reset()
+{
+    this->integralError = 0.0f;
+    this->integralErrorAir = 0.0f;
+    this->prevError = 0.0f;
+    this->prevTime = millis();
+    this->pwmHeater = 0;
+}
+
+/**
+ * @brief Returns the computed heater power between 0 and 100 percent.
  */
 float TemperatureController::getHeaterPower() const
 {
@@ -69,6 +98,8 @@ float TemperatureController::getHeaterPower() const
  */
 void TemperatureController::setReferenceTemperature(float tempRef)
 {
+    if (this->tempRef != tempRef)
+        reset();
     this->tempRef = tempRef;
 }
 

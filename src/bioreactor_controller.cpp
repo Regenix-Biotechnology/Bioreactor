@@ -118,6 +118,7 @@ bool isBioreactorStateSupported(eBioreactorState state)
            state == eBioreactorState::CLEANING_CIRCULATION ||
            state == eBioreactorState::CLEANING_RETURN ||
            state == eBioreactorState::CLEANING_WAITING_WATER ||
+           state == eBioreactorState::CLEANING_WAITING_DETERGENT ||
            state == eBioreactorState::TEST ||
            state == eBioreactorState::TRASH ||
            state == eBioreactorState::MEDIA_CHANGE_TRASH ||
@@ -143,7 +144,8 @@ void setBioreactorState(uint8_t state_int)
         state == eBioreactorState::CLEANING_APPROV ||
         state == eBioreactorState::CLEANING_CIRCULATION ||
         state == eBioreactorState::CLEANING_RETURN ||
-        state == eBioreactorState::CLEANING_WAITING_WATER;
+        state == eBioreactorState::CLEANING_WAITING_WATER ||
+        state == eBioreactorState::CLEANING_WAITING_DETERGENT;
     if (isCleaningState && cleaningCycle == eCleaningCycle::NONE)
     {
         return;
@@ -155,7 +157,8 @@ void setBioreactorState(uint8_t state_int)
             bioreactorState == eBioreactorState::CLEANING_APPROV ||
             bioreactorState == eBioreactorState::CLEANING_CIRCULATION ||
             bioreactorState == eBioreactorState::CLEANING_RETURN ||
-            bioreactorState == eBioreactorState::CLEANING_WAITING_WATER;
+            bioreactorState == eBioreactorState::CLEANING_WAITING_WATER ||
+            bioreactorState == eBioreactorState::CLEANING_WAITING_DETERGENT;
         if (wasCleaningState)
         {
             setHeatersState(OFF);
@@ -183,7 +186,9 @@ eCleaningCommandResult setCleaningCyclePhase(eCleaningCycle cycle, eBioreactorSt
         return eCleaningCommandResult::INVALID_TRANSITION;
     }
 
-    if (cycle == eCleaningCycle::DETERGENT && !isCleaningTemperatureSafe())
+    if (cycle == eCleaningCycle::DETERGENT &&
+        phase == eBioreactorState::CLEANING_APPROV &&
+        !isCleaningTemperatureSafe())
     {
         return eCleaningCommandResult::TEMPERATURE_SENSOR_NOT_READY;
     }
@@ -589,8 +594,6 @@ void setPressureChamberState(bool state)
  */
 void updateTemperatureController()
 {
-    heater.update();
-
     if (millis() - lastTemperatureControllerTime > TEMPERATURE_CONTROLLER_UPDATE_INTERVAL)
     {
         lastTemperatureControllerTime = millis();
@@ -607,12 +610,16 @@ void updateTemperatureController()
             isfinite(waterTemperature))
         {
             temperatureController.update(waterTemperature, airTemperature);
+            setHeatersState(ON);
         }
-        else if (cleaningCycle == eCleaningCycle::DETERGENT)
+        else
         {
+            temperatureController.reset();
             setHeatersState(OFF);
         }
     }
+
+    heater.update();
 }
 
 /**

@@ -9,13 +9,14 @@
  *
  * The control loop computes:
  * - A target air temperature based on the water temperature.
- * - A PID controller computes the fan power (with limits).
+ * - A PID controller computes the heater power (with limits).
  */
 class TemperatureController
 {
 public:
     TemperatureController();
     void update(float waterTemp, float airTemp);
+    void reset();
     float getHeaterPower() const;
     void setReferenceTemperature(float tempRef);
     float getReferenceTemperature();
@@ -34,9 +35,9 @@ private:
     uint8_t pwmHeater;
 
     // Constants for the control loop.
-    static constexpr float KP_FAN = 20.0f;
-    static constexpr float KI_FAN = 0.0001f;
-    static constexpr float KD_FAN = 0.0f;
+    static constexpr float KP_HEATER = 20.0f;
+    static constexpr float KI_HEATER = 0.0001f;
+    static constexpr float KD_HEATER = 0.0f;
     static constexpr float KP_AIR = 2.0f;
     static constexpr float KI_AIR = 0.0005f;
     static constexpr float MILLIS_TO_SECONDS = 1000.0f;

@@ -16,7 +16,8 @@ enum class eBioreactorState
     MEDIA_CHANGE_TRASH = 18,
     MEDIA_CHANGE_APPROV = 19,
     CLEANING_WAITING_WATER = 20,
-    MAX_STATE = 21
+    CLEANING_WAITING_DETERGENT = 21,
+    MAX_STATE = 22
 };
 
 enum class eCleaningCycle : unsigned char
@@ -45,12 +46,18 @@ inline bool isCleaningPhaseState(eBioreactorState state)
 inline bool isCleaningManagedState(eBioreactorState state)
 {
     return isCleaningPhaseState(state) ||
-           state == eBioreactorState::CLEANING_WAITING_WATER;
+           state == eBioreactorState::CLEANING_WAITING_WATER ||
+           state == eBioreactorState::CLEANING_WAITING_DETERGENT;
 }
 
 inline bool isWaitingForWater(eBioreactorState state)
 {
     return state == eBioreactorState::CLEANING_WAITING_WATER;
+}
+
+inline bool isWaitingForDetergent(eBioreactorState state)
+{
+    return state == eBioreactorState::CLEANING_WAITING_DETERGENT;
 }
 
 inline bool canStopCleaningSequence(eBioreactorState state)
@@ -85,6 +92,8 @@ inline const char *cleaningPhaseName(eBioreactorState state)
         return "RETURN";
     case eBioreactorState::CLEANING_WAITING_WATER:
         return "WAITING_FOR_WATER";
+    case eBioreactorState::CLEANING_WAITING_DETERGENT:
+        return "WAITING_FOR_DETERGENT";
     default:
         return "NONE";
     }
@@ -127,13 +136,16 @@ inline bool isValidCleaningOperatorCommand(
     eCleaningCycle requestedCycle,
     eBioreactorState requestedPhase)
 {
-    if (requestedPhase != eBioreactorState::CLEANING_APPROV)
-        return false;
-
     return (requestedCycle == eCleaningCycle::DETERGENT &&
+            requestedPhase == eBioreactorState::CLEANING_WAITING_DETERGENT &&
             currentState == eBioreactorState::IDLE &&
             currentCycle == eCleaningCycle::NONE) ||
+           (requestedCycle == eCleaningCycle::DETERGENT &&
+            requestedPhase == eBioreactorState::CLEANING_APPROV &&
+            currentState == eBioreactorState::CLEANING_WAITING_DETERGENT &&
+            currentCycle == eCleaningCycle::DETERGENT) ||
            (requestedCycle == eCleaningCycle::RINSE &&
+            requestedPhase == eBioreactorState::CLEANING_APPROV &&
             currentState == eBioreactorState::CLEANING_WAITING_WATER &&
             currentCycle == eCleaningCycle::DETERGENT);
 }

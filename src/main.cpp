@@ -169,6 +169,10 @@ void loop()
         if (!setCleaningSafeOutputs())
             failCleaningSequence("WAITING_STATE_OUTPUT_FAILURE");
         break;
+    case eBioreactorState::CLEANING_WAITING_DETERGENT:
+        if (!setCleaningSafeOutputs())
+            failCleaningSequence("WAITING_STATE_OUTPUT_FAILURE");
+        break;
         /* États non utilisés
             case eBioreactorState::RINSING_APPROV:
                 setFansState(OFF, OFF, ON, ON, ON, ON, ON);
