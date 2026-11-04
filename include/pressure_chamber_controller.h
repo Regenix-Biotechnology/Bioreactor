@@ -16,7 +16,7 @@ typedef enum
 extern GMP251 co2Sensor;
 
 /**
- * @class TemperatureController
+ * @class PressureChamberController
  * @brief Implements the control loop for the pressure chamber (O2, CO2, air)
  */
 class PressureChamberController

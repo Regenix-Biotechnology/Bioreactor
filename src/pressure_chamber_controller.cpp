@@ -1,4 +1,5 @@
 #include "pressure_chamber_controller.h"
+#include <math.h>
 
 /**
  * @brief Constructor to initialize the control loop parameters.
@@ -30,11 +31,24 @@ PressureChamberController::PressureChamberController()
 void PressureChamberController::update(float o2Concentration, float co2Concentration, float pressure)
 {
     if (!this->pressureChamberState)
-        return;
-
-    if (co2Sensor.getStatus() != GMP_251_STATUS_OK || co2Concentration <= 0.0f)
     {
-        unsigned long now = millis();
+        const unsigned long now = millis();
+        this->timeBeforeClosingO2Valve = now;
+        this->timeBeforeClosingCO2Valve = now;
+        this->timeBeforeClosingAirValve = now;
+        return;
+    }
+
+    if (co2Sensor.getStatus() != GMP_251_STATUS_OK ||
+        !isfinite(o2Concentration) ||
+        !isfinite(co2Concentration) ||
+        !isfinite(pressure) ||
+        o2Concentration <= 0.0f ||
+        co2Concentration <= 0.0f ||
+        this->o2Ref <= 0.0f ||
+        this->co2Ref <= 0.0f)
+    {
+        const unsigned long now = millis();
         this->timeBeforeClosingO2Valve = now;
         this->timeBeforeClosingCO2Valve = now;
         this->timeBeforeClosingAirValve = now;
@@ -45,47 +59,58 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
     float co2ValveTime = 0;
     float airValveTime = 0;
 
-    float o2Error = o2Concentration - this->o2Ref;
-    float co2Error = co2Concentration - this->co2Ref;
+    const bool o2BelowTarget = o2Concentration < this->o2MinRef;
+    const bool co2BelowTarget = co2Concentration < this->co2MinRef;
 
-    // --- O₂ Control Logic ---
-    if (o2Error > 0)
+    // Correct only one deficient gas at a time; the other gas is affected by dilution.
+    if (o2BelowTarget || co2BelowTarget)
     {
-        float effectiveO2Error = o2Error / o2Concentration;
-        airValveTime = calculateTimeBeforeClosingValve(AIR, effectiveO2Error) * CORRECTION_FACTOR_O2_REDUCTION;
+        const bool correctO2 =
+            o2BelowTarget &&
+            (!co2BelowTarget ||
+             (this->o2Ref - o2Concentration) / this->o2Ref >=
+                 (this->co2Ref - co2Concentration) / this->co2Ref);
+
+        if (correctO2)
+        {
+            const float o2Deficit = this->o2Ref - o2Concentration;
+            const float correctionFactor = (o2Deficit < SMALL_O2_ERROR_THRESHOLD)
+                                               ? CORRECTION_FACTOR_O2_SMALL
+                                               : CORRECTION_FACTOR_O2;
+            o2ValveTime = calculateTimeBeforeClosingValve(O2, o2Deficit) * correctionFactor;
+        }
+        else
+        {
+            const float co2Deficit = this->co2MinRef - co2Concentration;
+            const float correctionFactor = (co2Deficit < SMALL_CO2_ERROR_THRESHOLD)
+                                               ? CORRECTION_FACTOR_CO2_SMALL
+                                               : CORRECTION_FACTOR_CO2;
+            co2ValveTime = calculateTimeBeforeClosingValve(CO2, co2Deficit) * correctionFactor;
+        }
     }
-    else if (o2Error < 0)
+    else
     {
-        float correctionFactor = (-o2Error < SMALL_O2_ERROR_THRESHOLD)
-                                     ? CORRECTION_FACTOR_O2_SMALL
-                                     : CORRECTION_FACTOR_O2;
+        // Air dilution can lower both gas concentrations, so do not purge while either is low.
+        if (o2Concentration > this->o2MaxRef)
+        {
+            const float effectiveO2Error =
+                (o2Concentration - this->o2MaxRef) / o2Concentration;
+            airValveTime = calculateTimeBeforeClosingValve(AIR, effectiveO2Error) *
+                           CORRECTION_FACTOR_O2_REDUCTION;
+        }
 
-        o2ValveTime = calculateTimeBeforeClosingValve(O2, -o2Error) * correctionFactor;
-    }
+        if (co2Concentration > this->co2MaxRef)
+        {
+            const float effectiveCO2Error =
+                (co2Concentration - this->co2MaxRef) / co2Concentration;
+            const float airValveTimeFromCO2 =
+                calculateTimeBeforeClosingValve(AIR, effectiveCO2Error) *
+                CORRECTION_FACTOR_CO2_REDUCTION;
+            airValveTime = max(airValveTime, airValveTimeFromCO2);
+        }
 
-    // --- CO₂ Control Logic ---
-    if (co2Concentration > this->co2MaxRef)
-    {
-        float co2CorrectionError = co2Concentration - this->co2MaxRef;
-        float effectiveCO2Error = co2CorrectionError / co2Concentration;
-        float airValveTimeFromCo2 = calculateTimeBeforeClosingValve(AIR, effectiveCO2Error) * CORRECTION_FACTOR_CO2_REDUCTION;
-        airValveTime = max(airValveTime, airValveTimeFromCo2);
-    }
-    else if (co2Concentration < this->co2MinRef)
-    {
-        float co2CorrectionError = this->co2MinRef - co2Concentration;
-        float correctionFactor = (co2CorrectionError < SMALL_CO2_ERROR_THRESHOLD)
-                                     ? CORRECTION_FACTOR_CO2_SMALL
-                                     : CORRECTION_FACTOR_CO2;
-
-        co2ValveTime = calculateTimeBeforeClosingValve(CO2, co2CorrectionError) * correctionFactor;
-    }
-
-    // --- Pressure Control Logic ---
-    if (pressure < P_CHAMBER_MIN)
-    {
-        float airValveTimeFromPressure = AIR_VALVE_OPEN_TIME;
-        airValveTime = max(airValveTime, airValveTimeFromPressure);
+        if (pressure < P_CHAMBER_MIN)
+            airValveTime = max(airValveTime, AIR_VALVE_OPEN_TIME);
     }
 
     // Apply the calculated times

@@ -562,10 +562,20 @@ bool setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cult
  */
 void setHeatersState(bool heaterState)
 {
-    if (heaterState && isHeaterPermitted(bioreactorState, cleaningCycle, isCleaningTemperatureSafe()))
+    const bool temperatureDataSafe = isCleaningTemperatureSafe();
+    const bool belowTemperatureSetpoint =
+        temperatureDataSafe &&
+        tempSensor.getTemperatureC() < temperatureController.getReferenceTemperature();
+
+    if (heaterState &&
+        isHeaterPermitted(bioreactorState, cleaningCycle, temperatureDataSafe) &&
+        belowTemperatureSetpoint)
         heater.setLevel(temperatureController.getHeaterPower());
     else
+    {
         heater.setLevel(OFF);
+        temperatureController.reset();
+    }
 }
 
 bool isCleaningTemperatureSafe()
@@ -634,7 +644,10 @@ void updatePressureChamberController()
         float co2Concentration = co2Sensor.getCO2();
         float pressure = 25 * 6895; // 7.5 psi to Pa // TODO: get this value from the sensor
 
-        pressureChamber.update(o2Concentration, co2Concentration, pressure);
+        if (o2Sensor.getStatus() == O2_SENSOR_STATUS_OK)
+            pressureChamber.update(o2Concentration, co2Concentration, pressure);
+        else
+            pressureChamber.update(NAN, co2Concentration, pressure);
     }
 
     // // DEBUG: Print every second the O2 and CO2 concentration and the time since last update
