@@ -47,6 +47,376 @@ static bool cultureSetpointsAvailable = false;
 uint8_t testState = 0;
 unsigned long stateTimer;
 
+namespace
+{
+    enum class FlowCalibrationPhase
+    {
+        BASELINE,
+        PULSE,
+        RESPONSE
+    };
+
+    constexpr unsigned long FLOW_CALIBRATION_SAMPLE_INTERVAL_MS = 1000UL;
+    constexpr unsigned long FLOW_CALIBRATION_MAX_WAIT_MS = 180000UL;
+    constexpr unsigned long FLOW_CALIBRATION_STABLE_DURATION_MS = 10000UL;
+    constexpr unsigned long FLOW_O2_OBSERVATION_MS = 15000UL;
+    constexpr size_t FLOW_CALIBRATION_WINDOW_SIZE = 15;
+    constexpr size_t FLOW_CALIBRATION_REPETITIONS = 2;
+    constexpr unsigned long FLOW_CALIBRATION_DURATIONS_MS[] = {150UL, 250UL, 300UL, 500UL, 800UL};
+
+    bool flowCalibrationMode = false;
+    bool flowCalibrationActive = false;
+    bool flowCalibrationWaitingForNext = false;
+    bool flowCalibrationHasRunGas = false;
+    bool flowCalibrationPurgeConfirmed = false;
+    bool flowCalibrationPulsePendingStart = false;
+    eValves flowCalibrationValve = O2;
+    eValves flowCalibrationLastValve = O2;
+    size_t flowCalibrationTrialIndex = 0;
+    size_t flowCalibrationRepetition = 0;
+    FlowCalibrationPhase flowCalibrationPhase = FlowCalibrationPhase::BASELINE;
+    unsigned long flowCalibrationPulseStartMs = 0;
+    unsigned long flowCalibrationPhaseStartMs = 0;
+    unsigned long flowCalibrationNextSampleMs = 0;
+    unsigned long flowCalibrationStableStartMs = 0;
+    float flowCalibrationBefore = 0.0f;
+    float flowCalibrationPeak = 0.0f;
+    unsigned long flowCalibrationPeakTimeMs = 0;
+    float flowCalibrationBaselineSlope = 0.0f;
+    float flowCalibrationStabilityThreshold = 0.0f;
+    float flowCalibrationBaselineSamples[FLOW_CALIBRATION_WINDOW_SIZE] = {};
+    float flowCalibrationResponseSamples[FLOW_CALIBRATION_WINDOW_SIZE] = {};
+    size_t flowCalibrationBaselineSampleCount = 0;
+    size_t flowCalibrationResponseSampleCount = 0;
+    float flowCalibrationSumX2 = 0.0f;
+    float flowCalibrationSumXY = 0.0f;
+    float flowCalibrationNormalizedSumX2 = 0.0f;
+    float flowCalibrationNormalizedSumXY = 0.0f;
+
+    bool readFlowCalibrationValue(eValves valve, float &value)
+    {
+        if (valve == O2)
+        {
+            value = o2Sensor.getO2();
+            return o2Sensor.getStatus() == O2_SENSOR_STATUS_OK && isfinite(value);
+        }
+
+        value = co2Sensor.getCO2();
+        return co2Sensor.getStatus() == GMP_251_STATUS_OK && isfinite(value);
+    }
+
+    float getFlowCalibrationTrialDurationSeconds()
+    {
+        return static_cast<float>(FLOW_CALIBRATION_DURATIONS_MS[flowCalibrationTrialIndex]) / 1000.0f;
+    }
+
+    void calculateFlowCalibrationSlope(
+        const float *samples,
+        size_t count,
+        float &slope,
+        float &slopeStandardError)
+    {
+        slope = 0.0f;
+        slopeStandardError = 0.0f;
+        if (count < 3)
+            return;
+
+        float sumX = 0.0f;
+        float sumY = 0.0f;
+        float sumXX = 0.0f;
+        float sumXY = 0.0f;
+        for (size_t i = 0; i < count; ++i)
+        {
+            const float x = static_cast<float>(i);
+            sumX += x;
+            sumY += samples[i];
+            sumXX += x * x;
+            sumXY += x * samples[i];
+        }
+
+        const float countAsFloat = static_cast<float>(count);
+        const float centeredXX = sumXX - sumX * sumX / countAsFloat;
+        if (!(centeredXX > 0.0f))
+            return;
+
+        slope = (sumXY - sumX * sumY / countAsFloat) / centeredXX;
+        float residualSumSquares = 0.0f;
+        const float intercept = (sumY - slope * sumX) / countAsFloat;
+        for (size_t i = 0; i < count; ++i)
+        {
+            const float residual = samples[i] - (intercept + slope * static_cast<float>(i));
+            residualSumSquares += residual * residual;
+        }
+
+        const float residualVariance = residualSumSquares / static_cast<float>(count - 2);
+        slopeStandardError = sqrtf(residualVariance / centeredXX);
+    }
+
+    void clearFlowCalibrationResponseWindow()
+    {
+        flowCalibrationResponseSampleCount = 0;
+        flowCalibrationStableStartMs = 0;
+    }
+
+    void writeFlowCalibrationValveStatus(const char *event)
+    {
+        const bool outputsWritten = setPressureChamberValvesState(OFF, OFF, OFF, OFF);
+        Serial.println(
+            "CHAMBER_VALVES;O2=CLOSED;O2_MS=0;CO2=CLOSED;CO2_MS=0;AIR=CLOSED;AIR_MS=0;OUTPUTS=" +
+            String(outputsWritten ? "OK" : "ERROR") + ";EVENT=" + String(event));
+    }
+
+    void abortPressureChamberFlowTest(const char *reason)
+    {
+        flowCalibrationActive = false;
+        flowCalibrationWaitingForNext = false;
+        flowCalibrationBaselineSampleCount = 0;
+        flowCalibrationResponseSampleCount = 0;
+        flowCalibrationStableStartMs = 0;
+        Serial.println("ERR:FLOW_TEST:" + String(reason));
+        writeFlowCalibrationValveStatus("ABORT");
+    }
+
+    void updatePressureChamberFlowTest(bool &o2ValveOpen, bool &co2ValveOpen)
+    {
+        if (!flowCalibrationActive || flowCalibrationWaitingForNext)
+            return;
+
+        const unsigned long now = millis();
+        const unsigned long pulseDurationMs = FLOW_CALIBRATION_DURATIONS_MS[flowCalibrationTrialIndex];
+        float value = 0.0f;
+
+        if (flowCalibrationPhase == FlowCalibrationPhase::BASELINE)
+        {
+            if (flowCalibrationBaselineSampleCount > 0 &&
+                now - flowCalibrationNextSampleMs < FLOW_CALIBRATION_SAMPLE_INTERVAL_MS)
+                return;
+
+            flowCalibrationNextSampleMs = now;
+            if (!readFlowCalibrationValue(flowCalibrationValve, value))
+            {
+                abortPressureChamberFlowTest("SENSOR_FAILURE");
+                return;
+            }
+
+            flowCalibrationBaselineSamples[flowCalibrationBaselineSampleCount++] = value;
+            if (flowCalibrationBaselineSampleCount < FLOW_CALIBRATION_WINDOW_SIZE)
+                return;
+
+            flowCalibrationBefore = 0.0f;
+            for (float sample : flowCalibrationBaselineSamples)
+                flowCalibrationBefore += sample;
+            flowCalibrationBefore /= static_cast<float>(FLOW_CALIBRATION_WINDOW_SIZE);
+            if (flowCalibrationValve == O2 && flowCalibrationBefore >= 100.0f)
+            {
+                abortPressureChamberFlowTest("O2_HEADROOM_TOO_LOW");
+                return;
+            }
+
+            float baselineSlopeStandardError = 0.0f;
+            calculateFlowCalibrationSlope(
+                flowCalibrationBaselineSamples,
+                FLOW_CALIBRATION_WINDOW_SIZE,
+                flowCalibrationBaselineSlope,
+                baselineSlopeStandardError);
+            flowCalibrationStabilityThreshold =
+                fabsf(flowCalibrationBaselineSlope) + 3.0f * baselineSlopeStandardError;
+            flowCalibrationPhase = FlowCalibrationPhase::PULSE;
+            flowCalibrationPulsePendingStart = true;
+            o2ValveOpen = flowCalibrationValve == O2;
+            co2ValveOpen = flowCalibrationValve == CO2;
+            return;
+        }
+
+        if (flowCalibrationPhase == FlowCalibrationPhase::PULSE)
+        {
+            if (flowCalibrationPulseStartMs == 0)
+            {
+                o2ValveOpen = flowCalibrationValve == O2;
+                co2ValveOpen = flowCalibrationValve == CO2;
+                return;
+            }
+
+            if (now - flowCalibrationPulseStartMs < pulseDurationMs)
+            {
+                o2ValveOpen = flowCalibrationValve == O2;
+                co2ValveOpen = flowCalibrationValve == CO2;
+                return;
+            }
+
+            flowCalibrationPhase = FlowCalibrationPhase::RESPONSE;
+            flowCalibrationPhaseStartMs = now;
+            flowCalibrationNextSampleMs = 0;
+            flowCalibrationPeak = flowCalibrationBefore;
+            flowCalibrationPeakTimeMs = 0;
+            clearFlowCalibrationResponseWindow();
+            return;
+        }
+
+        const unsigned long responseElapsedMs = now - flowCalibrationPhaseStartMs;
+        if (flowCalibrationNextSampleMs == 0 ||
+            now - flowCalibrationNextSampleMs >= FLOW_CALIBRATION_SAMPLE_INTERVAL_MS)
+        {
+            flowCalibrationNextSampleMs = now;
+            if (!readFlowCalibrationValue(flowCalibrationValve, value))
+            {
+                abortPressureChamberFlowTest("SENSOR_FAILURE");
+                return;
+            }
+
+            if (value > flowCalibrationPeak)
+            {
+                flowCalibrationPeak = value;
+                flowCalibrationPeakTimeMs = now - flowCalibrationPulseStartMs;
+            }
+
+            if (flowCalibrationResponseSampleCount < FLOW_CALIBRATION_WINDOW_SIZE)
+            {
+                flowCalibrationResponseSamples[flowCalibrationResponseSampleCount++] = value;
+            }
+            else
+            {
+                for (size_t i = 1; i < FLOW_CALIBRATION_WINDOW_SIZE; ++i)
+                    flowCalibrationResponseSamples[i - 1] = flowCalibrationResponseSamples[i];
+                flowCalibrationResponseSamples[FLOW_CALIBRATION_WINDOW_SIZE - 1] = value;
+            }
+
+            if (flowCalibrationValve == CO2 && flowCalibrationResponseSampleCount == FLOW_CALIBRATION_WINDOW_SIZE)
+            {
+                float responseSlope = 0.0f;
+                float responseSlopeStandardError = 0.0f;
+                calculateFlowCalibrationSlope(
+                    flowCalibrationResponseSamples,
+                    FLOW_CALIBRATION_WINDOW_SIZE,
+                    responseSlope,
+                    responseSlopeStandardError);
+                (void)responseSlopeStandardError;
+
+                if (fabsf(responseSlope) <= flowCalibrationStabilityThreshold)
+                {
+                    if (flowCalibrationStableStartMs == 0)
+                        flowCalibrationStableStartMs = now;
+                }
+                else
+                {
+                    flowCalibrationStableStartMs = 0;
+                }
+            }
+        }
+
+        const bool co2Stable =
+            flowCalibrationValve == CO2 &&
+            flowCalibrationStableStartMs != 0 &&
+            now - flowCalibrationStableStartMs >= FLOW_CALIBRATION_STABLE_DURATION_MS;
+        const bool o2ObservationComplete =
+            flowCalibrationValve == O2 && responseElapsedMs >= FLOW_O2_OBSERVATION_MS;
+        const bool timedOut = flowCalibrationValve == CO2 && responseElapsedMs >= FLOW_CALIBRATION_MAX_WAIT_MS;
+        if (!co2Stable && !o2ObservationComplete && !timedOut)
+            return;
+
+        const float pulseSeconds = getFlowCalibrationTrialDurationSeconds();
+        const float peakElapsedSeconds = static_cast<float>(flowCalibrationPeakTimeMs) / 1000.0f;
+        const float correctedDelta = flowCalibrationPeak - flowCalibrationBefore -
+                                     flowCalibrationBaselineSlope * peakElapsedSeconds;
+        const float normalizedDelta = flowCalibrationValve == O2
+                                          ? correctedDelta / (100.0f - flowCalibrationBefore)
+                                          : 0.0f;
+
+        flowCalibrationSumX2 += pulseSeconds * pulseSeconds;
+        flowCalibrationSumXY += pulseSeconds * correctedDelta;
+        if (flowCalibrationValve == O2 && flowCalibrationBefore < 100.0f)
+        {
+            flowCalibrationNormalizedSumX2 += pulseSeconds * pulseSeconds;
+            flowCalibrationNormalizedSumXY += pulseSeconds * normalizedDelta;
+        }
+
+        const String normalizedDeltaOutput = flowCalibrationValve == O2
+                                                 ? ";DELTA_NORMALIZED=" + String(normalizedDelta, 6)
+                                                 : "";
+        Serial.println(
+            "FLOW_TEST;RESULT;GAS=" + String(flowCalibrationValve == O2 ? "O2" : "CO2") +
+            ";REPETITION=" + String(flowCalibrationRepetition + 1) +
+            ";PULSE_MS=" + String(pulseDurationMs) +
+            ";BEFORE=" + String(flowCalibrationBefore, 2) +
+            ";BASELINE_SLOPE_PER_S=" + String(flowCalibrationBaselineSlope, 4) +
+            ";STABILITY_THRESHOLD_PER_S=" + String(flowCalibrationStabilityThreshold, 4) +
+            ";PEAK=" + String(flowCalibrationPeak, 2) +
+            ";PEAK_AFTER_S=" + String(peakElapsedSeconds, 1) +
+            ";DELTA_CORRECTED=" + String(correctedDelta, 2) +
+            normalizedDeltaOutput +
+            ";STABILIZATION=" + String(flowCalibrationValve == O2 ? "NOT_REQUIRED" : (timedOut ? "TIMEOUT" : "OK")) +
+            ";WAIT_S=" + String(static_cast<float>(responseElapsedMs) / 1000.0f, 1));
+
+        ++flowCalibrationRepetition;
+        if (flowCalibrationRepetition >= FLOW_CALIBRATION_REPETITIONS)
+        {
+            flowCalibrationRepetition = 0;
+            ++flowCalibrationTrialIndex;
+        }
+
+        if (flowCalibrationTrialIndex >= (sizeof(FLOW_CALIBRATION_DURATIONS_MS) / sizeof(FLOW_CALIBRATION_DURATIONS_MS[0])))
+        {
+            const float regressionGain = flowCalibrationSumX2 > 0.0f
+                                             ? flowCalibrationSumXY / flowCalibrationSumX2
+                                             : 0.0f;
+            if (flowCalibrationValve == O2)
+            {
+                const float normalizedRegressionGain = flowCalibrationNormalizedSumX2 > 0.0f
+                                                           ? flowCalibrationNormalizedSumXY / flowCalibrationNormalizedSumX2
+                                                           : 0.0f;
+                Serial.println("FLOW_TEST;FIT;GAS=O2;GAIN_PTS_PER_S=" + String(regressionGain, 4) +
+                               ";GAIN_NORMALIZED_PER_S=" + String(normalizedRegressionGain, 6));
+            }
+            else
+            {
+                Serial.println("FLOW_TEST;FIT;GAS=CO2;GAIN_PPM_PER_S=" + String(regressionGain, 2));
+            }
+
+            flowCalibrationActive = false;
+            Serial.println("FLOW_TEST;STATUS=COMPLETE;GAS=" + String(flowCalibrationValve == O2 ? "O2" : "CO2"));
+        }
+        else
+        {
+            flowCalibrationWaitingForNext = true;
+            Serial.println(
+                "FLOW_TEST;STATUS=WAITING_FOR_NEXT;NEXT_COMMAND=FLOW_TEST=NEXT;NEXT_GAS=" +
+                String(flowCalibrationValve == O2 ? "O2" : "CO2") +
+                ";NEXT_REPETITION=" + String(flowCalibrationRepetition + 1) +
+                ";NEXT_PULSE_MS=" + String(FLOW_CALIBRATION_DURATIONS_MS[flowCalibrationTrialIndex]));
+        }
+
+        flowCalibrationPulseStartMs = 0;
+        flowCalibrationPhaseStartMs = 0;
+        flowCalibrationPeakTimeMs = 0;
+        clearFlowCalibrationResponseWindow();
+    }
+
+    void startNextFlowCalibrationPulse()
+    {
+        flowCalibrationPulseStartMs = millis();
+        flowCalibrationPulsePendingStart = false;
+        flowCalibrationPhaseStartMs = 0;
+        flowCalibrationNextSampleMs = 0;
+        flowCalibrationPeak = flowCalibrationBefore;
+        flowCalibrationPeakTimeMs = 0;
+        Serial.println(
+            "FLOW_TEST;PULSE_START;GAS=" + String(flowCalibrationValve == O2 ? "O2" : "CO2") +
+            ";DURATION_MS=" + String(FLOW_CALIBRATION_DURATIONS_MS[flowCalibrationTrialIndex]) +
+            ";REPETITION=" + String(flowCalibrationRepetition + 1) +
+            ";BASELINE=" + String(flowCalibrationBefore, 2) +
+            ";BASELINE_SLOPE_PER_S=" + String(flowCalibrationBaselineSlope, 4) +
+            ";STABILITY_THRESHOLD_PER_S=" + String(flowCalibrationStabilityThreshold, 4));
+    }
+
+    void resetFlowCalibrationFit()
+    {
+        flowCalibrationSumX2 = 0.0f;
+        flowCalibrationSumXY = 0.0f;
+        flowCalibrationNormalizedSumX2 = 0.0f;
+        flowCalibrationNormalizedSumXY = 0.0f;
+    }
+}
+
 static bool isCultureTemperatureState(eBioreactorState state)
 {
     return state == eBioreactorState::APPROV ||
@@ -150,6 +520,9 @@ void setBioreactorState(uint8_t state_int)
     {
         return;
     }
+
+    if (stateChanged && state != eBioreactorState::TEST)
+        resetPressureChamberFlowTest();
 
     if (!isCleaningState)
     {
@@ -500,12 +873,33 @@ bool setValvesState(bool valveSupplyState, bool valveCirculationState, bool valv
  * @param co2ValveState     State of the CO2 valve. (OPEN/CLOSE)
  * @param airValveState     State of the air valve. (OPEN/CLOSE)
  */
-bool setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState, bool co2AirValveState)
+bool setPressureChamberValvesState(bool o2, bool co2, bool air, bool co2Air)
 {
-    bool success = ioExpander.setEfuse(EFUSE_VALVE_O2_INDEX, o2ValveState);
-    success = ioExpander.setEfuse(EFUSE_VALVE_CO2_INDEX, co2ValveState) && success;
-    success = ioExpander.setEfuse(EFUSE_VALVE_AIR_INDEX, airValveState) && success;
-    success = ioExpander.setEfuse(EFUSE_VALVE_CO2_ATM_INDEX, co2AirValveState) && success;
+    struct Ch
+    {
+        const char *name;
+        int idx;
+        bool state;
+    };
+    const Ch ch[] = {{"O2_VALVE", EFUSE_VALVE_O2_INDEX, o2},
+                     {"CO2_VALVE", EFUSE_VALVE_CO2_INDEX, co2},
+                     {"AIR_VALVE", EFUSE_VALVE_AIR_INDEX, air},
+                     {"CO2_ATM_VALVE", EFUSE_VALVE_CO2_ATM_INDEX, co2Air}};
+    bool success = true;
+    for (const Ch &c : ch)
+    {
+        bool ok = ioExpander.setEfuse(c.idx, c.state);
+        if (!ok)
+            ok = ioExpander.setEfuse(c.idx, c.state); // un seul nouvel essai
+        if (!ok)
+        {
+            Serial.print("ERR:IO:OUTPUT_FAILURE;OUTPUT=");
+            Serial.print(c.name);
+            Serial.print(";CHANNEL=");
+            Serial.println(c.idx);
+            success = false;
+        }
+    }
     return success;
 }
 
@@ -599,6 +993,110 @@ void setPressureChamberState(bool state)
     pressureChamber.setPressureChamberState(state);
 }
 
+bool isPressureChamberFlowTestPurgeRequired(eValves valve)
+{
+    return flowCalibrationHasRunGas &&
+           valve != flowCalibrationLastValve &&
+           !flowCalibrationPurgeConfirmed;
+}
+
+bool startPressureChamberFlowTest(eValves valve)
+{
+    if (bioreactorState != eBioreactorState::TEST ||
+        flowCalibrationActive ||
+        (valve != O2 && valve != CO2) ||
+        isPressureChamberFlowTestPurgeRequired(valve))
+        return false;
+
+    flowCalibrationMode = true;
+    flowCalibrationActive = true;
+    flowCalibrationWaitingForNext = false;
+    flowCalibrationHasRunGas = true;
+    flowCalibrationPurgeConfirmed = false;
+    flowCalibrationLastValve = valve;
+    flowCalibrationValve = valve;
+    flowCalibrationTrialIndex = 0;
+    flowCalibrationPulsePendingStart = false;
+    flowCalibrationRepetition = 0;
+    flowCalibrationPhase = FlowCalibrationPhase::BASELINE;
+    flowCalibrationBaselineSampleCount = 0;
+    flowCalibrationNextSampleMs = 0;
+    flowCalibrationPulseStartMs = 0;
+    flowCalibrationPhaseStartMs = 0;
+    clearFlowCalibrationResponseWindow();
+    resetFlowCalibrationFit();
+    Serial.println("FLOW_TEST;STATUS=STARTED;GAS=" + String(valve == O2 ? "O2" : "CO2") +
+                   ";DURATIONS_MS=150,250,300,500,800;REPETITIONS=2");
+    Serial.println("FLOW_TEST;CHECK_BEFORE_START=VERIFY_SUPPLY_PRESSURE;P_APPROV_MODEL_PSI=30");
+    Serial.println("FLOW_TEST;BASELINE_START;SAMPLES=15;INTERVAL_MS=1000");
+    return true;
+}
+
+void stopPressureChamberFlowTest()
+{
+    flowCalibrationMode = true;
+    flowCalibrationActive = false;
+    flowCalibrationWaitingForNext = false;
+    flowCalibrationPulsePendingStart = false;
+    flowCalibrationBaselineSampleCount = 0;
+    clearFlowCalibrationResponseWindow();
+    writeFlowCalibrationValveStatus("STOP");
+}
+
+bool isPressureChamberFlowTestMode()
+{
+    return flowCalibrationMode;
+}
+
+bool isPressureChamberFlowTestActive()
+{
+    return flowCalibrationActive;
+}
+
+bool isPressureChamberFlowTestWaitingForNext()
+{
+    return flowCalibrationWaitingForNext;
+}
+
+bool advancePressureChamberFlowTest()
+{
+    if (!flowCalibrationActive || !flowCalibrationWaitingForNext)
+        return false;
+
+    flowCalibrationWaitingForNext = false;
+    flowCalibrationPhase = FlowCalibrationPhase::BASELINE;
+    flowCalibrationBaselineSampleCount = 0;
+    flowCalibrationNextSampleMs = 0;
+    clearFlowCalibrationResponseWindow();
+    Serial.println("FLOW_TEST;ADVANCE_CONFIRMED;BASELINE_START;SAMPLES=15;INTERVAL_MS=1000");
+    return true;
+}
+
+bool confirmPressureChamberFlowTestPurge()
+{
+    if (!flowCalibrationMode || flowCalibrationActive || !flowCalibrationHasRunGas)
+        return false;
+
+    flowCalibrationPurgeConfirmed = true;
+    Serial.println("FLOW_TEST;PURGE_CONFIRMED;NEXT_GAS_MAY_START");
+    return true;
+}
+
+void resetPressureChamberFlowTest()
+{
+    const bool wasInFlowTestMode = flowCalibrationMode;
+    flowCalibrationMode = false;
+    flowCalibrationActive = false;
+    flowCalibrationWaitingForNext = false;
+    flowCalibrationPulsePendingStart = false;
+    flowCalibrationHasRunGas = false;
+    flowCalibrationPurgeConfirmed = false;
+    flowCalibrationBaselineSampleCount = 0;
+    clearFlowCalibrationResponseWindow();
+    if (wasInFlowTestMode && !setPressureChamberValvesState(OFF, OFF, OFF, OFF))
+        Serial.println("ERR:FLOW_TEST:FAILED_TO_CLOSE_VALVES");
+}
+
 /**
  * @brief Update the temperature controller. Must be called in the main loop.
  */
@@ -637,32 +1135,61 @@ void updateTemperatureController()
  */
 void updatePressureChamberController()
 {
+    if (flowCalibrationMode)
+    {
+        bool o2ValveOpen = false;
+        bool co2ValveOpen = false;
+        updatePressureChamberFlowTest(o2ValveOpen, co2ValveOpen);
+        const bool outputsWritten = setPressureChamberValvesState(o2ValveOpen, co2ValveOpen, OFF, OFF);
+
+        if (!outputsWritten)
+        {
+            abortPressureChamberFlowTest("OUTPUT_FAILURE");
+        }
+        else if (flowCalibrationPulsePendingStart)
+        {
+            startNextFlowCalibrationPulse();
+        }
+
+        co2Sensor.update();
+        return;
+    }
+
+    bool controllerUpdated = false;
     if (millis() - lastPressureChamberControllerTime > PRESSURE_CHAMBER_CONTROLLER_UPDATE_INTERVAL)
     {
         lastPressureChamberControllerTime = millis();
         float o2Concentration = o2Sensor.getO2();
         float co2Concentration = co2Sensor.getCO2();
-        float pressure = 25 * 6895; // 7.5 psi to Pa // TODO: get this value from the sensor
+        float pressure = 7.5 * 6895; // 7.5 psi to Pa // TODO: get this value from the sensor
 
         if (o2Sensor.getStatus() == O2_SENSOR_STATUS_OK)
             pressureChamber.update(o2Concentration, co2Concentration, pressure);
         else
             pressureChamber.update(NAN, co2Concentration, pressure);
+
+        controllerUpdated = true;
     }
 
-    // // DEBUG: Print every second the O2 and CO2 concentration and the time since last update
-    // if (millis() - lastPressureChamberControllerTimePrint > 1000)
-    // {
-    //     lastPressureChamberControllerTimePrint = millis();
-    //     Serial.println(">o2Concentration: " + String(o2Sensor.getO2()));
-    //     Serial.println(">co2Concentration: " + String(co2Sensor.getCO2()));
-    //     Serial.println(">Time since controller update: " + String(millis() - lastPressureChamberControllerTime));
-    // }
+    const bool o2ValveOpen = pressureChamber.getValveState(O2);
+    const bool co2ValveOpen = pressureChamber.getValveState(CO2);
+    const bool airValveOpen = pressureChamber.getValveState(AIR);
+    const bool outputsWritten = setPressureChamberValvesState(o2ValveOpen,
+                                                              co2ValveOpen,
+                                                              airValveOpen,
+                                                              co2Controller.getValveState());
 
-    setPressureChamberValvesState(pressureChamber.getValveState(O2),
-                                  pressureChamber.getValveState(CO2),
-                                  pressureChamber.getValveState(AIR),
-                                  co2Controller.getValveState());
+    if (controllerUpdated)
+    {
+        Serial.println(
+            "CHAMBER_VALVES;O2=" + String(o2ValveOpen ? "OPEN" : "CLOSED") +
+            ";O2_MS=" + String(pressureChamber.getValveOpenDurationMs(O2)) +
+            ";CO2=" + String(co2ValveOpen ? "OPEN" : "CLOSED") +
+            ";CO2_MS=" + String(pressureChamber.getValveOpenDurationMs(CO2)) +
+            ";AIR=" + String(airValveOpen ? "OPEN" : "CLOSED") +
+            ";AIR_MS=" + String(pressureChamber.getValveOpenDurationMs(AIR)) +
+            ";OUTPUTS=" + String(outputsWritten ? "OK" : "ERROR"));
+    }
 
     co2Sensor.update();
 }
@@ -676,21 +1203,23 @@ void printBioreactorStateToSerial()
 {
     if (millis() - lastPrintTime > PRINT_UPDATE_INTERVAL)
     {
+        const float o2Concentration = o2Sensor.getO2();
+        const float co2Concentration = co2Sensor.getCO2();
         Serial.println("> Bioreactor State: " + String(static_cast<int>(bioreactorState)));
-        Serial.println("> DO Sensor (%sat): " + String(dissolvedOxygenSensor.getOxygen()));
-        Serial.println("> pH Sensor (pH): " + String(pHSensor.getPH()));
-        Serial.println("> Water Temperature (°C): " + String(tempSensor.getTemperatureC()));
-        Serial.println("> Air Temperature (°C): " + String(sht40.getLastTemperature()));
-        Serial.println("> Air Humidity (%RH): " + String(sht40.getLastHumidity()));
+        // Serial.println("> DO Sensor (%sat): " + String(dissolvedOxygenSensor.getOxygen()));
+        // Serial.println("> pH Sensor (pH): " + String(pHSensor.getPH()));
+        // Serial.println("> Water Temperature (°C): " + String(tempSensor.getTemperatureC()));
+        // Serial.println("> Air Temperature (°C): " + String(sht40.getLastTemperature()));
+        // Serial.println("> Air Humidity (%RH): " + String(sht40.getLastHumidity()));
         Serial.println("> Heater Power (%): " + String(temperatureController.getHeaterPower()));
         Serial.println("> CO2 Concentration (ppm): " + String(co2Sensor.getCO2()));
         Serial.println("> O2 Concentration (%): " + String(o2Sensor.getO2()));
         Serial.println("> O2 status: " + String(o2Sensor.getStatus()));
-        Serial.println("> PH status: " + String(pHSensor.getStatus()));
-        Serial.println("> Temperature culture status: " + String(tempSensor.getStatus()));
+        // Serial.println("> PH status: " + String(pHSensor.getStatus()));
+        // Serial.println("> Temperature culture status: " + String(tempSensor.getStatus()));
         Serial.println("> CO2 status: " + String(co2Sensor.getStatus()));
         Serial.println("> DO status: " + String(dissolvedOxygenSensor.getStatus()));
-        Serial.println(">  Water Temperature setpoint (°C): " + String(temperatureController.getReferenceTemperature()));
+        // Serial.println(">  Water Temperature setpoint (°C): " + String(temperatureController.getReferenceTemperature()));
         Serial.println("> CO2 concentration (%) Bioreactor air: " + String(CO2_Value));
 
         /* Add more prints here*/

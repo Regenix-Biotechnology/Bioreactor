@@ -287,13 +287,23 @@ void loop()
                 break;
                 */
     case eBioreactorState::TEST:
-        // start when user sent command
-        setFansState(ON, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(5.0, 86.0, 30.0, 30.0);
-        // setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CIRCUL, CULTURE 2, CULTURE 1
-        setValvesState(CLOSE, OPEN, CLOSE);
-        setPressureChamberState(OFF);
-        setHeatersState(OFF);
+        if (isPressureChamberFlowTestMode())
+        {
+            setFansState(ON, ON, ON, ON, ON, ON, ON);
+            setPumpsSpeed(OFF, OFF, OFF, OFF);
+            setValvesState(CLOSE, CLOSE, CLOSE);
+            setPressureChamberState(OFF);
+            setHeatersState(OFF);
+        }
+        else
+        {
+            // start when user sent command
+            setFansState(ON, ON, ON, ON, ON, ON, ON);
+            setPumpsSpeed(5.0, 86.0, 30.0, 30.0);
+            setValvesState(CLOSE, OPEN, CLOSE);
+            setPressureChamberState(OFF);
+            setHeatersState(OFF);
+        }
         // switch when user command received (to IDLE)
         break;
     case eBioreactorState::TRASH:

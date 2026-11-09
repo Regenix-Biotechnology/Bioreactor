@@ -206,6 +206,51 @@ void receiveSerialCommand()
             return;
         }
 
+        if (command == "FLOW_TEST=START_O2" || command == "FLOW_TEST=START_CO2")
+        {
+            const eValves valve = command == "FLOW_TEST=START_O2" ? O2 : CO2;
+            if (bioreactorState != eBioreactorState::TEST)
+                Serial.println("ERR:FLOW_TEST:STATE_REQUIRED" + idSuffix);
+            else if (isPressureChamberFlowTestActive())
+                Serial.println("ERR:FLOW_TEST:ALREADY_RUNNING" + idSuffix);
+            else if (isPressureChamberFlowTestPurgeRequired(valve))
+                Serial.println("ERR:FLOW_TEST:PURGE_CONFIRM_REQUIRED;RUN_PURGE_AND_SEND_FLOW_TEST_PURGE_DONE" + idSuffix);
+            else if (startPressureChamberFlowTest(valve))
+                Serial.println("OK:" + command + idSuffix);
+            else
+                Serial.println("ERR:FLOW_TEST:START_REJECTED" + idSuffix);
+            return;
+        }
+        if (command == "FLOW_TEST=PURGE_DONE")
+        {
+            if (confirmPressureChamberFlowTestPurge())
+                Serial.println("OK:" + command + idSuffix);
+            else
+                Serial.println("ERR:FLOW_TEST:PURGE_NOT_ALLOWED" + idSuffix);
+            return;
+        }
+        if (command == "FLOW_TEST=NEXT")
+        {
+            if (advancePressureChamberFlowTest())
+                Serial.println("OK:" + command + idSuffix);
+            else if (!isPressureChamberFlowTestActive())
+                Serial.println("ERR:FLOW_TEST:NOT_ACTIVE" + idSuffix);
+            else
+                Serial.println("ERR:FLOW_TEST:NOT_WAITING_FOR_NEXT" + idSuffix);
+            return;
+        }
+        if (command == "FLOW_TEST=STOP")
+        {
+            if (!isPressureChamberFlowTestMode() || !isPressureChamberFlowTestActive())
+            {
+                Serial.println("ERR:FLOW_TEST:NOT_ACTIVE" + idSuffix);
+                return;
+            }
+            stopPressureChamberFlowTest();
+            Serial.println("OK:" + command + idSuffix);
+            return;
+        }
+
         if (command == "CLEANING=STOP")
         {
             const eCleaningCycle stoppedCycle = cleaningCycle;
