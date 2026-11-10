@@ -62,7 +62,7 @@ namespace
     constexpr unsigned long FLOW_O2_OBSERVATION_MS = 15000UL;
     constexpr size_t FLOW_CALIBRATION_WINDOW_SIZE = 15;
     constexpr size_t FLOW_CALIBRATION_REPETITIONS = 2;
-    constexpr unsigned long FLOW_CALIBRATION_DURATIONS_MS[] = {150UL, 250UL, 300UL, 500UL, 800UL};
+    constexpr unsigned long FLOW_CALIBRATION_DURATIONS_MS[] = {175UL, 200UL, 225UL};
 
     bool flowCalibrationMode = false;
     bool flowCalibrationActive = false;
@@ -1026,7 +1026,7 @@ bool startPressureChamberFlowTest(eValves valve)
     clearFlowCalibrationResponseWindow();
     resetFlowCalibrationFit();
     Serial.println("FLOW_TEST;STATUS=STARTED;GAS=" + String(valve == O2 ? "O2" : "CO2") +
-                   ";DURATIONS_MS=150,250,300,500,800;REPETITIONS=2");
+                   ";DURATIONS_MS=175,200,225;REPETITIONS=2");
     Serial.println("FLOW_TEST;CHECK_BEFORE_START=VERIFY_SUPPLY_PRESSURE;P_APPROV_MODEL_PSI=30");
     Serial.println("FLOW_TEST;BASELINE_START;SAMPLES=15;INTERVAL_MS=1000");
     return true;
@@ -1212,8 +1212,10 @@ void printBioreactorStateToSerial()
         // Serial.println("> Air Temperature (°C): " + String(sht40.getLastTemperature()));
         // Serial.println("> Air Humidity (%RH): " + String(sht40.getLastHumidity()));
         Serial.println("> Heater Power (%): " + String(temperatureController.getHeaterPower()));
-        Serial.println("> CO2 Concentration (ppm): " + String(co2Sensor.getCO2()));
-        Serial.println("> O2 Concentration (%): " + String(o2Sensor.getO2()));
+        Serial.println("> CO2 Concentration (ppm): " + String(co2Concentration));
+        Serial.println("> CO2 Reference (ppm): " + String(pressureChamber.getCO2Reference()));
+        Serial.println("> O2 Concentration (%): " + String(o2Concentration));
+        Serial.println("> O2 Reference (%): " + String(pressureChamber.getO2Reference()));
         Serial.println("> O2 status: " + String(o2Sensor.getStatus()));
         // Serial.println("> PH status: " + String(pHSensor.getStatus()));
         // Serial.println("> Temperature culture status: " + String(tempSensor.getStatus()));

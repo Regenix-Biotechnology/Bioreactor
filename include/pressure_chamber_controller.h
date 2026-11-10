@@ -83,8 +83,9 @@ private:
     // Zones mortes = au moins la moitié du plus petit pas possible (impulsion minimale), sinon la
     // régulation dépasse sa cible à chaque impulsion. Pas minimal mesuré (FLOW_TEST, 250 ms) :
     // O2 ~ +10 points bruts, CO2 ~ +40 000 ppm bruts.
-    static constexpr float O2_DEAD_ZONE = 6.0f;      // points d'O2 (lecture brute)
-    static constexpr float CO2_DEAD_ZONE = 22000.0f; // ppm (lecture brute) ; choisi par simulation (aucune purge parasite avec des gains réels ±25 %)
+    // Impulsion minimale 200 ms (FLOW_TEST 175/200/225 ms) : pas O2 ~ +8,4 points, pas CO2 ~ +28 000 ppm.
+    static constexpr float O2_DEAD_ZONE = 5.0f;      // points d'O2 (lecture brute)
+    static constexpr float CO2_DEAD_ZONE = 15000.0f; // ppm (lecture brute) ; À TESTER : 175 ms n'a aucun effet, la marge est mince
 
     // Conversions.
     static constexpr float PERCENT_TO_LITERS = 0.01 * V;
@@ -92,7 +93,7 @@ private:
     static constexpr float SECONDS_TO_MILLIS = 1000.0f;
 
     // Impulsions.
-    static constexpr float MIN_PULSE_MS = 250.0f; // mesuré : à 150 ms les vannes n'ont aucun effet
+    static constexpr float MIN_PULSE_MS = 200.0f; // mesuré : 150 ms (O2) et 175 ms (CO2) n'ont aucun effet ; si le CO2 rate, remonter à 225-250
     static constexpr float MAX_O2_PULSE_MS = 1000.0f;
     static constexpr float MAX_CO2_PULSE_MS = 2000.0f;
     static constexpr float MAX_AIR_PULSE_MS = 3000.0f;
@@ -100,7 +101,7 @@ private:
 
     // Temps morts après une impulsion (le CO2 répond lentement : ~50 s observées).
     static constexpr unsigned long O2_SETTLE_MS = 15000UL;
-    static constexpr unsigned long CO2_SETTLE_MS = 120000UL; // mesuré : 90 % de l'effet à +81 s, 95 % à +99 s
+    static constexpr unsigned long CO2_SETTLE_MS = 150000UL; // mesuré : pic atteint entre +111 s et +136 s (FLOW_TEST 2026-11-10)
     static constexpr unsigned long AIR_SETTLE_MS = 20000UL;
     static constexpr unsigned long O2_MAX_WAIT_MS = 180000UL; // tour de garde de l'O2 sous la priorité du CO2
 
@@ -109,8 +110,8 @@ private:
 
     // Gains mesurés (FLOW_TEST du 2026-11-09, lectures brutes). 0 = utiliser le modèle de Poiseuille.
     // Durée d'ouverture = délai mort + erreur / gain.
-    static constexpr float O2_GAIN_PTS_PER_S = 51.0f; // points bruts d'O2 par seconde d'ouverture
-    static constexpr float O2_DEAD_TIME_MS = 55.0f;
+    static constexpr float O2_GAIN_PTS_PER_S = 58.0f; // points bruts d'O2 par seconde d'ouverture (250/300/500 ms : +11,6 / +15,4 / +26)
+    static constexpr float O2_DEAD_TIME_MS = 50.0f;
     static constexpr float CO2_GAIN_PPM_PER_S = 250000.0f; // ppm bruts par seconde d'ouverture
     static constexpr float CO2_DEAD_TIME_MS = 105.0f;
 
