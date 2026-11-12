@@ -322,7 +322,7 @@ void loop()
     case eBioreactorState::TRASH:
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
         setPumpsSpeed(-100.0, OFF, OFF, OFF);
-        setValvesState(OPEN, CLOSE, CLOSE);
+        setValvesState(CLOSE, CLOSE, OPEN);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
         break;
@@ -344,7 +344,7 @@ void loop()
     case eBioreactorState::MEDIA_CHANGE_APPROV:
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
         setPumpsSpeed(100.0, 100.0, OFF, OFF);
-        setValvesState(CLOSE, CLOSE, OPEN);
+        setValvesState(OPEN, CLOSE, CLOSE);
         setPressureChamberState(ON);
         setHeatersState(ON);
         break;
