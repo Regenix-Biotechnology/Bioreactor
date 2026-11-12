@@ -1205,9 +1205,91 @@ void printBioreactorStateToSerial()
     {
         const float o2Concentration = o2Sensor.getO2();
         const float co2Concentration = co2Sensor.getCO2();
+        const unsigned long now = millis();
+        const unsigned long phAgeMs = pHSensor.getAgeMs();
+        const uint32_t doLastReadMs = dissolvedOxygenSensor.getLastReadMs();
+        const unsigned long doAgeMs = doLastReadMs == 0 ? 0xFFFFFFFFUL : now - doLastReadMs;
+        const bool phValid =
+            pHSensor.getStatus() == ATLAS_STATUS_OK &&
+            phAgeMs != 0xFFFFFFFFUL &&
+            phAgeMs <= 15000UL;
+        // WAITING_RESPONSE is a normal transient state between two polls: the age check
+        // (5 s max) is what detects a sensor that really stopped answering.
+        const eVisiFermStatus doStatus = dissolvedOxygenSensor.getStatus();
+        const bool doValid =
+            (doStatus == VISIFERM_STATUS_OK || doStatus == VISIFERM_STATUS_WAITING_RESPONSE) &&
+            doLastReadMs != 0 &&
+            doAgeMs <= 5000UL;
+
+        Serial.print("SENSORS;PH=");
+        Serial.print(pHSensor.getPH(), 2);
+        Serial.print(";PH_STATUS=");
+        Serial.print(static_cast<int>(pHSensor.getStatus()));
+        Serial.print(";PH_VALID=");
+        Serial.print(phValid ? "1" : "0");
+        Serial.print(";PH_AGE_MS=");
+        Serial.print(phAgeMs);
+        Serial.print(";DO=");
+        Serial.print(dissolvedOxygenSensor.getOxygen(), 2);
+        Serial.print(";DO_TEMP_C=");
+        Serial.print(dissolvedOxygenSensor.getTemperature(), 2);
+        Serial.print(";DO_STATUS=");
+        Serial.print(static_cast<int>(dissolvedOxygenSensor.getStatus()));
+        Serial.print(";DO_VALID=");
+        Serial.print(doValid ? "1" : "0");
+        Serial.print(";DO_AGE_MS=");
+        Serial.print(doAgeMs);
+        Serial.print(";DO_CAL=");
+        Serial.println(VisiFermRS485::calStateToText(dissolvedOxygenSensor.getCalState()));
+
+        // Environment / chamber line (machine readable, parsed by the front)
+        const unsigned long waterTempAgeMs = tempSensor.getAgeMs();
+        const float waterTemperature = tempSensor.getTemperatureC();
+        const bool waterTempValid =
+            tempSensor.getStatus() == ATLAS_STATUS_OK &&
+            waterTempAgeMs <= 3 * TEMPERATURE_CONTROLLER_UPDATE_INTERVAL &&
+            isfinite(waterTemperature);
+        const bool airValid =
+            airTemperatureStatus == SHT40_STATUS_OK &&
+            lastValidAirTemperatureTime != 0 &&
+            now - lastValidAirTemperatureTime <= 3 * TEMPERATURE_CONTROLLER_UPDATE_INTERVAL;
+        const bool chamberO2Valid = o2Sensor.getStatus() == O2_SENSOR_STATUS_OK && isfinite(o2Concentration);
+        const bool chamberCO2Valid = co2Sensor.getStatus() == GMP_251_STATUS_OK && isfinite(co2Concentration);
+
+        Serial.print("ENV;STATE=");
+        Serial.print(static_cast<int>(bioreactorState));
+        Serial.print(";WATER_T_C=");
+        Serial.print(waterTemperature, 2);
+        Serial.print(";WATER_T_VALID=");
+        Serial.print(waterTempValid ? "1" : "0");
+        Serial.print(";WATER_T_SP_C=");
+        Serial.print(String(temperatureController.getReferenceTemperature()));
+        Serial.print(";HEATER_PCT=");
+        Serial.print(String(temperatureController.getHeaterPower()));
+        Serial.print(";AIR_T_C=");
+        Serial.print(sht40.getLastTemperature(), 2);
+        Serial.print(";AIR_RH=");
+        Serial.print(sht40.getLastHumidity(), 1);
+        Serial.print(";AIR_VALID=");
+        Serial.print(airValid ? "1" : "0");
+        Serial.print(";CH_CO2_PPM=");
+        Serial.print(co2Concentration, 0);
+        Serial.print(";CH_CO2_SP_PPM=");
+        Serial.print(String(pressureChamber.getCO2Reference()));
+        Serial.print(";CH_CO2_VALID=");
+        Serial.print(chamberCO2Valid ? "1" : "0");
+        Serial.print(";CH_O2_PCT=");
+        Serial.print(o2Concentration, 2);
+        Serial.print(";CH_O2_SP_PCT=");
+        Serial.print(String(pressureChamber.getO2Reference()));
+        Serial.print(";CH_O2_VALID=");
+        Serial.print(chamberO2Valid ? "1" : "0");
+        Serial.print(";BIO_AIR_CO2_PCT=");
+        Serial.print(CO2_Value, 2);
+        Serial.print(";DOOR_OPEN=");
+        Serial.println(limitSwitch.getDoorState() ? "1" : "0");
+
         Serial.println("> Bioreactor State: " + String(static_cast<int>(bioreactorState)));
-        // Serial.println("> DO Sensor (%sat): " + String(dissolvedOxygenSensor.getOxygen()));
-        // Serial.println("> pH Sensor (pH): " + String(pHSensor.getPH()));
         // Serial.println("> Water Temperature (°C): " + String(tempSensor.getTemperatureC()));
         // Serial.println("> Air Temperature (°C): " + String(sht40.getLastTemperature()));
         // Serial.println("> Air Humidity (%RH): " + String(sht40.getLastHumidity()));
@@ -1217,7 +1299,6 @@ void printBioreactorStateToSerial()
         Serial.println("> O2 Concentration (%): " + String(o2Concentration));
         Serial.println("> O2 Reference (%): " + String(pressureChamber.getO2Reference()));
         Serial.println("> O2 status: " + String(o2Sensor.getStatus()));
-        // Serial.println("> PH status: " + String(pHSensor.getStatus()));
         // Serial.println("> Temperature culture status: " + String(tempSensor.getStatus()));
         Serial.println("> CO2 status: " + String(co2Sensor.getStatus()));
         Serial.println("> DO status: " + String(dissolvedOxygenSensor.getStatus()));

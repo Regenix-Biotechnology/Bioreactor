@@ -5,5 +5,6 @@
 #include "bioreactor_controller.h"
 
 void receiveSerialCommand();
+void reportDoCalibration();
 
 #endif

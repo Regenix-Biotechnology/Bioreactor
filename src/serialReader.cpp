@@ -8,6 +8,97 @@ static String responseIdSuffix(bool hasId, uint32_t id)
     return hasId ? ";ID=" + String(id) : "";
 }
 
+// ---------------------------------------------------------------------------- DO calibration
+// The VisiFerm calibration runs asynchronously inside dissolvedOxygenSensor.update():
+// the command answers OK immediately, the result is reported later by reportDoCalibration().
+static bool doCalPending = false;
+static bool doCalHasId = false;
+static uint32_t doCalId = 0;
+static eVisiFermCalState doCalLastState = VISIFERM_CAL_IDLE;
+
+static const char *doCalPointName(eVisiFermCalPoint point)
+{
+    return point == VISIFERM_CAL_ZERO ? "0" : "100";
+}
+
+static const char *doCalErrorName(eVisiFermCalError error)
+{
+    switch (error)
+    {
+    case VISIFERM_CAL_ERR_NONE:
+        return "NONE";
+    case VISIFERM_CAL_ERR_TIMEOUT:
+        return "TIMEOUT";
+    case VISIFERM_CAL_ERR_CRC:
+        return "CRC";
+    case VISIFERM_CAL_ERR_BAD_FRAME:
+        return "BAD_FRAME";
+    case VISIFERM_CAL_ERR_MODBUS_EXCEPTION:
+        return "MODBUS_EXCEPTION";
+    case VISIFERM_CAL_ERR_LOGIN:
+        return "LOGIN";
+    case VISIFERM_CAL_ERR_REJECTED:
+        return "REJECTED";
+    default:
+        return "UNKNOWN";
+    }
+}
+
+/**
+ * @brief Print EVENT:CALIB-DO:... lines when the DO calibration changes state.
+ * Must be called from the main loop, after dissolvedOxygenSensor.update().
+ */
+void reportDoCalibration()
+{
+    if (!doCalPending)
+        return;
+
+    const eVisiFermCalState state = dissolvedOxygenSensor.getCalState();
+    if (state == doCalLastState)
+        return;
+    doCalLastState = state;
+
+    const eVisiFermCalPoint point = dissolvedOxygenSensor.getCalPoint();
+    const String context = String(";POINT=") + doCalPointName(point);
+    const String suffix = responseIdSuffix(doCalHasId, doCalId);
+
+    switch (state)
+    {
+    case VISIFERM_CAL_WAITING_RETRY:
+        Serial.println("EVENT:CALIB-DO:WAITING_RETRY" + context + ";DELAY_S=110" + suffix);
+        break;
+
+    case VISIFERM_CAL_SUCCESS:
+        Serial.println("EVENT:CALIB-DO:SUCCESS" + context +
+                       ";VALUE=" + String(dissolvedOxygenSensor.getCalStoredValue(), 2) + suffix);
+        doCalPending = false;
+        break;
+
+    case VISIFERM_CAL_FAILED:
+    {
+        const eVisiFermCalError error = dissolvedOxygenSensor.getCalError();
+        String message = "EVENT:CALIB-DO:FAILED" + context + ";ERROR=" + doCalErrorName(error);
+        if (error == VISIFERM_CAL_ERR_REJECTED)
+        {
+            String reason = VisiFermRS485::calStatusToText(point, dissolvedOxygenSensor.getCalStatusBits());
+            reason.replace(' ', '_');
+            reason.toUpperCase();
+            message += ";REASON=" + reason;
+        }
+        else if (error == VISIFERM_CAL_ERR_MODBUS_EXCEPTION)
+        {
+            message += ";EXCEPTION=" + String(dissolvedOxygenSensor.getLastModbusException());
+        }
+        Serial.println(message + suffix);
+        doCalPending = false;
+        break;
+    }
+
+    default: // RUNNING (start or after retry delay): nothing to report
+        break;
+    }
+}
+
 static void printContextError(
     const char *prefix,
     const char *code,
@@ -69,6 +160,12 @@ static void printStatusSnapshot(bool hasId, uint32_t id)
                    (waitingForWater ? "yes" : "no") + suffix);
     Serial.println(String("STATUS:WAITING_FOR_DETERGENT=") +
                    (waitingForDetergent ? "yes" : "no") + suffix);
+
+    const eVisiFermCalState doCalState = dissolvedOxygenSensor.getCalState();
+    String doCalLine = String("STATUS:DO_CAL=") + VisiFermRS485::calStateToText(doCalState);
+    if (doCalState != VISIFERM_CAL_IDLE)
+        doCalLine += String(";POINT=") + doCalPointName(dissolvedOxygenSensor.getCalPoint());
+    Serial.println(doCalLine + suffix);
 }
 
 static bool parseStateName(const String &name, eBioreactorState &state)
@@ -540,7 +637,26 @@ void receiveSerialCommand()
         }
         if (command == "CALIB-DO=0" || command == "CALIB-DO=100")
         {
-            printCommandError("UNSUPPORTED", hasId, commandId);
+            // CALIB-DO=0   -> CP1, oxygen-free medium
+            // CALIB-DO=100 -> CP2, air (chamber at atmospheric pressure)
+            const eVisiFermCalPoint point = command == "CALIB-DO=0" ? VISIFERM_CAL_ZERO : VISIFERM_CAL_AIR;
+            if (bioreactorState != eBioreactorState::IDLE && bioreactorState != eBioreactorState::TEST)
+            {
+                Serial.println("ERR:CALIB-DO:STATE_REQUIRED;STATE=" +
+                               String(static_cast<int>(bioreactorState)) + idSuffix);
+            }
+            else if (!dissolvedOxygenSensor.startCalibration(point))
+            {
+                Serial.println("ERR:CALIB-DO:ALREADY_RUNNING" + idSuffix);
+            }
+            else
+            {
+                doCalPending = true;
+                doCalHasId = hasId;
+                doCalId = commandId;
+                doCalLastState = VISIFERM_CAL_RUNNING;
+                Serial.println("OK:" + command + idSuffix);
+            }
             return;
         }
         // Test state commands

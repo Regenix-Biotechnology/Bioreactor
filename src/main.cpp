@@ -1,4 +1,5 @@
 #include "main.h"
+#include "serialReader.h"
 
 float puissnace_pompes;
 
@@ -14,17 +15,17 @@ static bool applyCleaningPhaseOutputs()
     bool valvesOk = false;
     if (bioreactorState == eBioreactorState::CLEANING_APPROV)
     {
-        pumpsOk = setPumpsSpeed(220.0, OFF, OFF, OFF);
+        pumpsOk = setPumpsSpeed(100.0, OFF, OFF, OFF);
         valvesOk = setValvesState(OPEN, CLOSE, CLOSE);
     }
     else if (bioreactorState == eBioreactorState::CLEANING_CIRCULATION)
     {
-        pumpsOk = setPumpsSpeed(OFF, 150.0, 50.0, 50.0);
+        pumpsOk = setPumpsSpeed(OFF, 100.0, 50.0, 50.0);
         valvesOk = setValvesState(CLOSE, OPEN, CLOSE);
     }
     else
     {
-        pumpsOk = setPumpsSpeed(-220.0, -220.0, -50.0, -50.0);
+        pumpsOk = setPumpsSpeed(-100.0, -100.0, -50.0, -50.0);
         valvesOk = cleaningCycle == eCleaningCycle::DRY
                        ? setValvesState(OPEN, CLOSE, CLOSE)
                        : setValvesState(CLOSE, OPEN, OPEN);
@@ -107,11 +108,11 @@ void loop()
     {
         // start when user sent command
         setFansState(ON, ON, ON, ON, ON, ON, ON);
-        float circulationSpeed = 75.0f;
-        float culturePump1Speed = 20.0f;
-        float culturePump2Speed = 20.0f;
+        float circulationSpeed = 100.0f;
+        float culturePump1Speed = 20.0f; // bain
+        float culturePump2Speed = 10.0f; // channel
         getRunCulturePumpSpeeds(circulationSpeed, culturePump1Speed, culturePump2Speed);
-        setPumpsSpeed(5.0f, circulationSpeed, culturePump1Speed, culturePump2Speed);
+        setPumpsSpeed(OFF, circulationSpeed, culturePump1Speed, culturePump2Speed);
         // setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CIRCUL, CULTURE 2, CULTURE 1
         setValvesState(CLOSE, OPEN, CLOSE);
         setPressureChamberState(ON);
@@ -129,42 +130,54 @@ void loop()
         setHeatersState(ON);
 
         // switch after 10 min to IDLE
-        if (millis() - stateTimer > 8 * MINUTE)
+        if (millis() - stateTimer > 10 * MINUTE)
         {
             setBioreactorState((uint8_t)eBioreactorState::TRASH);
             stateTimer = millis();
         }
         break;
     case eBioreactorState::CLEANING_APPROV:
+    {
         if (!applyCleaningPhaseOutputs())
         {
             failCleaningSequence("PHASE_OUTPUT_FAILURE");
             break;
         }
 
-        if (millis() - stateTimer > 1 * MINUTE) // 5
+        const unsigned long approvDuration =
+            cleaningCycle == eCleaningCycle::DETERGENT ? 7 * MINUTE : 12 * MINUTE;
+        if (millis() - stateTimer > approvDuration)
             advanceCleaningPhase(eBioreactorState::CLEANING_CIRCULATION);
         break;
+    }
     case eBioreactorState::CLEANING_CIRCULATION:
+    {
         if (!applyCleaningPhaseOutputs())
         {
             failCleaningSequence("PHASE_OUTPUT_FAILURE");
             break;
         }
 
-        if (millis() - stateTimer > 1 * MINUTE) // 15
+        const unsigned long circulationDuration =
+            cleaningCycle == eCleaningCycle::DETERGENT ? 40 * MINUTE : 15 * MINUTE;
+        if (millis() - stateTimer > circulationDuration)
             advanceCleaningPhase(eBioreactorState::CLEANING_RETURN);
         break;
+    }
     case eBioreactorState::CLEANING_RETURN:
+    {
         if (!applyCleaningPhaseOutputs())
         {
             failCleaningSequence("PHASE_OUTPUT_FAILURE");
             break;
         }
 
-        if (millis() - stateTimer > 1 * MINUTE) // 5
+        const unsigned long returnDuration =
+            cleaningCycle == eCleaningCycle::DETERGENT ? 7 * MINUTE : 12 * MINUTE;
+        if (millis() - stateTimer > returnDuration)
             finishCleaningCycle();
         break;
+    }
     case eBioreactorState::CLEANING_WAITING_WATER:
         if (!setCleaningSafeOutputs())
             failCleaningSequence("WAITING_STATE_OUTPUT_FAILURE");
@@ -308,14 +321,14 @@ void loop()
         break;
     case eBioreactorState::TRASH:
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
-        setPumpsSpeed(-220.0, OFF, OFF, OFF);
+        setPumpsSpeed(-100.0, OFF, OFF, OFF);
         setValvesState(OPEN, CLOSE, CLOSE);
         setPressureChamberState(OFF);
         setHeatersState(OFF);
         break;
     case eBioreactorState::MEDIA_CHANGE_TRASH:
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
-        setPumpsSpeed(-220.0, -220.0, OFF, OFF);
+        setPumpsSpeed(OFF, -100.0, OFF, OFF);
         setValvesState(CLOSE, CLOSE, OPEN);
         setPressureChamberState(ON);
         setHeatersState(ON);
@@ -330,7 +343,7 @@ void loop()
         break;
     case eBioreactorState::MEDIA_CHANGE_APPROV:
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
-        setPumpsSpeed(220.0, 220.0, OFF, OFF);
+        setPumpsSpeed(100.0, 100.0, OFF, OFF);
         setValvesState(CLOSE, CLOSE, OPEN);
         setPressureChamberState(ON);
         setHeatersState(ON);
@@ -341,6 +354,7 @@ void loop()
     }
 
     updateSensors();
+    reportDoCalibration();
     printBioreactorStateToSerial();
     updateTemperatureController();
     updatePressureChamberController();
