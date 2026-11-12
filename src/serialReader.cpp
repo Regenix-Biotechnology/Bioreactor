@@ -1,5 +1,6 @@
 #include "serialReader.h"
 #include "serial_protocol.h"
+#include "test_conditions.h"
 #include <stdlib.h>
 #include <math.h>
 
@@ -166,6 +167,8 @@ static void printStatusSnapshot(bool hasId, uint32_t id)
     if (doCalState != VISIFERM_CAL_IDLE)
         doCalLine += String(";POINT=") + doCalPointName(dissolvedOxygenSensor.getCalPoint());
     Serial.println(doCalLine + suffix);
+
+    Serial.println("STATUS:" + getConditionTestStatusFields() + suffix);
 }
 
 static bool parseStateName(const String &name, eBioreactorState &state)
@@ -310,6 +313,8 @@ void receiveSerialCommand()
                 Serial.println("ERR:FLOW_TEST:STATE_REQUIRED" + idSuffix);
             else if (isPressureChamberFlowTestActive())
                 Serial.println("ERR:FLOW_TEST:ALREADY_RUNNING" + idSuffix);
+            else if (isConditionTestActive())
+                Serial.println("ERR:FLOW_TEST:CONDITION_TEST_RUNNING" + idSuffix);
             else if (isPressureChamberFlowTestPurgeRequired(valve))
                 Serial.println("ERR:FLOW_TEST:PURGE_CONFIRM_REQUIRED;RUN_PURGE_AND_SEND_FLOW_TEST_PURGE_DONE" + idSuffix);
             else if (startPressureChamberFlowTest(valve))
@@ -345,6 +350,63 @@ void receiveSerialCommand()
             }
             stopPressureChamberFlowTest();
             Serial.println("OK:" + command + idSuffix);
+            return;
+        }
+
+        // ------------------------------------------------------------ condition test sequence
+        if (command == "TEST_COND=START" || command.startsWith("TEST_COND=START,"))
+        {
+            long firstStep = 1;
+            if (command.length() > 15) // "TEST_COND=START," + number
+            {
+                const String stepText = command.substring(16);
+                const char *text = stepText.c_str();
+                char *end = nullptr;
+                firstStep = strtol(text, &end, 10);
+                if (end == text || *end != '\0')
+                {
+                    Serial.println("ERR:TEST_COND:FORMAT" + idSuffix);
+                    return;
+                }
+            }
+
+            const eTestConditionStartResult result =
+                (firstStep < 1 || firstStep > TEST_CONDITION_COUNT)
+                    ? TEST_COND_START_INVALID_STEP
+                    : startConditionTest((uint8_t)firstStep);
+
+            if (result == TEST_COND_START_OK)
+                Serial.println("OK:" + command + idSuffix);
+            else if (result == TEST_COND_START_WRONG_STATE)
+                Serial.println("ERR:TEST_COND:STATE_REQUIRED;STATE=" +
+                               String(static_cast<int>(bioreactorState)) + idSuffix);
+            else if (result == TEST_COND_START_FLOW_TEST_MODE)
+                Serial.println("ERR:TEST_COND:FLOW_TEST_MODE_ACTIVE;SEND_STATE_IDLE_THEN_STATE_TEST" + idSuffix);
+            else if (result == TEST_COND_START_ALREADY_RUNNING)
+                Serial.println("ERR:TEST_COND:ALREADY_RUNNING" + idSuffix);
+            else
+                Serial.println("ERR:TEST_COND:INVALID_STEP;MIN=1;MAX=" + String(TEST_CONDITION_COUNT) + idSuffix);
+            return;
+        }
+        if (command == "TEST_COND=NEXT")
+        {
+            if (advanceConditionTest())
+                Serial.println("OK:" + command + idSuffix);
+            else
+                Serial.println("ERR:TEST_COND:NOT_ACTIVE" + idSuffix);
+            return;
+        }
+        if (command == "TEST_COND=STOP")
+        {
+            if (stopConditionTest("USER_STOP"))
+                Serial.println("OK:" + command + idSuffix);
+            else
+                Serial.println("ERR:TEST_COND:NOT_ACTIVE" + idSuffix);
+            return;
+        }
+        if (command == "TEST_COND=STATUS")
+        {
+            Serial.println("STATUS:" + getConditionTestStatusFields() + idSuffix);
             return;
         }
 

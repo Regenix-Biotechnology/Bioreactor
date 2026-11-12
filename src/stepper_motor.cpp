@@ -22,7 +22,7 @@ const uint32_t StepperMotor::SET_SPEED_CONFIG_MSG_DATA_LIST[CONFIG_MSG_SIZE] = {
     0x00000002, // [9]  0x24 : A1
     0x00120000, // [10] 0x25 : V1
     0x00043E00, // [11] 0x27 : VMAX
-    0x00000100, // [12] 0x28 : DMAX
+    0x0000000A, // [12] 0x28 : DMAX
     0x00000002, // [13] 0x2A : D1
     0x00000030  // [14] 0x2B : VSTOP
 };

@@ -1,5 +1,6 @@
 #include "main.h"
 #include "serialReader.h"
+#include "test_conditions.h"
 
 float puissnace_pompes;
 
@@ -308,6 +309,23 @@ void loop()
             setPressureChamberState(OFF);
             setHeatersState(OFF);
         }
+        else if (isConditionTestActive())
+        {
+            // Condition test (TEST_COND=START): same outputs as RUN, circulation + O2/CO2 from the condition
+            updateConditionTest();
+            if (bioreactorState != eBioreactorState::TEST)
+                break; // sequence finished: switched to RUN
+
+            float culturePump1Speed = 20.0f; // bain (same default as RUN)
+            float culturePump2Speed = 10.0f; // channel (same default as RUN)
+            getConfiguredCulturePumpSpeeds(culturePump1Speed, culturePump2Speed);
+
+            setFansState(ON, ON, ON, ON, ON, ON, ON);
+            setPumpsSpeed(OFF, getCurrentTestCondition().circulationPumpSpeed, culturePump1Speed, culturePump2Speed);
+            setValvesState(CLOSE, OPEN, CLOSE);
+            setPressureChamberState(ON);
+            setHeatersState(ON);
+        }
         else
         {
             // start when user sent command
@@ -328,7 +346,7 @@ void loop()
         break;
     case eBioreactorState::MEDIA_CHANGE_TRASH:
         setFansState(OFF, OFF, ON, ON, ON, ON, ON);
-        setPumpsSpeed(OFF, -100.0, OFF, OFF);
+        setPumpsSpeed(-100.0, -100.0, OFF, OFF);
         setValvesState(CLOSE, CLOSE, OPEN);
         setPressureChamberState(ON);
         setHeatersState(ON);

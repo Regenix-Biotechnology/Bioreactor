@@ -171,8 +171,12 @@ inline bool isValidCleaningPhaseTransition(
 inline bool isHeaterPermitted(
     eBioreactorState state,
     eCleaningCycle cycle,
-    bool cleaningTemperatureSafe)
+    bool cleaningTemperatureSafe,
+    bool conditionTestActive = false)
 {
+    if (state == eBioreactorState::TEST)
+        return conditionTestActive;
+
     if (state == eBioreactorState::APPROV ||
         state == eBioreactorState::PREPARE ||
         state == eBioreactorState::RUN ||

@@ -1,4 +1,5 @@
 #include "bioreactor_controller.h"
+#include "test_conditions.h"
 #include <math.h>
 
 // Objects declaration
@@ -522,7 +523,10 @@ void setBioreactorState(uint8_t state_int)
     }
 
     if (stateChanged && state != eBioreactorState::TEST)
+    {
         resetPressureChamberFlowTest();
+        stopConditionTest("STATE_CHANGED"); // no effect if the condition test is not running
+    }
 
     if (!isCleaningState)
     {
@@ -814,6 +818,19 @@ bool getRunCulturePumpSpeeds(
 }
 
 /**
+ * @brief Culture pump speeds used in RUN, whatever the current state (used by the condition test).
+ * Keeps the given default values if no culture setpoints are staged.
+ */
+void getConfiguredCulturePumpSpeeds(float &culturePump1Speed, float &culturePump2Speed)
+{
+    if (!cultureSetpointsAvailable)
+        return;
+
+    culturePump1Speed = activeCultureSetpoints.culturePump1Speed;
+    culturePump2Speed = activeCultureSetpoints.culturePump2Speed;
+}
+
+/**
  * @brief Set the state of the fans.
  * @param heaterFanState        State of the heater fan (ON/OFF)
  * @param circulationFanState   State of the interior circulation fan (ON/OFF) that circulates air inside the bioreactor
@@ -962,7 +979,11 @@ void setHeatersState(bool heaterState)
         tempSensor.getTemperatureC() < temperatureController.getReferenceTemperature();
 
     if (heaterState &&
-        isHeaterPermitted(bioreactorState, cleaningCycle, temperatureDataSafe) &&
+        isHeaterPermitted(
+            bioreactorState,
+            cleaningCycle,
+            temperatureDataSafe,
+            isConditionTestActive()) &&
         belowTemperatureSetpoint)
         heater.setLevel(temperatureController.getHeaterPower());
     else
@@ -1287,7 +1308,9 @@ void printBioreactorStateToSerial()
         Serial.print(";BIO_AIR_CO2_PCT=");
         Serial.print(CO2_Value, 2);
         Serial.print(";DOOR_OPEN=");
-        Serial.println(limitSwitch.getDoorState() ? "1" : "0");
+        Serial.print(limitSwitch.getDoorState() ? "1" : "0");
+        Serial.print(";TEST_COND_STEP=");
+        Serial.println(getConditionTestStep());
 
         Serial.println("> Bioreactor State: " + String(static_cast<int>(bioreactorState)));
         // Serial.println("> Water Temperature (°C): " + String(tempSensor.getTemperatureC()));

@@ -173,6 +173,9 @@ int main()
     for (eBioreactorState state : productionHeatingStates)
         assert(isHeaterPermitted(state, eCleaningCycle::NONE, false));
 
+    assert(!isHeaterPermitted(eBioreactorState::TEST, eCleaningCycle::NONE, false));
+    assert(isHeaterPermitted(eBioreactorState::TEST, eCleaningCycle::NONE, false, true));
+
     const eBioreactorState cleaningPhases[] = {
         eBioreactorState::CLEANING_APPROV,
         eBioreactorState::CLEANING_CIRCULATION,
