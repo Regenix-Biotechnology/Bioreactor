@@ -12,6 +12,16 @@ static const TestCondition TEST_CONDITIONS[TEST_CONDITION_COUNT] = {
     {100.0f, 40.0f, 82000.0f},  // 7
     {100.0f, 80.0f, 82000.0f},  // 8
     {100.0f, 80.0f, 104000.0f}, // 9
+    // Additional CO2 conditions (O2 kept at 80 %)
+    {50.0f, 80.0f, 120000.0f},  // 10
+    {50.0f, 80.0f, 150000.0f},  // 11
+    {50.0f, 80.0f, 180000.0f},  // 12
+    {75.0f, 80.0f, 120000.0f},  // 13
+    {75.0f, 80.0f, 150000.0f},  // 14
+    {75.0f, 80.0f, 180000.0f},  // 15
+    {100.0f, 80.0f, 120000.0f}, // 16
+    {100.0f, 80.0f, 150000.0f}, // 17
+    {100.0f, 80.0f, 180000.0f}, // 18
 };
 
 static bool conditionTestActive = false;
