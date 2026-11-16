@@ -6,7 +6,7 @@
 /**
  * @brief Condition test sequence (runs in the TEST state).
  *
- * 18 conditions of 2 h each (36 h): circulation pump speed + O2 / CO2 references of the pressure
+ * 4 conditions of 5 h 30 each (22 h): circulation pump speed + O2 / CO2 references of the pressure
  * chamber (table in test_conditions.cpp). The other outputs are the same as in RUN (approv pump,
  * culture pumps, valves, fans, pressure chamber ON, heater regulated at the setpoint). At the end
  * of the last condition the bioreactor switches to RUN and the O2 / CO2 references in use before
@@ -14,7 +14,7 @@
  *
  * Serial commands (see serialReader.cpp):
  *   TEST_COND=START      start at condition 1
- *   TEST_COND=START,n    start at condition n (1..18), e.g. to resume after a reboot
+ *   TEST_COND=START,n    start at condition n (1..4), e.g. to resume after a reboot
  *   TEST_COND=NEXT       end the current condition now and go to the next one
  *   TEST_COND=STOP       stop the sequence (stays in TEST, normal TEST outputs)
  *   TEST_COND=STATUS     print the current step and remaining time
@@ -27,8 +27,8 @@ struct TestCondition
     float co2Reference;         // ppm (pressure chamber)
 };
 
-static constexpr uint8_t TEST_CONDITION_COUNT = 18;
-static constexpr unsigned long TEST_CONDITION_DURATION_MS = 2UL * 60UL * 60UL * 1000UL; // 2 h
+static constexpr uint8_t TEST_CONDITION_COUNT = 4;
+static constexpr unsigned long TEST_CONDITION_DURATION_MS = 330UL * 60UL * 1000UL; // 5 h 30 (22 h in total). 300UL -> 5 h (20 h in total)
 
 typedef enum
 {
