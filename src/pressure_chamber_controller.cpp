@@ -30,6 +30,10 @@ PressureChamberController::PressureChamberController()
       settleUntilMs(0),
       o2BelowActive(false),
       o2BelowSinceMs(0),
+      co2MinPulseMs(CO2_MIN_PULSE_START_MS),
+      co2PulseEvalPending(false),
+      co2AtLastPulse(0.0f),
+      co2LastPulseMs(0),
       o2MinRef(O2_REF - O2_DEAD_ZONE),
       o2MaxRef(O2_REF + O2_DEAD_ZONE),
       co2MinRef(CO2_REF - CO2_DEAD_ZONE),
@@ -58,6 +62,44 @@ void PressureChamberController::resetState()
     this->settleUntilMs = 0;
     this->o2BelowActive = false;
     this->o2BelowSinceMs = 0;
+    this->co2PulseEvalPending = false; // l'impulsion minimale apprise est conservée
+}
+
+/**
+ * @brief Évalue la dernière impulsion CO2 à la fin de son temps mort et ajuste l'impulsion minimale.
+ *
+ * - Hausse < CO2_PULSE_NO_EFFECT_PPM : la vanne n'a (presque) rien injecté -> +25 ms.
+ * - Hausse > CO2_PULSE_TOO_BIG_PPM et impulsion au minimum : pas trop gros -> -25 ms.
+ * Seules les impulsions à la durée minimale font descendre le minimum (une impulsion plus longue
+ * qui dépasse vient du calcul de gain, pas du minimum).
+ */
+void PressureChamberController::evaluateLastCO2Pulse(float co2Concentration)
+{
+    if (!this->co2PulseEvalPending)
+        return;
+    this->co2PulseEvalPending = false;
+
+    const float rise = co2Concentration - this->co2AtLastPulse;
+    const unsigned long previous = this->co2MinPulseMs;
+
+    if (rise < CO2_PULSE_NO_EFFECT_PPM && this->co2LastPulseMs <= this->co2MinPulseMs)
+    {
+        this->co2MinPulseMs += CO2_MIN_PULSE_STEP_UP_MS;
+        if (this->co2MinPulseMs > CO2_MIN_PULSE_LIMIT_MS)
+            this->co2MinPulseMs = CO2_MIN_PULSE_LIMIT_MS;
+    }
+    else if (rise > CO2_PULSE_TOO_BIG_PPM && this->co2LastPulseMs <= this->co2MinPulseMs)
+    {
+        if (this->co2MinPulseMs >= CO2_MIN_PULSE_START_MS + CO2_MIN_PULSE_STEP_DOWN_MS)
+            this->co2MinPulseMs -= CO2_MIN_PULSE_STEP_DOWN_MS;
+        else
+            this->co2MinPulseMs = CO2_MIN_PULSE_START_MS;
+    }
+
+    Serial.println("EVENT:CO2_PULSE_EVAL;PULSE_MS=" + String(this->co2LastPulseMs) +
+                   ";RISE_PPM=" + String(rise, 0) +
+                   ";MIN_PULSE_MS=" + String(this->co2MinPulseMs) +
+                   (this->co2MinPulseMs != previous ? ";CHANGED=1" : ";CHANGED=0"));
 }
 
 /**
@@ -133,6 +175,9 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
     if (pulseActive || !timeReached(now, this->settleUntilMs))
         return;
 
+    // Fin du temps mort : on mesure l'effet de la dernière impulsion CO2 (une seule fois).
+    this->evaluateLastCO2Pulse(co2Concentration);
+
     const bool co2Below = co2Concentration < this->co2MinRef;
     const bool o2Starving = o2Below && (now - this->o2BelowSinceMs >= O2_MAX_WAIT_MS);
 
@@ -140,6 +185,7 @@ void PressureChamberController::update(float o2Concentration, float co2Concentra
     {
         // Règle 2 : le CO2 est prioritaire.
         const float co2Deficit = this->co2Ref - co2Concentration;
+        this->co2AtLastPulse = co2Concentration;
         this->startPulse(CO2, this->computePulseMs(CO2, co2Deficit));
     }
     else if (o2Below)
@@ -224,7 +270,7 @@ float PressureChamberController::computePulseMs(eValves Valve, float error)
     if (!isfinite(pulseMs) || !(pulseMs > 0.0f))
         return 0.0f;
 
-    const float minMs = MIN_PULSE_MS;
+    const float minMs = (Valve == CO2) ? static_cast<float>(this->co2MinPulseMs) : MIN_PULSE_MS;
     return clampValue(pulseMs, minMs, maxMs);
 }
 
@@ -251,6 +297,8 @@ void PressureChamberController::startPulse(eValves Valve, float pulseMs)
         this->co2ValveOpenDurationMs = duration;
         this->timeBeforeClosingCO2Valve = now + duration;
         settle = CO2_SETTLE_MS;
+        this->co2PulseEvalPending = true; // évaluée à la fin du temps mort
+        this->co2LastPulseMs = duration;
         break;
     case AIR:
         this->airValveOpenDurationMs = duration;

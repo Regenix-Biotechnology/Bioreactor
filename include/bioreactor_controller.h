@@ -30,6 +30,7 @@ bool setValvesState(bool valveSupplyState, bool valveCirculationState, bool valv
 bool setPressureChamberValvesState(bool o2ValveState, bool co2ValveState, bool airValveState, bool co2AirValveState);
 void setPressureChamberState(bool state);
 bool startPressureChamberFlowTest(eValves valve);
+bool startPressureChamberFlowTestAuto(eValves valve);
 void stopPressureChamberFlowTest();
 bool isPressureChamberFlowTestMode();
 bool isPressureChamberFlowTestActive();

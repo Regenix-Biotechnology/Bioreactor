@@ -1,4 +1,5 @@
 #include "visiferm_RS485.h"
+#include <math.h>
 
 /**
  * Constructor for the VisiFerm RS485 driver.
@@ -15,6 +16,8 @@ VisiFermRS485::VisiFermRS485(uint8_t rxPin,
       _status(VISIFERM_STATUS_NOT_INITIALISED),
       _oxygen(0.0),
       _temperature(0.0),
+      _doFlags(0),
+      _tempFlags(0),
       _rxLen(0),
       _waitStartMs(0),
       _lastReadTime(0),
@@ -86,12 +89,14 @@ eVisiFermStatus VisiFermRS485::update()
         if (result == FRAME_OK)
         {
             float parsedValue = 0.0;
+            uint32_t measurementFlags = 0;
 
-            if (parseData(_rxBuf, _rxLen, parsedValue))
+            if (parseData(_rxBuf, _rxLen, parsedValue, measurementFlags))
             {
                 if (_pollState == POLL_WAIT_DO)
                 {
                     _oxygen = parsedValue;
+                    _doFlags = measurementFlags;
                     _status = VISIFERM_STATUS_OK;
                     _rxLen = 0;
                     sendReadTemp(); // immediately ask for temperature
@@ -99,6 +104,7 @@ eVisiFermStatus VisiFermRS485::update()
                 }
 
                 _temperature = parsedValue;
+                _tempFlags = measurementFlags;
                 _status = VISIFERM_STATUS_OK;
                 _lastReadTime = now;
             }
@@ -282,9 +288,17 @@ VisiFermRS485::FrameResult VisiFermRS485::tryReadFrame()
 
 /**
  * @brief Parsing logic for Primary Measurement Channel frames.
- * @return True if parsing was successful, false on error.
+ * @param outFlags measurement status bits of the channel (Reg5/Reg6), 0 = no problem.
+ * @return True if the value can be used, false on error.
+ *
+ * Measurement status (Hamilton Arc, PMC Reg5/Reg6):
+ *   0x01 temperature out of user defined range   -> warning, value kept
+ *   0x02 temperature out of operating range      -> value rejected
+ *   0x04 calibration status not zero              -> warning, value kept
+ *   0x08 warning not zero                         -> warning, value kept
+ *   0x10 error not zero                           -> value rejected
  */
-bool VisiFermRS485::parseData(const uint8_t *frame, uint16_t len, float &outValue)
+bool VisiFermRS485::parseData(const uint8_t *frame, uint16_t len, float &outValue, uint32_t &outFlags)
 {
     if (len < MIN_MSG_LEN)
     {
@@ -310,12 +324,11 @@ bool VisiFermRS485::parseData(const uint8_t *frame, uint16_t len, float &outValu
     // Reg3/Reg4 = value (float, LSW first)
     outValue = modbusToFloat(&data[4]);
 
-    // Reg5/Reg6 = measurement status
-    uint16_t statusLo = (uint16_t)data[8] << 8 | data[9];
-    uint16_t statusHi = (uint16_t)data[10] << 8 | data[11];
-    if (statusLo != 0 || statusHi != 0)
+    // Reg5/Reg6 = measurement status (32 bits, LSW first)
+    outFlags = modbusToU32(&data[8]);
+    if ((outFlags & MEAS_FLAGS_BLOCKING) != 0 || !isfinite(outValue))
     {
-        // sensor reports warning/error in measurement
+        // the sensor reports that this value cannot be used
         _status = VISIFERM_STATUS_SENSOR_STATUS_ERROR;
         return false;
     }

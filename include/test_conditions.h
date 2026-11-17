@@ -18,6 +18,9 @@
  *   TEST_COND=NEXT       end the current condition now and go to the next one
  *   TEST_COND=STOP       stop the sequence (stays in TEST, normal TEST outputs)
  *   TEST_COND=STATUS     print the current step and remaining time
+ *
+ * After a reboot of the ESP32, the sequence resumes at the same step (at most 5 min lost on that
+ * step) if the bioreactor restarts in TEST: EVENT:TEST_COND:RESUMED;STEP=..;REMAINING_S=..
  */
 
 struct TestCondition
@@ -46,6 +49,13 @@ bool isConditionTestActive();
 
 /** @brief Timer of the sequence. Must be called in the TEST state of the main loop. */
 void updateConditionTest();
+
+/**
+ * @brief Resume a sequence interrupted by a reboot (progress stored in flash every 5 min and at
+ * each step change). Called once at boot, after the stored state and references are loaded.
+ * Resumes only if the bioreactor restarts in TEST; otherwise EVENT:TEST_COND:RESUME_ABORTED.
+ */
+void restoreConditionTestAfterBoot();
 
 const TestCondition &getCurrentTestCondition();
 uint8_t getConditionTestStep(); // 1..9, 0 if not running

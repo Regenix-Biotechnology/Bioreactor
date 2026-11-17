@@ -38,6 +38,7 @@ public:
     float getCO2Reference() const;
     void setReferenceLevel(eValves Valve, float ReferenceLevel);
     void setPressureChamberState(bool state) { this->pressureChamberState = state; }
+    unsigned long getCO2MinPulseMs() const { return this->co2MinPulseMs; }
 
 private:
     float calculateTimeBeforeClosingValve(eValves Valve, float error);
@@ -58,6 +59,14 @@ private:
     bool o2BelowActive;           // l'O2 est sous sa borne basse
     unsigned long o2BelowSinceMs; // depuis quand
 
+    // Impulsion minimale CO2 adaptative : mesure l'effet de chaque impulsion CO2 et ajuste
+    // la durée minimale (la vanne s'ouvre plus ou moins bien selon P_APPROV - P_CHAMBER).
+    unsigned long co2MinPulseMs;  // impulsion minimale CO2 apprise (ms)
+    bool co2PulseEvalPending;     // une impulsion CO2 attend son évaluation
+    float co2AtLastPulse;         // lecture CO2 au moment de l'impulsion
+    unsigned long co2LastPulseMs; // durée de cette impulsion
+    void evaluateLastCO2Pulse(float co2Concentration);
+
     // Consignes et bornes.
     float o2MinRef;
     float o2MaxRef;
@@ -72,7 +81,7 @@ private:
     static constexpr float MU_AIR = 0.000018;                    // Viscosité de l'air
     static constexpr float MU_O2 = 0.00002;                      // Viscosité de l'O2
     static constexpr float MU_CO2 = 0.000015;                    // Viscosité du CO2
-    static constexpr float P_APPROV = 30 * 6895;                 // Pression des bouteilles (Pa) : À VÉRIFIER (psi relatifs)
+    static constexpr float P_APPROV = 20 * 6895;                 // Pression d'alimentation des bouteilles (Pa), 20 psi relatifs (2026-11-17)
     static constexpr float P_CHAMBER = 7.5f * 6895;              // Pression de la chambre (Pa), 7,5 psi relatifs
     static constexpr float P_CHAMBER_MIN = P_CHAMBER - 2 * 6895; // Pression minimale : 2 psi sous la consigne
     static constexpr float V = 1.296;                            // Volume de la chambre (L)
@@ -98,6 +107,16 @@ private:
     static constexpr float MAX_CO2_PULSE_MS = 2000.0f;
     static constexpr float MAX_AIR_PULSE_MS = 3000.0f;
     static constexpr float AIR_VALVE_OPEN_TIME = 1000.0f; // ouverture d'air si la pression est trop basse (ms)
+
+    // Impulsion minimale CO2 adaptative (2026-11-17) : à 20 psi en RUN (chambre à 7,5 psi),
+    // 200 ms n'injecte plus rien alors que 200 ms donne +25 000 ppm chambre à pression atmosphérique.
+    // Après chaque impulsion CO2, la hausse mesurée à la fin du temps mort ajuste l'impulsion minimale.
+    static constexpr unsigned long CO2_MIN_PULSE_START_MS = 200UL;    // valeur de départ
+    static constexpr unsigned long CO2_MIN_PULSE_LIMIT_MS = 500UL;    // jamais au-delà
+    static constexpr unsigned long CO2_MIN_PULSE_STEP_UP_MS = 25UL;   // si l'impulsion n'a pas d'effet
+    static constexpr unsigned long CO2_MIN_PULSE_STEP_DOWN_MS = 25UL; // si l'impulsion dépasse trop
+    static constexpr float CO2_PULSE_NO_EFFECT_PPM = 3000.0f;         // hausse en dessous = impulsion sans effet
+    static constexpr float CO2_PULSE_TOO_BIG_PPM = 30000.0f;          // hausse au-dessus = pas trop gros (2 x zone morte)
 
     // Temps morts après une impulsion (le CO2 répond lentement : ~50 s observées).
     static constexpr unsigned long O2_SETTLE_MS = 15000UL;

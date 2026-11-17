@@ -1,6 +1,9 @@
 #include "bioreactor_controller.h"
 #include "test_conditions.h"
+#include "water_temperature.h"
 #include <math.h>
+
+bool advancePressureChamberFlowTest(); // used by the FLOW_TEST AUTO mode (defined below)
 
 // Objects declaration
 SHT40 sht40(&Wire);
@@ -43,6 +46,33 @@ static eSHT40Status airTemperatureStatus = SHT40_STATUS_NOT_INITIALISED;
 static unsigned long lastValidAirTemperatureTime = 0;
 static const char *lastCleaningErrorCode = "NONE";
 static float baseTemperatureReference = 37.0f;
+
+// Heater safety limits (used by setHeatersState)
+static constexpr float AIR_TEMP_MAX_C = 42.0f;         // heater cut if the air is hotter (protects the culture)
+static constexpr float WATER_OVERTEMP_MARGIN_C = 1.0f; // ERR:TEMP:OVERTEMP if water > setpoint + margin
+static constexpr unsigned long SAFETY_PRINT_INTERVAL_MS = 60000UL;
+static unsigned long lastAirLimitPrintMs = 0;
+static unsigned long lastOvertempPrintMs = 0;
+
+// Output failures are printed at most once per second and per channel
+static constexpr unsigned long OUTPUT_ERROR_PRINT_INTERVAL_MS = 1000UL;
+static unsigned long lastOutputErrorPrintMs[IOExpander::OUTPUT_COUNT] = {};
+
+static void reportOutputFailure(const char *name, int channel)
+{
+    const unsigned long now = millis();
+    if (channel >= 0 && channel < IOExpander::OUTPUT_COUNT)
+    {
+        unsigned long &last = lastOutputErrorPrintMs[channel];
+        if (last != 0 && now - last < OUTPUT_ERROR_PRINT_INTERVAL_MS)
+            return;
+        last = (now == 0) ? 1 : now;
+    }
+    Serial.print("ERR:IO:OUTPUT_FAILURE;OUTPUT=");
+    Serial.print(name);
+    Serial.print(";CHANNEL=");
+    Serial.println(channel);
+}
 static CultureSetpoints activeCultureSetpoints = {};
 static bool cultureSetpointsAvailable = false;
 uint8_t testState = 0;
@@ -71,6 +101,9 @@ namespace
     bool flowCalibrationHasRunGas = false;
     bool flowCalibrationPurgeConfirmed = false;
     bool flowCalibrationPulsePendingStart = false;
+    bool flowCalibrationAuto = false;                                 // AUTO mode: no FLOW_TEST=NEXT needed between pulses
+    unsigned long flowCalibrationWaitStartMs = 0;                     // start of the pause between two pulses (AUTO mode)
+    constexpr unsigned long FLOW_CALIBRATION_AUTO_PAUSE_MS = 30000UL; // pause before the next baseline (AUTO)
     eValves flowCalibrationValve = O2;
     eValves flowCalibrationLastValve = O2;
     size_t flowCalibrationTrialIndex = 0;
@@ -171,6 +204,7 @@ namespace
     {
         flowCalibrationActive = false;
         flowCalibrationWaitingForNext = false;
+        flowCalibrationAuto = false;
         flowCalibrationBaselineSampleCount = 0;
         flowCalibrationResponseSampleCount = 0;
         flowCalibrationStableStartMs = 0;
@@ -180,6 +214,14 @@ namespace
 
     void updatePressureChamberFlowTest(bool &o2ValveOpen, bool &co2ValveOpen)
     {
+        // AUTO mode: go to the next pulse by itself after the pause (the 15 s baseline that
+        // follows still checks that the signal is stable before pulsing).
+        if (flowCalibrationActive && flowCalibrationWaitingForNext && flowCalibrationAuto &&
+            millis() - flowCalibrationWaitStartMs >= FLOW_CALIBRATION_AUTO_PAUSE_MS)
+        {
+            advancePressureChamberFlowTest();
+        }
+
         if (!flowCalibrationActive || flowCalibrationWaitingForNext)
             return;
 
@@ -374,16 +416,19 @@ namespace
             }
 
             flowCalibrationActive = false;
+            flowCalibrationAuto = false;
             Serial.println("FLOW_TEST;STATUS=COMPLETE;GAS=" + String(flowCalibrationValve == O2 ? "O2" : "CO2"));
         }
         else
         {
             flowCalibrationWaitingForNext = true;
+            flowCalibrationWaitStartMs = now;
             Serial.println(
                 "FLOW_TEST;STATUS=WAITING_FOR_NEXT;NEXT_COMMAND=FLOW_TEST=NEXT;NEXT_GAS=" +
                 String(flowCalibrationValve == O2 ? "O2" : "CO2") +
                 ";NEXT_REPETITION=" + String(flowCalibrationRepetition + 1) +
-                ";NEXT_PULSE_MS=" + String(FLOW_CALIBRATION_DURATIONS_MS[flowCalibrationTrialIndex]));
+                ";NEXT_PULSE_MS=" + String(FLOW_CALIBRATION_DURATIONS_MS[flowCalibrationTrialIndex]) +
+                (flowCalibrationAuto ? String(";AUTO_NEXT_IN_S=") + String(FLOW_CALIBRATION_AUTO_PAUSE_MS / 1000UL) : String("")));
         }
 
         flowCalibrationPulseStartMs = 0;
@@ -774,6 +819,9 @@ void beginBioreactorPreferences()
         bioreactorParameter.putShort("state", (int16_t)state);
     }
     // pump
+
+    // Resume a condition test interrupted by a reboot (only if we restart in TEST)
+    restoreConditionTestAfterBoot();
 }
 
 eCultureSetpointResult stageCultureSetpoints(const CultureSetpoints &setpoints)
@@ -860,26 +908,18 @@ bool setFansState(bool heaterFanState, bool circulationFanState, bool rightFanSt
  */
 bool setValvesState(bool valveSupplyState, bool valveCirculationState, bool valveCleaningState)
 {
+    // ioExpander only uses the I2C bus when an output changes (+ retry / periodic refresh)
     const bool supplyOk = ioExpander.setEfuse(EFUSE_VALVE_SUPPLY_INDEX, valveSupplyState);
     if (!supplyOk)
-    {
-        Serial.print("ERR:IO:OUTPUT_FAILURE;OUTPUT=SUPPLY_VALVE;CHANNEL=");
-        Serial.println(EFUSE_VALVE_SUPPLY_INDEX);
-    }
+        reportOutputFailure("SUPPLY_VALVE", EFUSE_VALVE_SUPPLY_INDEX);
 
     const bool circulationOk = ioExpander.setEfuse(EFUSE_VALVE_CIRCULATION_INDEX, valveCirculationState);
     if (!circulationOk)
-    {
-        Serial.print("ERR:IO:OUTPUT_FAILURE;OUTPUT=CIRCULATION_VALVE;CHANNEL=");
-        Serial.println(EFUSE_VALVE_CIRCULATION_INDEX);
-    }
+        reportOutputFailure("CIRCULATION_VALVE", EFUSE_VALVE_CIRCULATION_INDEX);
 
     const bool returnOk = ioExpander.setEfuse(EFUSE_VALVE_RETURN_INDEX, valveCleaningState);
     if (!returnOk)
-    {
-        Serial.print("ERR:IO:OUTPUT_FAILURE;OUTPUT=RETURN_VALVE;CHANNEL=");
-        Serial.println(EFUSE_VALVE_RETURN_INDEX);
-    }
+        reportOutputFailure("RETURN_VALVE", EFUSE_VALVE_RETURN_INDEX);
 
     return supplyOk && circulationOk && returnOk;
 }
@@ -905,15 +945,10 @@ bool setPressureChamberValvesState(bool o2, bool co2, bool air, bool co2Air)
     bool success = true;
     for (const Ch &c : ch)
     {
-        bool ok = ioExpander.setEfuse(c.idx, c.state);
-        if (!ok)
-            ok = ioExpander.setEfuse(c.idx, c.state); // un seul nouvel essai
+        const bool ok = ioExpander.setEfuse(c.idx, c.state); // includes one retry on failure
         if (!ok)
         {
-            Serial.print("ERR:IO:OUTPUT_FAILURE;OUTPUT=");
-            Serial.print(c.name);
-            Serial.print(";CHANNEL=");
-            Serial.println(c.idx);
+            reportOutputFailure(c.name, c.idx);
             success = false;
         }
     }
@@ -974,17 +1009,35 @@ bool setPumpsSpeed(float approvPumpSpeed, float circulationPumpSpeed, float cult
 void setHeatersState(bool heaterState)
 {
     const bool temperatureDataSafe = isCleaningTemperatureSafe();
+    const float waterTemperature = getWaterTemperature();
+    const float reference = temperatureController.getReferenceTemperature();
     const bool belowTemperatureSetpoint =
         temperatureDataSafe &&
-        tempSensor.getTemperatureC() < temperatureController.getReferenceTemperature();
+        waterTemperature < reference;
+
+    // Safety 1: air limit (with a single water probe, errors cannot be detected by comparison)
+    const float airTemperature = sht40.getLastTemperature();
+    const bool airTooHot = isfinite(airTemperature) && airTemperature > AIR_TEMP_MAX_C;
+    // Safety 2: water clearly above the setpoint
+    const bool waterOvertemp = temperatureDataSafe && waterTemperature > reference + WATER_OVERTEMP_MARGIN_C;
+
+    const unsigned long now = millis();
+    if (airTooHot && (lastAirLimitPrintMs == 0 || now - lastAirLimitPrintMs >= SAFETY_PRINT_INTERVAL_MS))
+    {
+        Serial.println("ERR:TEMP:AIR_LIMIT;AIR_T_C=" + String(airTemperature, 2) + ";MAX_C=" + String(AIR_TEMP_MAX_C, 1));
+        lastAirLimitPrintMs = (now == 0) ? 1 : now;
+    }
+    if (waterOvertemp && (lastOvertempPrintMs == 0 || now - lastOvertempPrintMs >= SAFETY_PRINT_INTERVAL_MS))
+    {
+        Serial.println("ERR:TEMP:OVERTEMP;WATER_T_C=" + String(waterTemperature, 2) + ";SP_C=" + String(reference, 2) +
+                       ";SRC=" + String(getWaterTemperatureSourceName()));
+        lastOvertempPrintMs = (now == 0) ? 1 : now;
+    }
 
     if (heaterState &&
-        isHeaterPermitted(
-            bioreactorState,
-            cleaningCycle,
-            temperatureDataSafe,
-            isConditionTestActive()) &&
-        belowTemperatureSetpoint)
+        isHeaterPermitted(bioreactorState, cleaningCycle, temperatureDataSafe, isConditionTestActive()) &&
+        belowTemperatureSetpoint &&
+        !airTooHot)
         heater.setLevel(temperatureController.getHeaterPower());
     else
     {
@@ -996,9 +1049,8 @@ void setHeatersState(bool heaterState)
 bool isCleaningTemperatureSafe()
 {
     const unsigned long now = millis();
-    return tempSensor.getStatus() == ATLAS_STATUS_OK &&
-           tempSensor.getAgeMs() <= 3 * TEMPERATURE_CONTROLLER_UPDATE_INTERVAL &&
-           isfinite(tempSensor.getTemperatureC()) &&
+    // Water temperature from the selected source (Atlas or VisiFerm, see water_temperature.h)
+    return isWaterTemperatureValid() &&
            airTemperatureStatus == SHT40_STATUS_OK &&
            lastValidAirTemperatureTime != 0 &&
            now - lastValidAirTemperatureTime <= 3 * TEMPERATURE_CONTROLLER_UPDATE_INTERVAL &&
@@ -1032,6 +1084,7 @@ bool startPressureChamberFlowTest(eValves valve)
     flowCalibrationMode = true;
     flowCalibrationActive = true;
     flowCalibrationWaitingForNext = false;
+    flowCalibrationAuto = false; // manual by default, see startPressureChamberFlowTestAuto()
     flowCalibrationHasRunGas = true;
     flowCalibrationPurgeConfirmed = false;
     flowCalibrationLastValve = valve;
@@ -1053,11 +1106,26 @@ bool startPressureChamberFlowTest(eValves valve)
     return true;
 }
 
+/**
+ * @brief Same as startPressureChamberFlowTest(), but the pulses follow each other without
+ * FLOW_TEST=NEXT (pause of FLOW_CALIBRATION_AUTO_PAUSE_MS, then the usual 15 s baseline).
+ * The purge between two different gases still has to be confirmed (FLOW_TEST=PURGE_DONE).
+ */
+bool startPressureChamberFlowTestAuto(eValves valve)
+{
+    if (!startPressureChamberFlowTest(valve))
+        return false;
+    flowCalibrationAuto = true;
+    Serial.println("FLOW_TEST;MODE=AUTO;PAUSE_BETWEEN_PULSES_S=" + String(FLOW_CALIBRATION_AUTO_PAUSE_MS / 1000UL));
+    return true;
+}
+
 void stopPressureChamberFlowTest()
 {
     flowCalibrationMode = true;
     flowCalibrationActive = false;
     flowCalibrationWaitingForNext = false;
+    flowCalibrationAuto = false;
     flowCalibrationPulsePendingStart = false;
     flowCalibrationBaselineSampleCount = 0;
     clearFlowCalibrationResponseWindow();
@@ -1109,6 +1177,7 @@ void resetPressureChamberFlowTest()
     flowCalibrationMode = false;
     flowCalibrationActive = false;
     flowCalibrationWaitingForNext = false;
+    flowCalibrationAuto = false;
     flowCalibrationPulsePendingStart = false;
     flowCalibrationHasRunGas = false;
     flowCalibrationPurgeConfirmed = false;
@@ -1130,11 +1199,11 @@ void updateTemperatureController()
         airTemperatureStatus = sht40.getData(&airTemperature);
         if (airTemperatureStatus == SHT40_STATUS_OK)
             lastValidAirTemperatureTime = millis();
-        float waterTemperature = tempSensor.getTemperatureC();
+        updateWaterTemperature(); // selects Atlas or VisiFerm (see water_temperature.h)
+        float waterTemperature = getWaterTemperature();
 
         if (airTemperatureStatus == SHT40_STATUS_OK &&
-            tempSensor.getStatus() == ATLAS_STATUS_OK &&
-            tempSensor.getAgeMs() <= 3 * TEMPERATURE_CONTROLLER_UPDATE_INTERVAL &&
+            isWaterTemperatureValid() &&
             isfinite(airTemperature) &&
             isfinite(waterTemperature))
         {
@@ -1261,15 +1330,14 @@ void printBioreactorStateToSerial()
         Serial.print(";DO_AGE_MS=");
         Serial.print(doAgeMs);
         Serial.print(";DO_CAL=");
-        Serial.println(VisiFermRS485::calStateToText(dissolvedOxygenSensor.getCalState()));
+        Serial.print(VisiFermRS485::calStateToText(dissolvedOxygenSensor.getCalState()));
+        Serial.print(";DO_FLAGS=");
+        Serial.println(dissolvedOxygenSensor.getMeasurementFlags());
 
         // Environment / chamber line (machine readable, parsed by the front)
-        const unsigned long waterTempAgeMs = tempSensor.getAgeMs();
-        const float waterTemperature = tempSensor.getTemperatureC();
-        const bool waterTempValid =
-            tempSensor.getStatus() == ATLAS_STATUS_OK &&
-            waterTempAgeMs <= 3 * TEMPERATURE_CONTROLLER_UPDATE_INTERVAL &&
-            isfinite(waterTemperature);
+        // Water temperature = selected source (Atlas or VisiFerm), Atlas raw value printed separately
+        const float waterTemperature = getWaterTemperature();
+        const bool waterTempValid = isWaterTemperatureValid();
         const bool airValid =
             airTemperatureStatus == SHT40_STATUS_OK &&
             lastValidAirTemperatureTime != 0 &&
@@ -1283,6 +1351,10 @@ void printBioreactorStateToSerial()
         Serial.print(waterTemperature, 2);
         Serial.print(";WATER_T_VALID=");
         Serial.print(waterTempValid ? "1" : "0");
+        Serial.print(";WATER_T_SRC=");
+        Serial.print(getWaterTemperatureSourceName());
+        Serial.print(";ATLAS_T_C=");
+        Serial.print(tempSensor.getTemperatureC(), 2);
         Serial.print(";WATER_T_SP_C=");
         Serial.print(String(temperatureController.getReferenceTemperature()));
         Serial.print(";HEATER_PCT=");

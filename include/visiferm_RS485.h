@@ -94,6 +94,12 @@ public:
     float getTemperature() const { return _temperature; }
 
     /**
+     * @brief Measurement status bits of the last DO and temperature readings (0 = no problem).
+     * Only warnings can be set here (0x01, 0x04, 0x08): readings with 0x02 or 0x10 are rejected.
+     */
+    uint32_t getMeasurementFlags() const { return _doFlags | _tempFlags; }
+
+    /**
      * @brief Get the timestamp of the last successful read.
      * @return Milliseconds since startup.
      */
@@ -173,7 +179,7 @@ private:
     void sendWriteRegisters(uint16_t reg, const uint16_t *words, uint8_t count);
     void sendFrame(const uint8_t *frame, uint8_t len);
     FrameResult tryReadFrame();
-    bool parseData(const uint8_t *frame, uint16_t len, float &outValue);
+    bool parseData(const uint8_t *frame, uint16_t len, float &outValue, uint32_t &outFlags);
     void cleanSerialBuffer();
 
     // calibration helpers
@@ -198,8 +204,10 @@ private:
     eVisiFermStatus _status;
 
     // latest values
-    float _oxygen;      // dissolved oxygen in %sat
-    float _temperature; // temperature in °C
+    float _oxygen;       // dissolved oxygen in %sat
+    float _temperature;  // temperature in °C
+    uint32_t _doFlags;   // measurement status of the last DO reading
+    uint32_t _tempFlags; // measurement status of the last temperature reading
 
     // constants
     static constexpr uint32_t BAUD_RATE = 19200;
@@ -216,6 +224,9 @@ private:
     static constexpr uint8_t MIN_MSG_LEN = 5; // addr(1) + func(1) + byteCount(1) + CRC(2)
     static constexpr uint8_t DATA_LEN = 20;   // 10 registers * 2 bytes each
     static constexpr uint8_t MAX_BUF_SIZE = 64;
+
+    // measurement status bits that make a reading unusable (see parseData)
+    static constexpr uint32_t MEAS_FLAGS_BLOCKING = 0x02 | 0x10;
 
     // calibration constants
     static constexpr uint32_t CAL_RESPONSE_TIMEOUT_MS = 1000;

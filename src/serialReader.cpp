@@ -323,6 +323,24 @@ void receiveSerialCommand()
                 Serial.println("ERR:FLOW_TEST:START_REJECTED" + idSuffix);
             return;
         }
+        if (command == "FLOW_TEST=AUTO_O2" || command == "FLOW_TEST=AUTO_CO2")
+        {
+            // Same as START_xx, but the pulses follow each other without FLOW_TEST=NEXT
+            const eValves valve = command == "FLOW_TEST=AUTO_O2" ? O2 : CO2;
+            if (bioreactorState != eBioreactorState::TEST)
+                Serial.println("ERR:FLOW_TEST:STATE_REQUIRED" + idSuffix);
+            else if (isPressureChamberFlowTestActive())
+                Serial.println("ERR:FLOW_TEST:ALREADY_RUNNING" + idSuffix);
+            else if (isConditionTestActive())
+                Serial.println("ERR:FLOW_TEST:CONDITION_TEST_RUNNING" + idSuffix);
+            else if (isPressureChamberFlowTestPurgeRequired(valve))
+                Serial.println("ERR:FLOW_TEST:PURGE_CONFIRM_REQUIRED;RUN_PURGE_AND_SEND_FLOW_TEST_PURGE_DONE" + idSuffix);
+            else if (startPressureChamberFlowTestAuto(valve))
+                Serial.println("OK:" + command + idSuffix);
+            else
+                Serial.println("ERR:FLOW_TEST:START_REJECTED" + idSuffix);
+            return;
+        }
         if (command == "FLOW_TEST=PURGE_DONE")
         {
             if (confirmPressureChamberFlowTestPurge())
