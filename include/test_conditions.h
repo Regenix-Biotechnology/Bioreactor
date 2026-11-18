@@ -6,15 +6,16 @@
 /**
  * @brief Condition test sequence (runs in the TEST state).
  *
- * 4 conditions of 5 h 30 each (22 h): circulation pump speed + O2 / CO2 references of the pressure
- * chamber (table in test_conditions.cpp). The other outputs are the same as in RUN (approv pump,
+ * 9 conditions (O2 40/60/80 % x CO2 140 000/160 000/180 000 ppm) in a random order, 8 x 11 h then
+ * 27 h for the last one (80 % / 180 000 ppm), 115 h in total: circulation pump speed + O2 / CO2
+ * references of the pressure chamber + duration of each condition (table in test_conditions.cpp). The other outputs are the same as in RUN (approv pump,
  * culture pumps, valves, fans, pressure chamber ON, heater regulated at the setpoint). At the end
  * of the last condition the bioreactor switches to RUN and the O2 / CO2 references in use before
  * the test are restored.
  *
  * Serial commands (see serialReader.cpp):
  *   TEST_COND=START      start at condition 1
- *   TEST_COND=START,n    start at condition n (1..4), e.g. to resume after a reboot
+ *   TEST_COND=START,n    start at condition n (1..9), e.g. to resume after a reboot
  *   TEST_COND=NEXT       end the current condition now and go to the next one
  *   TEST_COND=STOP       stop the sequence (stays in TEST, normal TEST outputs)
  *   TEST_COND=STATUS     print the current step and remaining time
@@ -28,10 +29,15 @@ struct TestCondition
     float circulationPumpSpeed; // ml/min
     float o2Reference;          // % (pressure chamber)
     float co2Reference;         // ppm (pressure chamber)
+    unsigned long durationMin;  // duration of the condition (min)
 };
 
-static constexpr uint8_t TEST_CONDITION_COUNT = 4;
-static constexpr unsigned long TEST_CONDITION_DURATION_MS = 330UL * 60UL * 1000UL; // 5 h 30 (22 h in total). 300UL -> 5 h (20 h in total)
+static constexpr uint8_t TEST_CONDITION_COUNT = 9;
+
+/** @brief Duration of condition index (0-based) in ms. */
+unsigned long getTestConditionDurationMs(uint8_t index);
+/** @brief Total duration of the sequence in ms. */
+unsigned long getTestSequenceDurationMs();
 
 typedef enum
 {

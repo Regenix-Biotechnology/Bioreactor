@@ -2,14 +2,38 @@
 #include "main.h"
 #include <math.h>
 
-// circulation (ml/min), O2 (%), CO2 (ppm)
-// pH test: O2 constant at 80 %, pump speeds 100 then 50, CO2 150 000 / 180 000 ppm, 5 h 30 per condition (22 h)
+// circulation (ml/min), O2 (%), CO2 (ppm), duration (min)
+// O2 40/60/80 % x CO2 140 000/160 000/180 000 ppm (9 conditions), circulation 50 ml/min.
+// Random order, chosen so that O2 AND CO2 both change at every step (rises and falls of both gases);
+// the last condition is 80 % / 180 000 ppm. 8 x 11 h + 27 h = 115 h
+// (start Wednesday 2026-11-18 13:00 -> end Monday 2026-11-23 08:00).
+static constexpr unsigned long MIN_PER_H = 60UL; // minutes per hour
 static const TestCondition TEST_CONDITIONS[TEST_CONDITION_COUNT] = {
-    {100.0f, 80.0f, 150000.0f}, // 1
-    {100.0f, 80.0f, 180000.0f}, // 2
-    {50.0f, 80.0f, 150000.0f},  // 3
-    {50.0f, 80.0f, 180000.0f},  // 4
+    {50.0f, 80.0f, 160000.0f, 11UL * MIN_PER_H}, // 1
+    {50.0f, 60.0f, 180000.0f, 11UL * MIN_PER_H}, // 2
+    {50.0f, 80.0f, 140000.0f, 11UL * MIN_PER_H}, // 3
+    {50.0f, 40.0f, 160000.0f, 11UL * MIN_PER_H}, // 4
+    {50.0f, 60.0f, 140000.0f, 11UL * MIN_PER_H}, // 5
+    {50.0f, 40.0f, 180000.0f, 11UL * MIN_PER_H}, // 6
+    {50.0f, 60.0f, 160000.0f, 11UL * MIN_PER_H}, // 7
+    {50.0f, 40.0f, 140000.0f, 11UL * MIN_PER_H}, // 8
+    {50.0f, 80.0f, 180000.0f, 27UL * MIN_PER_H}, // 9 (last)
 };
+
+unsigned long getTestConditionDurationMs(uint8_t index)
+{
+    if (index >= TEST_CONDITION_COUNT)
+        return 0;
+    return TEST_CONDITIONS[index].durationMin * 60UL * 1000UL;
+}
+
+unsigned long getTestSequenceDurationMs()
+{
+    unsigned long total = 0;
+    for (uint8_t i = 0; i < TEST_CONDITION_COUNT; i++)
+        total += getTestConditionDurationMs(i);
+    return total; // 115 h = 414 000 000 ms, below the 49.7-day limit of millis()
+}
 
 static bool conditionTestActive = false;
 static uint8_t conditionIndex = 0; // 0..8
@@ -76,7 +100,7 @@ static void startStep(uint8_t index, unsigned long now)
     pressureChamber.setReferenceLevel(O2, c.o2Reference);
     pressureChamber.setReferenceLevel(CO2, c.co2Reference);
     Serial.println("EVENT:TEST_COND:STEP_START" + conditionFields(index) +
-                   ";DURATION_S=" + String(TEST_CONDITION_DURATION_MS / 1000UL));
+                   ";DURATION_S=" + String(getTestConditionDurationMs(index) / 1000UL));
     saveProgress(now);
 }
 
@@ -134,7 +158,8 @@ eTestConditionStartResult startConditionTest(uint8_t firstStep)
     conditionStartMs = now; // startStep() sets it again; needed for saveProgress()
     Serial.println("EVENT:TEST_COND:SEQUENCE_START;FIRST_STEP=" + String(firstStep) +
                    ";TOTAL=" + String(TEST_CONDITION_COUNT) +
-                   ";STEP_DURATION_S=" + String(TEST_CONDITION_DURATION_MS / 1000UL));
+                   ";STEP_DURATION_S=" + String(getTestConditionDurationMs(firstStep - 1) / 1000UL) +
+                   ";TOTAL_DURATION_S=" + String(getTestSequenceDurationMs() / 1000UL));
     Serial.println("> Debut de la sequence de test -> debut de la " + conditionText(firstStep - 1));
     startStep(firstStep - 1, now);
     return TEST_COND_START_OK;
@@ -176,7 +201,7 @@ void updateConditionTest()
         return;
 
     const unsigned long now = millis();
-    if (now - conditionStartMs >= TEST_CONDITION_DURATION_MS)
+    if (now - conditionStartMs >= getTestConditionDurationMs(conditionIndex))
     {
         goToNextCondition(now);
         return;
@@ -210,8 +235,9 @@ void restoreConditionTestAfterBoot()
         return;
     }
 
-    if (stepMs > TEST_CONDITION_DURATION_MS)
-        stepMs = TEST_CONDITION_DURATION_MS;
+    const unsigned long stepDurationMs = getTestConditionDurationMs(step);
+    if (stepMs > stepDurationMs)
+        stepMs = stepDurationMs;
 
     const unsigned long now = millis();
     savedO2Reference = o2Saved;
@@ -228,7 +254,7 @@ void restoreConditionTestAfterBoot()
 
     Serial.println("EVENT:TEST_COND:RESUMED" + conditionFields(step) +
                    ";ELAPSED_S=" + String(stepMs / 1000UL) +
-                   ";REMAINING_S=" + String((TEST_CONDITION_DURATION_MS - stepMs) / 1000UL));
+                   ";REMAINING_S=" + String((stepDurationMs - stepMs) / 1000UL));
     Serial.println("> Sequence de test reprise apres redemarrage : " + conditionText(step));
 }
 
@@ -248,7 +274,8 @@ String getConditionTestStatusFields()
         return "TEST_COND=IDLE";
 
     const unsigned long elapsedMs = millis() - conditionStartMs;
-    const unsigned long remainingMs = elapsedMs >= TEST_CONDITION_DURATION_MS ? 0 : TEST_CONDITION_DURATION_MS - elapsedMs;
+    const unsigned long durationMs = getTestConditionDurationMs(conditionIndex);
+    const unsigned long remainingMs = elapsedMs >= durationMs ? 0 : durationMs - elapsedMs;
     return "TEST_COND=RUNNING" + conditionFields(conditionIndex) +
            ";ELAPSED_S=" + String(elapsedMs / 1000UL) +
            ";REMAINING_S=" + String(remainingMs / 1000UL);
