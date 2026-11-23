@@ -197,6 +197,8 @@ static bool parseStateName(const String &name, eBioreactorState &state)
         state = eBioreactorState::MEDIA_CHANGE_TRASH;
     else if (name == "MEDIA-CHANGE-APPROV" || name == "MEDIA_CHANGE_APPROV")
         state = eBioreactorState::MEDIA_CHANGE_APPROV;
+    else if (name == "ASSEMBLY")
+        state = eBioreactorState::ASSEMBLY;
     else
         return false;
 
@@ -214,8 +216,6 @@ static bool parseCleaningCycle(const String &name, eCleaningCycle &cycle)
         cycle = eCleaningCycle::DETERGENT;
     else if (name == "RINSE")
         cycle = eCleaningCycle::RINSE;
-    else if (name == "DRY")
-        cycle = eCleaningCycle::DRY;
     else if (name == "PRE_RINSE")
         cycle = eCleaningCycle::PRE_RINSE;
     else

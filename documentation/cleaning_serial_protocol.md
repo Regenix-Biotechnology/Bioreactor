@@ -9,10 +9,18 @@ water has been added; the waiting-state confirmations are operator acknowledgmen
 1. Water pre-rinse
 2. Detergent cycle
 3. Water rinse
-4. Dry cycle (automatic)
 
 Each cycle runs APPROV → CIRCULATION → RETURN. The heater is only used during
-the detergent cycle.
+the detergent cycle. There is no separate dry cycle anymore: the RETURN of the
+final water rinse empties the circuit.
+
+| Cycle | APPROV | CIRCULATION | RETURN | Total |
+|---|---|---|---|---|
+| Pre-rinse (water) | 12 min | 15 min | 12 min | 39 min |
+| Detergent | 7 min | 40 min | 7 min | 54 min |
+| Rinse (water) | 12 min | 15 min | 12 min | 39 min |
+
+Total: 2 h 12 min plus the operator confirmations.
 
 ## Start: water for the pre-rinse
 
@@ -63,9 +71,24 @@ After detergent completes, the firmware enters `CLEANING_WAITING_WATER` again
 CLEANING=RINSE,APPROV
 ```
 
-Rinse is followed automatically by the dry cycle, then `EVENT:CLEANING:COMPLETE`.
+When the rinse RETURN ends, the firmware emits `EVENT:CLEANING:RINSE_COMPLETE`,
+goes back to `IDLE` and emits `EVENT:CLEANING:COMPLETE`.
 
 `STATUS?` reports `STATUS:WAITING_FOR_DETERGENT=yes|no` and
 `STATUS:WAITING_FOR_WATER=yes|no`. The interface should treat the matching
 `OK:` response as command acceptance, and should display a matching
 `ERR:CLEANING:` response as failure.
+
+
+## Related states (outside the cleaning sequence)
+
+- `STATE=CELL-RETURN` (state 4, **END** in the interface): same outputs as the
+  cleaning RETURN phase (pumps −100 / −100 / −50 / −50 mL/min, circulation and
+  cleaning valves open, heater off) for 12 min, then `EVENT:END:COMPLETE` and
+  `IDLE`. It replaces the former CELL-RETURN → TRASH chain (`STATE=TRASH`
+  still exists but is no longer chained automatically).
+- `STATE=ASSEMBLY` (state 22): assembly / disassembly of the bioreactor before
+  or after the autoclave. The three process valves (supply, circulation,
+  cleaning) are open; pumps, heater, fans and gas valves are off. It stays in
+  this state until another state is sent (e.g. `STATE=IDLE`), and is restored
+  after a reboot.

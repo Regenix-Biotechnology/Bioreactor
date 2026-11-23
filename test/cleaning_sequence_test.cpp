@@ -15,8 +15,9 @@ int main()
     assert(static_cast<int>(eBioreactorState::MEDIA_CHANGE_APPROV) == 19);
     assert(static_cast<int>(eBioreactorState::CLEANING_WAITING_WATER) == 20);
     assert(static_cast<int>(eBioreactorState::CLEANING_WAITING_DETERGENT) == 21);
+    assert(static_cast<int>(eBioreactorState::ASSEMBLY) == 22);
 
-    // New order: water pre-rinse, detergent, water rinse, dry
+    // Order: water pre-rinse, detergent, water rinse (its RETURN empties the circuit)
     assert(isValidCleaningOperatorCommand(
         eBioreactorState::IDLE,
         eCleaningCycle::NONE,
@@ -79,7 +80,7 @@ int main()
     assert(!isValidCleaningOperatorCommand(
         eBioreactorState::CLEANING_WAITING_WATER,
         eCleaningCycle::DETERGENT,
-        eCleaningCycle::DRY,
+        eCleaningCycle::PRE_RINSE,
         eBioreactorState::CLEANING_APPROV));
     assert(!isValidCleaningOperatorCommand(
         eBioreactorState::IDLE,
@@ -90,7 +91,7 @@ int main()
     const eCleaningCycle cycles[] = {
         eCleaningCycle::DETERGENT,
         eCleaningCycle::RINSE,
-        eCleaningCycle::DRY};
+        eCleaningCycle::PRE_RINSE};
     for (eCleaningCycle cycle : cycles)
     {
         assert(isValidCleaningPhaseTransition(
@@ -127,11 +128,9 @@ int main()
     assert(nextCleaningCycle(eCleaningCycle::DETERGENT) == eCleaningCycle::DETERGENT);
     assert(nextCleaningStateAfterCycle(eCleaningCycle::DETERGENT) ==
            eBioreactorState::CLEANING_WAITING_WATER);
-    assert(nextCleaningCycle(eCleaningCycle::RINSE) == eCleaningCycle::DRY);
-    assert(nextCleaningStateAfterCycle(eCleaningCycle::RINSE) ==
-           eBioreactorState::CLEANING_APPROV);
-    assert(nextCleaningCycle(eCleaningCycle::DRY) == eCleaningCycle::NONE);
-    assert(nextCleaningStateAfterCycle(eCleaningCycle::DRY) == eBioreactorState::IDLE);
+    assert(nextCleaningCycle(eCleaningCycle::RINSE) == eCleaningCycle::NONE);
+    assert(nextCleaningStateAfterCycle(eCleaningCycle::RINSE) == eBioreactorState::IDLE);
+    assert(getSafeStartupState(eBioreactorState::ASSEMBLY) == eBioreactorState::ASSEMBLY);
 
     assert(isCleaningManagedState(eBioreactorState::CLEANING_APPROV));
     assert(isCleaningManagedState(eBioreactorState::CLEANING_CIRCULATION));
@@ -196,12 +195,14 @@ int main()
         eBioreactorState::APPROV,
         eBioreactorState::PREPARE,
         eBioreactorState::RUN,
-        eBioreactorState::CELL_RETURN,
         eBioreactorState::MEDIA_CHANGE_TRASH,
         eBioreactorState::MEDIA_CHANGE_APPROV};
     for (eBioreactorState state : productionHeatingStates)
         assert(isHeaterPermitted(state, eCleaningCycle::NONE, false));
 
+    // END return empties the circuit, assembly keeps everything off
+    assert(!isHeaterPermitted(eBioreactorState::CELL_RETURN, eCleaningCycle::NONE, true));
+    assert(!isHeaterPermitted(eBioreactorState::ASSEMBLY, eCleaningCycle::NONE, true));
     assert(!isHeaterPermitted(eBioreactorState::TEST, eCleaningCycle::NONE, false));
     assert(isHeaterPermitted(eBioreactorState::TEST, eCleaningCycle::NONE, false, true));
 
@@ -214,7 +215,7 @@ int main()
         assert(isHeaterPermitted(state, eCleaningCycle::DETERGENT, true));
         assert(!isHeaterPermitted(state, eCleaningCycle::DETERGENT, false));
         assert(!isHeaterPermitted(state, eCleaningCycle::RINSE, true));
-        assert(!isHeaterPermitted(state, eCleaningCycle::DRY, true));
+        assert(!isHeaterPermitted(state, eCleaningCycle::PRE_RINSE, true));
     }
     assert(!isHeaterPermitted(
         eBioreactorState::CLEANING_WAITING_WATER,

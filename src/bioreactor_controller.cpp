@@ -538,7 +538,8 @@ bool isBioreactorStateSupported(eBioreactorState state)
            state == eBioreactorState::TEST ||
            state == eBioreactorState::TRASH ||
            state == eBioreactorState::MEDIA_CHANGE_TRASH ||
-           state == eBioreactorState::MEDIA_CHANGE_APPROV;
+           state == eBioreactorState::MEDIA_CHANGE_APPROV ||
+           state == eBioreactorState::ASSEMBLY;
 }
 
 /**
@@ -681,21 +682,11 @@ void finishCleaningCycle()
     }
     else if (cleaningCycle == eCleaningCycle::RINSE)
     {
+        // Last water rinse: its RETURN empties the circuit, the sequence is complete
         Serial.println("EVENT:CLEANING:CYCLE_END;CYCLE=RINSE;PHASE=RETURN");
-        cleaningCycle = nextCleaningCycle(cleaningCycle);
-        setBioreactorState((uint8_t)nextCleaningStateAfterCycle(eCleaningCycle::RINSE));
-        setHeatersState(OFF);
-        Serial.println("EVENT:CLEANING:CYCLE_START;CYCLE=DRY;PHASE=APPROV");
         Serial.println("EVENT:CLEANING:RINSE_COMPLETE");
-        Serial.println("EVENT:CLEANING:DRY_STARTED");
-        Serial.println("EVENT:CLEANING:DRY:APPROV_STARTED");
-    }
-    else if (cleaningCycle == eCleaningCycle::DRY)
-    {
-        Serial.println("EVENT:CLEANING:CYCLE_END;CYCLE=DRY;PHASE=RETURN");
-        setBioreactorState((uint8_t)nextCleaningStateAfterCycle(cleaningCycle));
-        Serial.println("EVENT:CLEANING:COMPLETE;CYCLE=DRY;PHASE=COMPLETE");
-        Serial.println("EVENT:CLEANING:DRY_COMPLETE");
+        setBioreactorState((uint8_t)nextCleaningStateAfterCycle(eCleaningCycle::RINSE));
+        Serial.println("EVENT:CLEANING:COMPLETE;CYCLE=RINSE;PHASE=COMPLETE");
         Serial.println("EVENT:CLEANING:COMPLETE");
     }
     else

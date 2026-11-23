@@ -4,6 +4,9 @@
 
 float puissnace_pompes;
 
+// END (CELL_RETURN): same duration as the RETURN phase of the water rinse
+static const unsigned long END_RETURN_DURATION = 12 * MINUTE;
+
 static bool applyCleaningPhaseOutputs()
 {
     bool success = true;
@@ -27,9 +30,7 @@ static bool applyCleaningPhaseOutputs()
     else
     {
         pumpsOk = setPumpsSpeed(-100.0, -100.0, -50.0, -50.0);
-        valvesOk = cleaningCycle == eCleaningCycle::DRY
-                       ? setValvesState(OPEN, CLOSE, CLOSE)
-                       : setValvesState(CLOSE, OPEN, OPEN);
+        valvesOk = setValvesState(CLOSE, OPEN, OPEN);
     }
 
     if (!pumpsOk)
@@ -122,20 +123,32 @@ void loop()
         break;
     }
     case eBioreactorState::CELL_RETURN:
-        // start when user send command (from IDLE after culture is finished)
-        setFansState(OFF, ON, ON, ON, ON, ON, ON);
-        setPumpsSpeed(OFF, -80.0, -30.0, -30.0);
-        // setPumpsSpeed(OFF, OFF, 200.0, 200.0);
-        setValvesState(CLOSE, OPEN, OPEN); //       setValvesState(OPEN, OPEN, CLOSE);
+        // END: same return as the cleaning RETURN phase (cell return + trash in one step).
+        // Circuit emptied in both directions, then IDLE.
+        setFansState(OFF, OFF, ON, ON, ON, ON, ON);
+        setPumpsSpeed(-100.0, -100.0, -50.0, -50.0); // APPROV, CIRCUL, CULTURE 1, CULTURE 2
+        setValvesState(CLOSE, OPEN, OPEN);
+        setPressureChamberValvesState(OFF, OFF, OFF, OFF);
         setPressureChamberState(OFF);
-        setHeatersState(ON);
+        setHeatersState(OFF); // the circuit is being emptied
 
-        // switch after 10 min to IDLE
-        if (millis() - stateTimer > 10 * MINUTE)
+        if (millis() - stateTimer > END_RETURN_DURATION)
         {
-            setBioreactorState((uint8_t)eBioreactorState::TRASH);
+            Serial.println("EVENT:END:COMPLETE");
+            setBioreactorState((uint8_t)eBioreactorState::IDLE);
             stateTimer = millis();
         }
+        break;
+    case eBioreactorState::ASSEMBLY:
+        // Assembly / disassembly of the bioreactor (autoclave): every process valve open
+        // so the tubing can be removed / put back. Pumps, heater, fans and gas valves off.
+        setFansState(OFF, OFF, OFF, OFF, OFF, OFF, OFF);
+        setPumpsSpeed(OFF, OFF, OFF, OFF);
+        setValvesState(OPEN, OPEN, OPEN);
+        setPressureChamberValvesState(OFF, OFF, OFF, OFF);
+        setPressureChamberState(OFF);
+        setHeatersState(OFF);
+        // switch when user command received (to IDLE)
         break;
     case eBioreactorState::CLEANING_APPROV:
     {
