@@ -17,7 +17,8 @@ enum class eBioreactorState
     MEDIA_CHANGE_APPROV = 19,
     CLEANING_WAITING_WATER = 20,
     CLEANING_WAITING_DETERGENT = 21,
-    MAX_STATE = 22
+    ASSEMBLY = 22, // assembly / disassembly (autoclave): all process valves open, everything else off
+    MAX_STATE = 23
 };
 
 /**
@@ -28,14 +29,14 @@ enum class eBioreactorState
  *        --CLEANING=DETERGENT,APPROV (operator: detergent added)--> DETERGENT: APPROV -> CIRCULATION -> RETURN
  *        --> WAITING_FOR_WATER (cycle DETERGENT)
  *        --CLEANING=RINSE,APPROV (operator: water added)--> RINSE: APPROV -> CIRCULATION -> RETURN
- *        --> DRY: APPROV -> CIRCULATION -> RETURN --> IDLE (EVENT:CLEANING:COMPLETE)
+ *        --> IDLE (EVENT:CLEANING:COMPLETE)
+ * The final RINSE return empties the circuit: there is no separate drying cycle anymore.
  */
 enum class eCleaningCycle : unsigned char
 {
     NONE = 0,
     DETERGENT,
     RINSE,
-    DRY,
     PRE_RINSE // water rinse before the detergent
 };
 
@@ -84,8 +85,6 @@ inline const char *cleaningCycleName(eCleaningCycle cycle)
         return "DETERGENT";
     case eCleaningCycle::RINSE:
         return "RINSE";
-    case eCleaningCycle::DRY:
-        return "DRY";
     case eCleaningCycle::PRE_RINSE:
         return "PRE_RINSE";
     default:
@@ -118,8 +117,6 @@ inline eCleaningCycle nextCleaningCycle(eCleaningCycle cycle)
     {
     case eCleaningCycle::DETERGENT:
         return eCleaningCycle::DETERGENT;
-    case eCleaningCycle::RINSE:
-        return eCleaningCycle::DRY;
     default:
         return eCleaningCycle::NONE;
     }
@@ -133,8 +130,6 @@ inline eBioreactorState nextCleaningStateAfterCycle(eCleaningCycle cycle)
         return eBioreactorState::CLEANING_WAITING_DETERGENT;
     case eCleaningCycle::DETERGENT:
         return eBioreactorState::CLEANING_WAITING_WATER;
-    case eCleaningCycle::RINSE:
-        return eBioreactorState::CLEANING_APPROV;
     default:
         return eBioreactorState::IDLE;
     }
@@ -180,8 +175,7 @@ inline bool isValidCleaningPhaseTransition(
     const bool validCycle =
         currentCycle == eCleaningCycle::PRE_RINSE ||
         currentCycle == eCleaningCycle::DETERGENT ||
-        currentCycle == eCleaningCycle::RINSE ||
-        currentCycle == eCleaningCycle::DRY;
+        currentCycle == eCleaningCycle::RINSE;
     if (!validCycle)
         return false;
 
@@ -203,7 +197,6 @@ inline bool isHeaterPermitted(
     if (state == eBioreactorState::APPROV ||
         state == eBioreactorState::PREPARE ||
         state == eBioreactorState::RUN ||
-        state == eBioreactorState::CELL_RETURN ||
         state == eBioreactorState::MEDIA_CHANGE_TRASH ||
         state == eBioreactorState::MEDIA_CHANGE_APPROV)
         return true;
