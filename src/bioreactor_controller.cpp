@@ -621,6 +621,10 @@ eCleaningCommandResult setCleaningCyclePhase(eCleaningCycle cycle, eBioreactorSt
     }
 
     lastCleaningErrorCode = "NONE";
+    // While waiting for the water of the first rinse, the generic "water added" command
+    // (CLEANING=RINSE,APPROV) starts the PRE_RINSE cycle.
+    if (cycle == eCleaningCycle::RINSE && cleaningCycle == eCleaningCycle::PRE_RINSE)
+        cycle = eCleaningCycle::PRE_RINSE;
     cleaningCycle = cycle;
     setBioreactorState((uint8_t)phase);
     setHeatersState(cycle == eCleaningCycle::DETERGENT);
@@ -657,7 +661,17 @@ void finishCleaningCycle()
         return;
     }
 
-    if (cleaningCycle == eCleaningCycle::DETERGENT)
+    if (cleaningCycle == eCleaningCycle::PRE_RINSE)
+    {
+        // First water rinse done: the detergent cycle waits for the operator
+        Serial.println("EVENT:CLEANING:CYCLE_END;CYCLE=PRE_RINSE;PHASE=RETURN");
+        Serial.println("EVENT:CLEANING:PRE_RINSE_COMPLETE");
+        cleaningCycle = eCleaningCycle::DETERGENT;
+        setBioreactorState((uint8_t)nextCleaningStateAfterCycle(eCleaningCycle::PRE_RINSE));
+        Serial.println("EVENT:CLEANING:WAITING_FOR_DETERGENT;CYCLE=DETERGENT;PHASE=WAITING_FOR_DETERGENT");
+        Serial.println("EVENT:CLEANING:WAITING_FOR_DETERGENT_CONFIRMATION");
+    }
+    else if (cleaningCycle == eCleaningCycle::DETERGENT)
     {
         Serial.println("EVENT:CLEANING:CYCLE_END;CYCLE=DETERGENT;PHASE=RETURN");
         setBioreactorState((uint8_t)nextCleaningStateAfterCycle(cleaningCycle));

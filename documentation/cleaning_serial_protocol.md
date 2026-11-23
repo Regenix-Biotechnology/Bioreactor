@@ -4,41 +4,66 @@ Cleaning commands are ASCII lines terminated by `\n`, sent at the configured
 115200 baud rate. The firmware does not physically detect whether detergent or
 water has been added; the waiting-state confirmations are operator acknowledgments.
 
-## Detergent confirmation
+## Sequence (since 2026-11-23)
 
-Start by placing the firmware in a safe waiting state:
+1. Water pre-rinse
+2. Detergent cycle
+3. Water rinse
+4. Dry cycle (automatic)
+
+Each cycle runs APPROV → CIRCULATION → RETURN. The heater is only used during
+the detergent cycle.
+
+## Start: water for the pre-rinse
+
+Start from `IDLE` by placing the firmware in a safe waiting state:
 
 ```text
-CLEANING=DETERGENT,WAITING_FOR_DETERGENT
+CLEANING=PRE_RINSE,WAITING_FOR_WATER
 ```
 
-The firmware replies `OK:CLEANING=DETERGENT,WAITING_FOR_DETERGENT` and emits
-`EVENT:CLEANING:WAITING_FOR_DETERGENT_CONFIRMATION`. Confirm the detergent has
-been added by sending:
-
-```text
-CLEANING=DETERGENT,APPROV
-```
-
-This second command starts the detergent cycle, provided cleaning temperature
-sensors are ready. The command is rejected with
-`ERR:CLEANING:TEMPERATURE_SENSOR_NOT_READY` otherwise.
-
-The initial waiting command is accepted only from `IDLE`. The confirmation is
-accepted only while the firmware is waiting for detergent. To cancel either
-waiting state, send `CLEANING=STOP`.
-
-## Water confirmation
-
-After detergent completes, the firmware enters `CLEANING_WAITING_WATER`.
-After adding water, confirm and start rinse with:
+The firmware replies `OK:CLEANING=PRE_RINSE,WAITING_FOR_WATER` and emits
+`EVENT:CLEANING:WAITING_FOR_WATER;CYCLE=PRE_RINSE;PHASE=WAITING_FOR_WATER` and
+`EVENT:CLEANING:WAITING_FOR_WATER_CONFIRMATION`. After adding water, start the
+pre-rinse with:
 
 ```text
 CLEANING=RINSE,APPROV
 ```
 
-The rinse command is accepted only from the waiting-for-water state. Rinse is
-followed automatically by the dry cycle.
+(`CLEANING=PRE_RINSE,APPROV` is accepted too.) The firmware emits
+`EVENT:CLEANING:CYCLE_START;CYCLE=PRE_RINSE;PHASE=APPROV`.
+
+The former start command `CLEANING=DETERGENT,WAITING_FOR_DETERGENT` is no longer
+accepted from `IDLE` (`ERR:CLEANING:INVALID_TRANSITION`).
+
+## Detergent confirmation
+
+When the pre-rinse ends, the firmware emits `EVENT:CLEANING:PRE_RINSE_COMPLETE`,
+enters `CLEANING_WAITING_DETERGENT` and emits
+`EVENT:CLEANING:WAITING_FOR_DETERGENT;CYCLE=DETERGENT;PHASE=WAITING_FOR_DETERGENT`
+and `EVENT:CLEANING:WAITING_FOR_DETERGENT_CONFIRMATION`. Confirm the detergent
+has been added by sending:
+
+```text
+CLEANING=DETERGENT,APPROV
+```
+
+This command starts the detergent cycle, provided cleaning temperature sensors
+are ready. The command is rejected with
+`ERR:CLEANING:TEMPERATURE_SENSOR_NOT_READY` otherwise. To cancel any waiting
+state, send `CLEANING=STOP`.
+
+## Water confirmation for the final rinse
+
+After detergent completes, the firmware enters `CLEANING_WAITING_WATER` again
+(`CYCLE=DETERGENT`). After adding water, confirm and start the rinse with:
+
+```text
+CLEANING=RINSE,APPROV
+```
+
+Rinse is followed automatically by the dry cycle, then `EVENT:CLEANING:COMPLETE`.
 
 `STATUS?` reports `STATUS:WAITING_FOR_DETERGENT=yes|no` and
 `STATUS:WAITING_FOR_WATER=yes|no`. The interface should treat the matching

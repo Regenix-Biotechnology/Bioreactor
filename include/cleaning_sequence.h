@@ -20,12 +20,23 @@ enum class eBioreactorState
     MAX_STATE = 22
 };
 
+/**
+ * Cleaning sequence (2026-11-23):
+ *   IDLE --CLEANING=PRE_RINSE,WAITING_FOR_WATER--> WAITING_FOR_WATER (cycle PRE_RINSE)
+ *        --CLEANING=RINSE,APPROV (operator: water added)--> PRE_RINSE: APPROV -> CIRCULATION -> RETURN
+ *        --> WAITING_FOR_DETERGENT (cycle DETERGENT)
+ *        --CLEANING=DETERGENT,APPROV (operator: detergent added)--> DETERGENT: APPROV -> CIRCULATION -> RETURN
+ *        --> WAITING_FOR_WATER (cycle DETERGENT)
+ *        --CLEANING=RINSE,APPROV (operator: water added)--> RINSE: APPROV -> CIRCULATION -> RETURN
+ *        --> DRY: APPROV -> CIRCULATION -> RETURN --> IDLE (EVENT:CLEANING:COMPLETE)
+ */
 enum class eCleaningCycle : unsigned char
 {
     NONE = 0,
     DETERGENT,
     RINSE,
-    DRY
+    DRY,
+    PRE_RINSE // water rinse before the detergent
 };
 
 enum class eCleaningCommandResult : unsigned char
@@ -75,6 +86,8 @@ inline const char *cleaningCycleName(eCleaningCycle cycle)
         return "RINSE";
     case eCleaningCycle::DRY:
         return "DRY";
+    case eCleaningCycle::PRE_RINSE:
+        return "PRE_RINSE";
     default:
         return "NONE";
     }
@@ -116,6 +129,8 @@ inline eBioreactorState nextCleaningStateAfterCycle(eCleaningCycle cycle)
 {
     switch (cycle)
     {
+    case eCleaningCycle::PRE_RINSE:
+        return eBioreactorState::CLEANING_WAITING_DETERGENT;
     case eCleaningCycle::DETERGENT:
         return eBioreactorState::CLEANING_WAITING_WATER;
     case eCleaningCycle::RINSE:
@@ -136,10 +151,17 @@ inline bool isValidCleaningOperatorCommand(
     eCleaningCycle requestedCycle,
     eBioreactorState requestedPhase)
 {
-    return (requestedCycle == eCleaningCycle::DETERGENT &&
-            requestedPhase == eBioreactorState::CLEANING_WAITING_DETERGENT &&
+    // Start of the sequence: wait for the water of the first rinse
+    return (requestedCycle == eCleaningCycle::PRE_RINSE &&
+            requestedPhase == eBioreactorState::CLEANING_WAITING_WATER &&
             currentState == eBioreactorState::IDLE &&
             currentCycle == eCleaningCycle::NONE) ||
+           // Water added for the first rinse (RINSE,APPROV is accepted like PRE_RINSE,APPROV)
+           ((requestedCycle == eCleaningCycle::PRE_RINSE || requestedCycle == eCleaningCycle::RINSE) &&
+            requestedPhase == eBioreactorState::CLEANING_APPROV &&
+            currentState == eBioreactorState::CLEANING_WAITING_WATER &&
+            currentCycle == eCleaningCycle::PRE_RINSE) ||
+           // Detergent added (after the first rinse)
            (requestedCycle == eCleaningCycle::DETERGENT &&
             requestedPhase == eBioreactorState::CLEANING_APPROV &&
             currentState == eBioreactorState::CLEANING_WAITING_DETERGENT &&
@@ -156,6 +178,7 @@ inline bool isValidCleaningPhaseTransition(
     eBioreactorState nextPhase)
 {
     const bool validCycle =
+        currentCycle == eCleaningCycle::PRE_RINSE ||
         currentCycle == eCleaningCycle::DETERGENT ||
         currentCycle == eCleaningCycle::RINSE ||
         currentCycle == eCleaningCycle::DRY;

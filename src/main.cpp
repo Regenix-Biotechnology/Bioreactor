@@ -110,8 +110,8 @@ void loop()
         // start when user sent command
         setFansState(ON, ON, ON, ON, ON, ON, ON);
         float circulationSpeed = 100.0f;
-        float culturePump1Speed = 20.0f; // bain
-        float culturePump2Speed = 10.0f; // channel
+        float culturePump1Speed = 10.0f; // channel
+        float culturePump2Speed = 20.0f; // bain
         getRunCulturePumpSpeeds(circulationSpeed, culturePump1Speed, culturePump2Speed);
         setPumpsSpeed(OFF, circulationSpeed, culturePump1Speed, culturePump2Speed);
         // setPumpsSpeed(OFF, OFF, OFF, OFF); // APPROV, CIRCUL, CULTURE 2, CULTURE 1
@@ -316,8 +316,8 @@ void loop()
             if (bioreactorState != eBioreactorState::TEST)
                 break; // sequence finished: switched to RUN
 
-            float culturePump1Speed = 20.0f; // bain (same default as RUN)
-            float culturePump2Speed = 10.0f; // channel (same default as RUN)
+            float culturePump1Speed = 10.0f; // channel (same default as RUN)
+            float culturePump2Speed = 20.0f; // bain (same default as RUN)
             getConfiguredCulturePumpSpeeds(culturePump1Speed, culturePump2Speed);
 
             setFansState(ON, ON, ON, ON, ON, ON, ON);

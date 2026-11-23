@@ -268,6 +268,12 @@ uint8_t getConditionTestStep()
     return conditionTestActive ? conditionIndex + 1 : 0;
 }
 
+String getTestConditionListFields(uint8_t index)
+{
+    return "TEST_COND_ITEM" + conditionFields(index) +
+           ";DURATION_S=" + String(getTestConditionDurationMs(index) / 1000UL);
+}
+
 String getConditionTestStatusFields()
 {
     if (!conditionTestActive)

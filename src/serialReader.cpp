@@ -216,6 +216,8 @@ static bool parseCleaningCycle(const String &name, eCleaningCycle &cycle)
         cycle = eCleaningCycle::RINSE;
     else if (name == "DRY")
         cycle = eCleaningCycle::DRY;
+    else if (name == "PRE_RINSE")
+        cycle = eCleaningCycle::PRE_RINSE;
     else
         return false;
 
@@ -226,6 +228,8 @@ static bool parseCleaningPhase(const String &name, eBioreactorState &phase)
 {
     if (name == "WAITING_FOR_DETERGENT")
         phase = eBioreactorState::CLEANING_WAITING_DETERGENT;
+    else if (name == "WAITING_FOR_WATER")
+        phase = eBioreactorState::CLEANING_WAITING_WATER;
     else if (name == "APPROV")
         phase = eBioreactorState::CLEANING_APPROV;
     else if (name == "CIRCULATION")
@@ -428,6 +432,15 @@ void receiveSerialCommand()
             return;
         }
 
+        if (command == "TEST_COND=LIST")
+        {
+            // Plan of the sequence, one line per condition, for the front-end
+            for (uint8_t i = 0; i < TEST_CONDITION_COUNT; i++)
+                Serial.println("STATUS:" + getTestConditionListFields(i) + idSuffix);
+            Serial.println("OK:TEST_COND=LIST" + idSuffix);
+            return;
+        }
+
         if (command == "CLEANING=STOP")
         {
             const eCleaningCycle stoppedCycle = cleaningCycle;
@@ -482,20 +495,25 @@ void receiveSerialCommand()
             if (result == eCleaningCommandResult::ACCEPTED)
             {
                 Serial.println("OK:" + command + idSuffix);
-                if (phase == eBioreactorState::CLEANING_WAITING_DETERGENT)
+                // Cycle actually started (RINSE,APPROV starts PRE_RINSE during the first rinse)
+                const String activeCycleName = String(cleaningCycleName(cleaningCycle));
+                if (phase == eBioreactorState::CLEANING_WAITING_WATER)
+                {
+                    Serial.println("EVENT:CLEANING:WAITING_FOR_WATER;CYCLE=" + activeCycleName +
+                                   ";PHASE=WAITING_FOR_WATER");
+                    Serial.println("EVENT:CLEANING:WAITING_FOR_WATER_CONFIRMATION");
+                }
+                else if (phase == eBioreactorState::CLEANING_WAITING_DETERGENT)
                 {
                     Serial.println("EVENT:CLEANING:WAITING_FOR_DETERGENT;CYCLE=DETERGENT;PHASE=WAITING_FOR_DETERGENT");
                     Serial.println("EVENT:CLEANING:WAITING_FOR_DETERGENT_CONFIRMATION");
                 }
                 else
                 {
-                    Serial.println("EVENT:CLEANING:CYCLE_START;CYCLE=" +
-                                   String(cleaningCycleName(cycle)) + ";PHASE=" +
-                                   String(cleaningPhaseName(phase)));
-                    Serial.println(cycle == eCleaningCycle::DETERGENT
-                                       ? "EVENT:CLEANING:DETERGENT_STARTED"
-                                       : "EVENT:CLEANING:RINSE_STARTED");
-                    Serial.println("EVENT:CLEANING:" + cycleName + ":APPROV_STARTED");
+                    Serial.println("EVENT:CLEANING:CYCLE_START;CYCLE=" + activeCycleName +
+                                   ";PHASE=" + String(cleaningPhaseName(phase)));
+                    Serial.println("EVENT:CLEANING:" + activeCycleName + "_STARTED");
+                    Serial.println("EVENT:CLEANING:" + activeCycleName + ":APPROV_STARTED");
                 }
             }
             else if (result == eCleaningCommandResult::ACTUATOR_FAILURE)
