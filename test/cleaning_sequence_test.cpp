@@ -16,11 +16,40 @@ int main()
     assert(static_cast<int>(eBioreactorState::CLEANING_WAITING_WATER) == 20);
     assert(static_cast<int>(eBioreactorState::CLEANING_WAITING_DETERGENT) == 21);
 
+    // New order: water pre-rinse, detergent, water rinse, dry
     assert(isValidCleaningOperatorCommand(
+        eBioreactorState::IDLE,
+        eCleaningCycle::NONE,
+        eCleaningCycle::PRE_RINSE,
+        eBioreactorState::CLEANING_WAITING_WATER));
+    assert(isValidCleaningOperatorCommand(
+        eBioreactorState::CLEANING_WAITING_WATER,
+        eCleaningCycle::PRE_RINSE,
+        eCleaningCycle::RINSE,
+        eBioreactorState::CLEANING_APPROV));
+    assert(isValidCleaningOperatorCommand(
+        eBioreactorState::CLEANING_WAITING_WATER,
+        eCleaningCycle::PRE_RINSE,
+        eCleaningCycle::PRE_RINSE,
+        eBioreactorState::CLEANING_APPROV));
+    // The detergent can no longer be the first step
+    assert(!isValidCleaningOperatorCommand(
         eBioreactorState::IDLE,
         eCleaningCycle::NONE,
         eCleaningCycle::DETERGENT,
         eBioreactorState::CLEANING_WAITING_DETERGENT));
+    assert(!isValidCleaningOperatorCommand(
+        eBioreactorState::CLEANING_WAITING_WATER,
+        eCleaningCycle::PRE_RINSE,
+        eCleaningCycle::DETERGENT,
+        eBioreactorState::CLEANING_APPROV));
+    assert(nextCleaningStateAfterCycle(eCleaningCycle::PRE_RINSE) ==
+           eBioreactorState::CLEANING_WAITING_DETERGENT);
+    assert(isValidCleaningPhaseTransition(
+        eBioreactorState::CLEANING_APPROV,
+        eCleaningCycle::PRE_RINSE,
+        eBioreactorState::CLEANING_CIRCULATION));
+    assert(!isHeaterPermitted(eBioreactorState::CLEANING_APPROV, eCleaningCycle::PRE_RINSE, true));
     assert(isValidCleaningOperatorCommand(
         eBioreactorState::CLEANING_WAITING_DETERGENT,
         eCleaningCycle::DETERGENT,

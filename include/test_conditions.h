@@ -19,6 +19,7 @@
  *   TEST_COND=NEXT       end the current condition now and go to the next one
  *   TEST_COND=STOP       stop the sequence (stays in TEST, normal TEST outputs)
  *   TEST_COND=STATUS     print the current step and remaining time
+ *   TEST_COND=LIST       print every condition (STATUS:TEST_COND_ITEM;...) then OK:TEST_COND=LIST
  *
  * After a reboot of the ESP32, the sequence resumes at the same step (at most 5 min lost on that
  * step) if the bioreactor restarts in TEST: EVENT:TEST_COND:RESUMED;STEP=..;REMAINING_S=..
@@ -68,6 +69,13 @@ uint8_t getConditionTestStep(); // 1..9, 0 if not running
 
 /** @brief "TEST_COND=IDLE" or "TEST_COND=RUNNING;STEP=..;...;REMAINING_S=.." (without prefix / ID). */
 String getConditionTestStatusFields();
+
+/**
+ * @brief Description of condition index (0-based) for TEST_COND=LIST:
+ * "TEST_COND_ITEM;STEP=..;TOTAL=..;CIRCULATION=..;O2=..;CO2=..;DURATION_S=.." (without prefix / ID).
+ * Lets the front-end display the plan of the sequence without hard-coding it.
+ */
+String getTestConditionListFields(uint8_t index);
 
 // Defined in bioreactor_controller.cpp: culture pump speeds used in RUN
 // (culture setpoints if staged, otherwise the given default values are kept).
